@@ -1,3 +1,16 @@
+import java.util.Properties
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties().apply {
+    if (!keystorePropertiesFile.exists()) {
+        throw GradleException(
+            "Missing keystore.properties — create it next to build.gradle.kts " +
+                "with storeFile/storePassword/keyAlias/keyPassword entries."
+        )
+    }
+    keystorePropertiesFile.inputStream().use { load(it) }
+}
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -10,6 +23,15 @@ android {
     namespace = "fr.ibdjournal.app"
     compileSdk = 37
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     defaultConfig {
         applicationId = "fr.ibdjournal.app"
         minSdk = 26
@@ -21,6 +43,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
