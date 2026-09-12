@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,8 +21,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 
 /** Feuille d'ajout d'une selle du jour, avec commentaire facultatif. */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -30,35 +33,56 @@ fun StoolSheet(
     onDismiss: () -> Unit,
     onSave: (comment: String) -> Unit,
 ) {
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        StoolSheetContent(onSave = onSave)
+    }
+}
+
+/**
+ * Contenu de la feuille d'ajout de selle, séparé pour être prévisualisé
+ * sans le ModalBottomSheet.
+ */
+@Composable
+fun StoolSheetContent(
+    onSave: (comment: String) -> Unit,
+) {
     var comment by remember { mutableStateOf("") }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.add_stool),
+            style = MaterialTheme.typography.titleLarge,
+        )
+        OutlinedTextField(
+            value = comment,
+            onValueChange = { comment = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.stool_comment_hint)) },
+            minLines = 2,
+            maxLines = 5,
+        )
+        Button(
+            onClick = { onSave(comment) },
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(
-                text = stringResource(R.string.add_stool),
-                style = MaterialTheme.typography.titleLarge,
-            )
-            OutlinedTextField(
-                value = comment,
-                onValueChange = { comment = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.stool_comment_hint)) },
-                minLines = 2,
-                maxLines = 5,
-            )
-            Button(
-                onClick = { onSave(comment) },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(stringResource(R.string.save))
-            }
-            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.save))
+        }
+        Spacer(Modifier.height(8.dp))
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StoolSheetPreview() {
+    IBDJournalTheme {
+        Surface {
+            StoolSheetContent(onSave = {})
         }
     }
 }

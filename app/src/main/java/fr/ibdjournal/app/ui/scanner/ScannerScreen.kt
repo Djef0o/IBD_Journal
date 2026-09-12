@@ -53,7 +53,9 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.tooling.preview.Preview as ComposePreview
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
@@ -75,11 +77,31 @@ fun ScannerScreen(
 
     BackHandler(onBack = onClose)
 
-    Box(Modifier.fillMaxSize().background(Color.Black)) {
-        CameraPreview(
-            onBarcodeDetected = viewModel::onBarcodeDetected,
-            modifier = Modifier.fillMaxSize(),
-        )
+    ScannerContent(
+        state = state,
+        onClose = onClose,
+        onProductScanned = onProductScanned,
+        onBarcodeDetected = viewModel::onBarcodeDetected,
+        cameraPreview = { onDetected ->
+            CameraPreview(
+                onBarcodeDetected = onDetected,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+    )
+}
+
+@Composable
+fun ScannerContent(
+    state: ScanState,
+    onClose: () -> Unit,
+    onProductScanned: (Product) -> Unit,
+    onBarcodeDetected: (String) -> Unit,
+    cameraPreview: @Composable (onBarcodeDetected: (String) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.fillMaxSize().background(Color.Black)) {
+        cameraPreview(onBarcodeDetected)
 
         // Barre supérieure.
         Row(
@@ -180,6 +202,38 @@ fun ScannerScreen(
                 }
             }
         }
+    }
+}
+
+@ComposePreview
+@Composable
+private fun ScannerContentPreview() {
+    IBDJournalTheme {
+        ScannerContent(
+            state = ScanState.Found(
+                Product(
+                    barcode = "3017620422003",
+                    name = "Nutella",
+                    brand = "Ferrero",
+                    nutriscore = "e",
+                    imageUrl = null,
+                    ingredients = null
+                )
+            ),
+            onClose = {},
+            onProductScanned = {},
+            onBarcodeDetected = {},
+            cameraPreview = {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.DarkGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Aperçu Caméra (Preview)", color = Color.White)
+                }
+            }
+        )
     }
 }
 

@@ -28,6 +28,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import androidx.compose.runtime.Composable
+import androidx.compose.material3.Surface
+import androidx.compose.ui.tooling.preview.Preview
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 
 /**
  * Niveau de zoom du calendrier.
@@ -313,5 +317,41 @@ class CalendarViewModel @Inject constructor(
 
     fun finishOnboarding() {
         viewModelScope.launch { appPrefs.markOnboardingDone() }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun StoolSheetContentPreview() {
+    IBDJournalTheme {
+        Surface {
+            StoolSheetContent(onSave = {})
+        }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun CalendarScreenPreview() {
+    IBDJournalTheme {
+        CalendarContent(
+            state = CalendarUiState(onboardingDone = true),
+            onNavigateTo = {},
+            onGoToToday = {},
+            onSelectDate = {},
+            onSetZoom = {},
+            onOpenMealEditor = { _, _ -> },
+            onOpenStoolSheet = {},
+            onDeleteMeal = {},
+            onDeleteStool = {},
+            onCloseMealEditor = {},
+            onSaveMeal = { _, _, _, _ -> },
+            onOpenScanner = {},
+            onCloseScanner = {},
+            onScannedProduct = {},
+            onCloseStoolSheet = {},
+            onAddStool = {},
+            onFinishOnboarding = {},
+        )
     }
 }

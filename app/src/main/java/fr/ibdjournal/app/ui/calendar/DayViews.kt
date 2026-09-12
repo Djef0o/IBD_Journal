@@ -47,6 +47,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import fr.ibdjournal.app.R
@@ -54,6 +55,7 @@ import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import java.io.File
 import java.time.LocalDate
 import java.time.YearMonth
@@ -516,6 +518,55 @@ fun DaySummaryCard(
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun MonthGridPreview() {
+    val today = LocalDate.now()
+    IBDJournalTheme {
+        Surface {
+            MonthGrid(
+                month = YearMonth.now(),
+                selected = today,
+                mealsByDay = mapOf(
+                    today to listOf(
+                        Meal(date = today, type = MealType.BREAKFAST, description = "Café et tartines")
+                    )
+                ),
+                stoolsByDay = mapOf(
+                    today to listOf(Stool(date = today, comment = "Normal"))
+                ),
+                onSelect = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun DayPagePreview() {
+    val today = LocalDate.now()
+    IBDJournalTheme {
+        Surface {
+            DayPage(
+                date = today,
+                mealsByDay = mapOf(
+                    today to listOf(
+                        Meal(date = today, type = MealType.BREAKFAST, description = "Omelette"),
+                        Meal(date = today, type = MealType.LUNCH, description = "Salade César", productName = "Salade Monoprix")
+                    )
+                ),
+                stoolsByDay = mapOf(
+                    today to listOf(Stool(date = today, comment = "Un peu dur"))
+                ),
+                onOpenMeal = { _, _ -> },
+                onOpenStoolSheet = {},
+                onDeleteMeal = {},
+                onDeleteStool = {}
+            )
         }
     }
 }

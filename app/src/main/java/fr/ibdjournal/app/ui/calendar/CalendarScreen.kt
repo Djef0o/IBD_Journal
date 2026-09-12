@@ -38,20 +38,68 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
+import android.net.Uri
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
+import fr.ibdjournal.app.data.model.Product
+import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.onboarding.OnboardingScreen
 import fr.ibdjournal.app.ui.scanner.ScannerScreen
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
+import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    CalendarContent(
+        state = state,
+        onNavigateTo = viewModel::navigateTo,
+        onGoToToday = viewModel::goToToday,
+        onSelectDate = viewModel::selectDate,
+        onSetZoom = viewModel::setZoom,
+        onOpenMealEditor = viewModel::openMealEditor,
+        onOpenStoolSheet = viewModel::openStoolSheet,
+        onDeleteMeal = viewModel::deleteMeal,
+        onDeleteStool = viewModel::deleteStool,
+        onCloseMealEditor = viewModel::closeMealEditor,
+        onSaveMeal = viewModel::saveMeal,
+        onOpenScanner = viewModel::openScanner,
+        onCloseScanner = viewModel::closeScanner,
+        onScannedProduct = viewModel::onScannedProduct,
+        onCloseStoolSheet = viewModel::closeStoolSheet,
+        onAddStool = viewModel::addStool,
+        onFinishOnboarding = viewModel::finishOnboarding,
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalendarContent(
+    state: CalendarUiState,
+    onNavigateTo: (Int) -> Unit,
+    onGoToToday: () -> Unit,
+    onSelectDate: (LocalDate) -> Unit,
+    onSetZoom: (ZoomLevel) -> Unit,
+    onOpenMealEditor: (MealType, Meal?) -> Unit,
+    onOpenStoolSheet: () -> Unit,
+    onDeleteMeal: (Meal) -> Unit,
+    onDeleteStool: (Stool) -> Unit,
+    onCloseMealEditor: () -> Unit,
+    onSaveMeal: (String, Uri?, Boolean, Product?) -> Unit,
+    onOpenScanner: () -> Unit,
+    onCloseScanner: () -> Unit,
+    onScannedProduct: (Product) -> Unit,
+    onCloseStoolSheet: () -> Unit,
+    onAddStool: (String) -> Unit,
+    onFinishOnboarding: () -> Unit,
+) {
     var showChooser by remember { mutableStateOf(false) }
 
     val pagerState = rememberPagerState(initialPage = ZoomLevel.JOUR.ordinal) {
@@ -61,7 +109,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     // Glissement dans le pager → changement de zoom (mois → semaine → jour).
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect { page ->
-            viewModel.setZoom(ZoomLevel.entries[page])
+            onSetZoom(ZoomLevel.entries[page])
         }
     }
     // Changement de zoom (boutons) → alignement du pager.
@@ -76,7 +124,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
             TopAppBar(
                 title = { Text(headerTitle(state)) },
                 navigationIcon = {
-                    IconButton(onClick = { viewModel.navigateTo(-1) }) {
+                    IconButton(onClick = { onNavigateTo(-1) }) {
                         Icon(
                             imageVector = Icons.Outlined.ChevronLeft,
                             contentDescription = stringResource(R.string.previous),
@@ -84,13 +132,13 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.navigateTo(1) }) {
+                    IconButton(onClick = { onNavigateTo(1) }) {
                         Icon(
                             imageVector = Icons.Outlined.ChevronRight,
                             contentDescription = stringResource(R.string.next),
                         )
                     }
-                    TextButton(onClick = viewModel::goToToday) {
+                    TextButton(onClick = onGoToToday) {
                         Text(stringResource(R.string.today))
                     }
                 },
@@ -105,7 +153,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
-            ZoomSelector(state.zoom, viewModel::setZoom)
+            ZoomSelector(state.zoom, onSetZoom)
             HorizontalPager(
                 state = pagerState,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
@@ -116,7 +164,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         selected = state.selectedDate,
                         mealsByDay = state.mealsByDay,
                         stoolsByDay = state.stoolsByDay,
-                        onSelect = viewModel::selectDate,
+                        onSelect = onSelectDate,
                         modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
                     )
 
@@ -125,7 +173,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         selected = state.selectedDate,
                         mealsByDay = state.mealsByDay,
                         stoolsByDay = state.stoolsByDay,
-                        onSelect = viewModel::selectDate,
+                        onSelect = onSelectDate,
                         modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp),
                     )
 
@@ -133,10 +181,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         date = state.selectedDate,
                         mealsByDay = state.mealsByDay,
                         stoolsByDay = state.stoolsByDay,
-                        onOpenMeal = { type, meal -> viewModel.openMealEditor(type, meal) },
-                        onOpenStoolSheet = viewModel::openStoolSheet,
-                        onDeleteMeal = viewModel::deleteMeal,
-                        onDeleteStool = viewModel::deleteStool,
+                        onOpenMeal = onOpenMealEditor,
+                        onOpenStoolSheet = onOpenStoolSheet,
+                        onDeleteMeal = onDeleteMeal,
+                        onDeleteStool = onDeleteStool,
                     )
                 }
             }
@@ -145,9 +193,9 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     date = state.selectedDate,
                     meals = state.mealsByDay[state.selectedDate].orEmpty(),
                     stools = state.stoolsByDay[state.selectedDate].orEmpty(),
-                    onOpenMeal = { type, meal -> viewModel.openMealEditor(type, meal) },
-                    onOpenStoolSheet = viewModel::openStoolSheet,
-                    onOpenDay = { viewModel.setZoom(ZoomLevel.JOUR) },
+                    onOpenMeal = onOpenMealEditor,
+                    onOpenStoolSheet = onOpenStoolSheet,
+                    onOpenDay = { onSetZoom(ZoomLevel.JOUR) },
                 )
             }
         }
@@ -174,7 +222,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                         },
                         modifier = Modifier.clickable {
                             showChooser = false
-                            viewModel.openMealEditor(type)
+                            onOpenMealEditor(type, null)
                         },
                     )
                 }
@@ -190,7 +238,7 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
                     },
                     modifier = Modifier.clickable {
                         showChooser = false
-                        viewModel.openStoolSheet()
+                        onOpenStoolSheet()
                     },
                 )
             }
@@ -201,32 +249,60 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
     if (state.showMealEditor) {
         MealEditorSheet(
             state = state,
-            onDismiss = viewModel::closeMealEditor,
-            onSave = viewModel::saveMeal,
-            onDelete = viewModel::deleteMeal,
-            onScan = viewModel::openScanner,
+            onDismiss = onCloseMealEditor,
+            onSave = onSaveMeal,
+            onDelete = onDeleteMeal,
+            onScan = onOpenScanner,
         )
     }
 
     // Ajout d'une selle.
     if (state.showStoolSheet) {
         StoolSheet(
-            onDismiss = viewModel::closeStoolSheet,
-            onSave = viewModel::addStool,
+            onDismiss = onCloseStoolSheet,
+            onSave = onAddStool,
         )
     }
 
     // Scanner de code-barres plein écran.
     if (state.showScanner) {
         ScannerScreen(
-            onClose = viewModel::closeScanner,
-            onProductScanned = viewModel::onScannedProduct,
+            onClose = onCloseScanner,
+            onProductScanned = onScannedProduct,
         )
     }
 
     // Écran de bienvenue au premier lancement.
     if (!state.onboardingDone) {
-        OnboardingScreen(onFinish = viewModel::finishOnboarding)
+        OnboardingScreen(onFinish = onFinishOnboarding)
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun CalendarPreview() {
+    IBDJournalTheme {
+        CalendarContent(
+            state = CalendarUiState(
+                onboardingDone = false,
+            ),
+            onNavigateTo = {},
+            onGoToToday = {},
+            onSelectDate = {},
+            onSetZoom = {},
+            onOpenMealEditor = { _, _ -> },
+            onOpenStoolSheet = {},
+            onDeleteMeal = {},
+            onDeleteStool = {},
+            onCloseMealEditor = {},
+            onSaveMeal = { _, _, _, _ -> },
+            onOpenScanner = {},
+            onCloseScanner = {},
+            onScannedProduct = {},
+            onCloseStoolSheet = {},
+            onAddStool = {},
+            onFinishOnboarding = {},
+        )
     }
 }
 

@@ -10,6 +10,23 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import android.content.res.Configuration
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 
 // Palette santé (vert d'eau) utilisée quand la couleur dynamique n'est pas disponible.
 private val LightColors = lightColorScheme(
@@ -55,4 +72,49 @@ fun IBDJournalTheme(
         typography = MaterialTheme.typography,
         content = content,
     )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ThemePreviewContent() {
+    Surface(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Text(text = "IBDJournal Theme", style = MaterialTheme.typography.headlineMedium)
+            
+            Text(text = "Typography", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Ceci est un texte de corps (bodyLarge).", style = MaterialTheme.typography.bodyLarge)
+            
+            Text(text = "Buttons", style = MaterialTheme.typography.titleMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = {}) { Text("Primary") }
+                OutlinedButton(onClick = {}) { Text("Secondary") }
+                TextButton(onClick = {}) { Text("Text") }
+            }
+            
+            Text(text = "Cards & Chips", style = MaterialTheme.typography.titleMedium)
+            ElevatedCard(modifier = Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp)) {
+                    Text("Carte de contenu", style = MaterialTheme.typography.titleSmall)
+                    Text("Exemple de texte à l'intérieur d'une carte M3.")
+                }
+            }
+            
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(selected = true, onClick = {}, label = { Text("Sélectionné") })
+                FilterChip(selected = false, onClick = {}, label = { Text("Non sélectionné") })
+            }
+        }
+    }
+}
+
+@Preview(name = "Light Mode")
+@Preview(name = "Dark Mode", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ThemePreview() {
+    IBDJournalTheme(dynamicColor = false) {
+        ThemePreviewContent()
+    }
 }

@@ -1,14 +1,11 @@
 import java.util.Properties
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
+val hasReleaseKeystore = keystorePropertiesFile.exists()
 val keystoreProperties = Properties().apply {
-    if (!keystorePropertiesFile.exists()) {
-        throw GradleException(
-            "Missing keystore.properties — create it next to build.gradle.kts " +
-                "with storeFile/storePassword/keyAlias/keyPassword entries."
-        )
+    if (hasReleaseKeystore) {
+        keystorePropertiesFile.inputStream().use { load(it) }
     }
-    keystorePropertiesFile.inputStream().use { load(it) }
 }
 
 plugins {
@@ -24,11 +21,13 @@ android {
     compileSdk = 37
 
     signingConfigs {
-        create("release") {
-            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
-            storePassword = keystoreProperties.getProperty("storePassword")
-            keyAlias = keystoreProperties.getProperty("keyAlias")
-            keyPassword = keystoreProperties.getProperty("keyPassword")
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
         }
     }
 
@@ -43,7 +42,7 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = false
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
@@ -54,6 +53,16 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val buildingRelease = allTasks.any { it.name.endsWith("Release") }
+    if (buildingRelease && !hasReleaseKeystore) {
+        throw GradleException(
+            "Missing keystore.properties in ${rootProject.projectDir} — create it with " +
+                "storeFile/storePassword/keyAlias/keyPassword entries to sign release builds."
+        )
     }
 }
 

@@ -20,8 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 
 /** Écran de bienvenue affiché au premier lancement. */
 @Composable
@@ -73,5 +75,13 @@ fun OnboardingScreen(onFinish: () -> Unit) {
                 Text(stringResource(R.string.start))
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun OnboardingPreview() {
+    IBDJournalTheme {
+        OnboardingScreen(onFinish = {})
     }
 }

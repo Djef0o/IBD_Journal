@@ -11,6 +11,16 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 
 /** État du scan d'un code-barres. */
 sealed interface ScanState {
@@ -42,5 +52,37 @@ class ScannerViewModel @Inject constructor(
             }
             processing = false
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun ScannerScreenPreview() {
+    IBDJournalTheme {
+        ScannerContent(
+            state = ScanState.Found(
+                Product(
+                    barcode = "3017620422003",
+                    name = "Nutella",
+                    brand = "Ferrero",
+                    nutriscore = "e",
+                    imageUrl = null,
+                    ingredients = null
+                )
+            ),
+            onClose = {},
+            onProductScanned = {},
+            onBarcodeDetected = {},
+            cameraPreview = {
+                Box(
+                    Modifier
+                        .fillMaxSize()
+                        .background(Color.DarkGray),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("Aperçu Caméra (Mock)", color = Color.White)
+                }
+            }
+        )
     }
 }

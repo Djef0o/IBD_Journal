@@ -51,6 +51,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import fr.ibdjournal.app.R
@@ -58,7 +59,9 @@ import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import java.io.File
+import java.time.LocalDate
 
 /**
  * Feuille d'édition d'un repas : description, photo (photo picker), code-barres
@@ -73,14 +76,61 @@ fun MealEditorSheet(
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
 ) {
+    // L'état de la photo est hissé pour être mis à jour par le picker.
+    var photoUri by remember(state.editorSessionId) { mutableStateOf<Uri?>(null) }
+    var removePhoto by remember(state.editorSessionId) { mutableStateOf(false) }
+
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        uri?.let {
+            photoUri = it
+            removePhoto = false
+        }
+    }
+
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        MealEditorContent(
+            state = state,
+            photoUri = photoUri,
+            removePhoto = removePhoto,
+            onPhotoUriChanged = { photoUri = it },
+            onRemovePhotoChanged = { removePhoto = it },
+            onPickPhoto = {
+                photoPicker.launch(
+                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                )
+            },
+            onSave = onSave,
+            onDelete = onDelete,
+            onScan = onScan,
+        )
+    }
+}
+
+/**
+ * Contenu de l'éditeur de repas, séparé pour être prévisualisé sans ModalBottomSheet
+ * ni ActivityResultLauncher (qui ne fonctionnent pas en Preview).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MealEditorContent(
+    state: CalendarUiState,
+    photoUri: Uri?,
+    removePhoto: Boolean,
+    onPhotoUriChanged: (Uri?) -> Unit,
+    onRemovePhotoChanged: (Boolean) -> Unit,
+    onPickPhoto: () -> Unit,
+    onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
+    onDelete: (Meal) -> Unit,
+    onScan: () -> Unit,
+) {
     val editing = state.editingMeal
     val context = LocalContext.current
 
     // L'état du formulaire est réinitialisé à chaque ouverture (session d'édition).
     var type by remember(state.editorSessionId) { mutableStateOf(editing?.type ?: state.editorMealType) }
     var description by remember(state.editorSessionId) { mutableStateOf(editing?.description ?: "") }
-    var photoUri by remember(state.editorSessionId) { mutableStateOf<Uri?>(null) }
-    var removePhoto by remember(state.editorSessionId) { mutableStateOf(false) }
     var draftProduct by remember(state.editorSessionId) {
         mutableStateOf<Product?>(
             if (editing?.productBarcode != null) {
@@ -96,146 +146,131 @@ fun MealEditorSheet(
         state.pendingProduct?.let { draftProduct = it }
     }
 
-    val photoPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        uri?.let {
-            photoUri = it
-            removePhoto = false
-        }
-    }
-
     val existingPhotoFile = remember(state.editorSessionId, editing?.photoPath) {
         editing?.photoPath?.let { File(context.filesDir, it) }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = if (editing != null) {
-                    stringResource(R.string.edit_meal)
-                } else {
-                    stringResource(R.string.add_meal)
-                },
-                style = MaterialTheme.typography.titleLarge,
-            )
-            Text(
-                text = DateFormats.fullDate(state.selectedDate),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .verticalScroll(rememberScrollState())
+            .navigationBarsPadding()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(
+            text = if (editing != null) {
+                stringResource(R.string.edit_meal)
+            } else {
+                stringResource(R.string.add_meal)
+            },
+            style = MaterialTheme.typography.titleLarge,
+        )
+        Text(
+            text = DateFormats.fullDate(state.selectedDate),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
 
-            // Moment du repas.
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MealType.entries.forEach { candidate ->
-                    FilterChip(
-                        selected = type == candidate,
-                        onClick = { type = candidate },
-                        label = { Text(stringResource(candidate.labelRes)) },
-                    )
-                }
+        // Moment du repas.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MealType.entries.forEach { candidate ->
+                FilterChip(
+                    selected = type == candidate,
+                    onClick = { type = candidate },
+                    label = { Text(stringResource(candidate.labelRes)) },
+                )
             }
-
-            // Description.
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                modifier = Modifier.fillMaxWidth(),
-                label = { Text(stringResource(R.string.meal_description_hint)) },
-                minLines = 3,
-                maxLines = 6,
-            )
-
-            // Photo.
-            when {
-                photoUri != null -> {
-                    AsyncImage(
-                        model = photoUri,
-                        contentDescription = stringResource(R.string.photo),
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop,
-                    )
-                    TextButton(onClick = {
-                        photoUri = null
-                        removePhoto = true
-                    }) {
-                        Text(stringResource(R.string.remove_photo))
-                    }
-                }
-
-                !removePhoto && existingPhotoFile != null -> {
-                    AsyncImage(
-                        model = existingPhotoFile,
-                        contentDescription = stringResource(R.string.photo),
-                        modifier = Modifier
-                            .size(120.dp)
-                            .clip(RoundedCornerShape(12.dp)),
-                        contentScale = ContentScale.Crop,
-                    )
-                    TextButton(onClick = { removePhoto = true }) {
-                        Text(stringResource(R.string.remove_photo))
-                    }
-                }
-
-                else -> {
-                    OutlinedButton(onClick = {
-                        photoPicker.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    }) {
-                        Icon(Icons.Outlined.PhotoCamera, contentDescription = null)
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.add_photo))
-                    }
-                }
-            }
-
-            // Scanner de code-barres.
-            OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
-                Icon(Icons.Outlined.QrCodeScanner, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.scan_barcode))
-            }
-
-            // Produit scanné.
-            draftProduct?.let { product ->
-                ScannedProductCard(product, onRemove = { draftProduct = null })
-            }
-
-            // Actions.
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (editing != null) {
-                    OutlinedButton(
-                        onClick = { onDelete(editing) },
-                        modifier = Modifier.weight(1f),
-                    ) {
-                        Text(stringResource(R.string.delete))
-                    }
-                }
-                Button(
-                    onClick = {
-                        onSave(description, photoUri, removePhoto, draftProduct)
-                    },
-                    modifier = Modifier.weight(1f),
-                    enabled = description.isNotBlank() ||
-                        photoUri != null ||
-                        draftProduct != null ||
-                        (!removePhoto && editing?.photoPath != null),
-                ) {
-                    Text(stringResource(R.string.save))
-                }
-            }
-            Spacer(Modifier.height(8.dp))
         }
+
+        // Description.
+        OutlinedTextField(
+            value = description,
+            onValueChange = { description = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.meal_description_hint)) },
+            minLines = 3,
+            maxLines = 6,
+        )
+
+        // Photo.
+        when {
+            photoUri != null -> {
+                AsyncImage(
+                    model = photoUri,
+                    contentDescription = stringResource(R.string.photo),
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+                TextButton(onClick = {
+                    onPhotoUriChanged(null)
+                    onRemovePhotoChanged(true)
+                }) {
+                    Text(stringResource(R.string.remove_photo))
+                }
+            }
+
+            !removePhoto && existingPhotoFile != null -> {
+                AsyncImage(
+                    model = existingPhotoFile,
+                    contentDescription = stringResource(R.string.photo),
+                    modifier = Modifier
+                        .size(120.dp)
+                        .clip(RoundedCornerShape(12.dp)),
+                    contentScale = ContentScale.Crop,
+                )
+                TextButton(onClick = { onRemovePhotoChanged(true) }) {
+                    Text(stringResource(R.string.remove_photo))
+                }
+            }
+
+            else -> {
+                OutlinedButton(onClick = onPickPhoto) {
+                    Icon(Icons.Outlined.PhotoCamera, contentDescription = null)
+                    Spacer(Modifier.width(8.dp))
+                    Text(stringResource(R.string.add_photo))
+                }
+            }
+        }
+
+        // Scanner de code-barres.
+        OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
+            Icon(Icons.Outlined.QrCodeScanner, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.scan_barcode))
+        }
+
+        // Produit scanné.
+        draftProduct?.let { product ->
+            ScannedProductCard(product, onRemove = { draftProduct = null })
+        }
+
+        // Actions.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (editing != null) {
+                OutlinedButton(
+                    onClick = { onDelete(editing) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.delete))
+                }
+            }
+            Button(
+                onClick = {
+                    onSave(description, photoUri, removePhoto, draftProduct)
+                },
+                modifier = Modifier.weight(1f),
+                enabled = description.isNotBlank() ||
+                    photoUri != null ||
+                    draftProduct != null ||
+                    (!removePhoto && editing?.photoPath != null),
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        }
+        Spacer(Modifier.height(8.dp))
     }
 }
 
@@ -310,4 +345,32 @@ fun nutriscoreColor(score: String): Color = when (score.uppercase().firstOrNull(
     'D' -> Color(0xFFEF6C00)
     'E' -> Color(0xFFC62828)
     else -> MaterialTheme.colorScheme.onSurfaceVariant
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun MealEditorSheetPreview() {
+    IBDJournalTheme {
+        Surface {
+            MealEditorContent(
+                state = CalendarUiState(
+                    selectedDate = LocalDate.now(),
+                    editingMeal = Meal(
+                        id = 1,
+                        date = LocalDate.now(),
+                        type = MealType.LUNCH,
+                        description = "Salade composée et poulet grillé",
+                    )
+                ),
+                photoUri = null,
+                removePhoto = false,
+                onPhotoUriChanged = {},
+                onRemovePhotoChanged = {},
+                onPickPhoto = {},
+                onSave = { _, _, _, _ -> },
+                onDelete = {},
+                onScan = {},
+            )
+        }
+    }
 }
