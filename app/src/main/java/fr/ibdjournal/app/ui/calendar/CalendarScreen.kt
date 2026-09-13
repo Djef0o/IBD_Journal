@@ -76,6 +76,10 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         onCloseStoolSheet = viewModel::closeStoolSheet,
         onAddStool = viewModel::addStool,
         onFinishOnboarding = viewModel::finishOnboarding,
+        onEditorDescriptionChanged = viewModel::onEditorDescriptionChanged,
+        onEditorPhotoUriChanged = viewModel::onEditorPhotoUriChanged,
+        onEditorRemovePhotoChanged = viewModel::onEditorRemovePhotoChanged,
+        onEditorProductChanged = viewModel::onEditorProductChanged,
     )
 }
 
@@ -99,6 +103,10 @@ fun CalendarContent(
     onCloseStoolSheet: () -> Unit,
     onAddStool: (String) -> Unit,
     onFinishOnboarding: () -> Unit,
+    onEditorDescriptionChanged: (String) -> Unit,
+    onEditorPhotoUriChanged: (Uri?) -> Unit,
+    onEditorRemovePhotoChanged: (Boolean) -> Unit,
+    onEditorProductChanged: (Product?) -> Unit,
 ) {
     var showChooser by remember { mutableStateOf(false) }
 
@@ -253,6 +261,10 @@ fun CalendarContent(
             onSave = onSaveMeal,
             onDelete = onDeleteMeal,
             onScan = onOpenScanner,
+            onDescriptionChanged = onEditorDescriptionChanged,
+            onPhotoUriChanged = onEditorPhotoUriChanged,
+            onRemovePhotoChanged = onEditorRemovePhotoChanged,
+            onProductChanged = onEditorProductChanged,
         )
     }
 
@@ -302,6 +314,10 @@ fun CalendarPreview() {
             onCloseStoolSheet = {},
             onAddStool = {},
             onFinishOnboarding = {},
+            onEditorDescriptionChanged = {},
+            onEditorPhotoUriChanged = {},
+            onEditorRemovePhotoChanged = {},
+            onEditorProductChanged = {},
         )
     }
 }

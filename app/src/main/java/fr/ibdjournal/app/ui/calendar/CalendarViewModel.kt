@@ -55,6 +55,9 @@ data class CalendarUiState(
     val editorSessionId: Int = 0,
     val editingMeal: Meal? = null,
     val editorMealType: MealType = MealType.BREAKFAST,
+    val editorDescription: String = "",
+    val editorPhotoUri: Uri? = null,
+    val editorRemovePhoto: Boolean = false,
     val showStoolSheet: Boolean = false,
     val showScanner: Boolean = false,
     val pendingProduct: Product? = null,
@@ -78,6 +81,9 @@ class CalendarViewModel @Inject constructor(
     private val editorSessionId = MutableStateFlow(0)
     private val editingMeal = MutableStateFlow<Meal?>(null)
     private val editorMealType = MutableStateFlow(MealType.BREAKFAST)
+    private val editorDescription = MutableStateFlow("")
+    private val editorPhotoUri = MutableStateFlow<Uri?>(null)
+    private val editorRemovePhoto = MutableStateFlow(false)
     private val showStoolSheet = MutableStateFlow(false)
     private val showScanner = MutableStateFlow(false)
     private val pendingProduct = MutableStateFlow<Product?>(null)
@@ -91,24 +97,14 @@ class CalendarViewModel @Inject constructor(
         val weekOffset: Int,
     )
 
-    private data class EditorState(
-        val showMealEditor: Boolean,
-        val editorSessionId: Int,
-        val editingMeal: Meal?,
-        val editorMealType: MealType,
-        val showStoolSheet: Boolean,
-    )
-
-    private data class ScannerState(
-        val showScanner: Boolean,
-        val pendingProduct: Product?,
-    )
-
     private data class SheetState(
         val showMealEditor: Boolean,
         val editorSessionId: Int,
         val editingMeal: Meal?,
         val editorMealType: MealType,
+        val editorDescription: String,
+        val editorPhotoUri: Uri?,
+        val editorRemovePhoto: Boolean,
         val showStoolSheet: Boolean,
         val showScanner: Boolean,
         val pendingProduct: Product?,
@@ -142,27 +138,30 @@ class CalendarViewModel @Inject constructor(
             NavState(sel, z, mo, wo)
         }
 
-    private val editorState: Flow<EditorState> =
-        combine(showMealEditor, editorSessionId, editingMeal, editorMealType, showStoolSheet) {
-                showEditor, session, edMeal, edType, stoolSheet ->
-            EditorState(showEditor, session, edMeal, edType, stoolSheet)
-        }
-
-    private val scannerState: Flow<ScannerState> =
-        combine(showScanner, pendingProduct) { scanner, product ->
-            ScannerState(scanner, product)
-        }
-
     private val sheetState: Flow<SheetState> =
-        combine(editorState, scannerState) { editor, scanner ->
+        combine(
+            showMealEditor,
+            editorSessionId,
+            editingMeal,
+            editorMealType,
+            editorDescription,
+            editorPhotoUri,
+            editorRemovePhoto,
+            showStoolSheet,
+            showScanner,
+            pendingProduct
+        ) { args ->
             SheetState(
-                showMealEditor = editor.showMealEditor,
-                editorSessionId = editor.editorSessionId,
-                editingMeal = editor.editingMeal,
-                editorMealType = editor.editorMealType,
-                showStoolSheet = editor.showStoolSheet,
-                showScanner = scanner.showScanner,
-                pendingProduct = scanner.pendingProduct,
+                showMealEditor = args[0] as Boolean,
+                editorSessionId = args[1] as Int,
+                editingMeal = args[2] as Meal?,
+                editorMealType = args[3] as MealType,
+                editorDescription = args[4] as String,
+                editorPhotoUri = args[5] as Uri?,
+                editorRemovePhoto = args[6] as Boolean,
+                showStoolSheet = args[7] as Boolean,
+                showScanner = args[8] as Boolean,
+                pendingProduct = args[9] as Product?,
             )
         }
 
@@ -186,6 +185,9 @@ class CalendarViewModel @Inject constructor(
             editorSessionId = sheet.editorSessionId,
             editingMeal = sheet.editingMeal,
             editorMealType = sheet.editorMealType,
+            editorDescription = sheet.editorDescription,
+            editorPhotoUri = sheet.editorPhotoUri,
+            editorRemovePhoto = sheet.editorRemovePhoto,
             showStoolSheet = sheet.showStoolSheet,
             showScanner = sheet.showScanner,
             pendingProduct = sheet.pendingProduct,
@@ -227,7 +229,12 @@ class CalendarViewModel @Inject constructor(
     fun openMealEditor(type: MealType, meal: Meal? = null) {
         editorMealType.value = type
         editingMeal.value = meal
-        pendingProduct.value = null
+        editorDescription.value = meal?.description ?: ""
+        editorPhotoUri.value = null
+        editorRemovePhoto.value = false
+        pendingProduct.value = if (meal?.productBarcode != null) {
+            Product(meal.productBarcode, meal.productName, null, null, null, null)
+        } else null
         editorSessionId.update { it + 1 }
         showMealEditor.value = true
     }
@@ -299,18 +306,40 @@ class CalendarViewModel @Inject constructor(
     // --- Scanner de code-barres ---
 
     fun openScanner() {
-        pendingProduct.value = null
+        showMealEditor.value = false
         showScanner.value = true
     }
 
     fun closeScanner() {
         showScanner.value = false
+        showMealEditor.value = true
     }
 
     /** Un produit a été scanné : on le transmet à l'éditeur de repas ouvert. */
     fun onScannedProduct(product: Product) {
         pendingProduct.value = product
         showScanner.value = false
+        showMealEditor.value = true
+    }
+
+    // --- Actions de l'éditeur (hoisted state) ---
+
+    fun onEditorDescriptionChanged(desc: String) {
+        editorDescription.value = desc
+    }
+
+    fun onEditorPhotoUriChanged(uri: Uri?) {
+        editorPhotoUri.value = uri
+        if (uri != null) editorRemovePhoto.value = false
+    }
+
+    fun onEditorRemovePhotoChanged(remove: Boolean) {
+        editorRemovePhoto.value = remove
+        if (remove) editorPhotoUri.value = null
+    }
+
+    fun onEditorProductChanged(product: Product?) {
+        pendingProduct.value = product
     }
 
     // --- Bienvenue ---
@@ -352,6 +381,10 @@ private fun CalendarScreenPreview() {
             onCloseStoolSheet = {},
             onAddStool = {},
             onFinishOnboarding = {},
+            onEditorDescriptionChanged = {},
+            onEditorPhotoUriChanged = {},
+            onEditorRemovePhotoChanged = {},
+            onEditorProductChanged = {},
         )
     }
 }

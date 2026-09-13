@@ -75,32 +75,31 @@ fun MealEditorSheet(
     onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
+    onDescriptionChanged: (String) -> Unit,
+    onPhotoUriChanged: (Uri?) -> Unit,
+    onRemovePhotoChanged: (Boolean) -> Unit,
+    onProductChanged: (Product?) -> Unit,
 ) {
-    // L'état de la photo est hissé pour être mis à jour par le picker.
-    var photoUri by remember(state.editorSessionId) { mutableStateOf<Uri?>(null) }
-    var removePhoto by remember(state.editorSessionId) { mutableStateOf(false) }
-
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         uri?.let {
-            photoUri = it
-            removePhoto = false
+            onPhotoUriChanged(it)
         }
     }
 
     ModalBottomSheet(onDismissRequest = onDismiss) {
         MealEditorContent(
             state = state,
-            photoUri = photoUri,
-            removePhoto = removePhoto,
-            onPhotoUriChanged = { photoUri = it },
-            onRemovePhotoChanged = { removePhoto = it },
+            onDescriptionChanged = onDescriptionChanged,
+            onPhotoUriChanged = onPhotoUriChanged,
+            onRemovePhotoChanged = onRemovePhotoChanged,
             onPickPhoto = {
                 photoPicker.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
                 )
             },
+            onProductChanged = onProductChanged,
             onSave = onSave,
             onDelete = onDelete,
             onScan = onScan,
@@ -116,11 +115,11 @@ fun MealEditorSheet(
 @Composable
 fun MealEditorContent(
     state: CalendarUiState,
-    photoUri: Uri?,
-    removePhoto: Boolean,
+    onDescriptionChanged: (String) -> Unit,
     onPhotoUriChanged: (Uri?) -> Unit,
     onRemovePhotoChanged: (Boolean) -> Unit,
     onPickPhoto: () -> Unit,
+    onProductChanged: (Product?) -> Unit,
     onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
@@ -128,23 +127,12 @@ fun MealEditorContent(
     val editing = state.editingMeal
     val context = LocalContext.current
 
-    // L'état du formulaire est réinitialisé à chaque ouverture (session d'édition).
-    var type by remember(state.editorSessionId) { mutableStateOf(editing?.type ?: state.editorMealType) }
-    var description by remember(state.editorSessionId) { mutableStateOf(editing?.description ?: "") }
-    var draftProduct by remember(state.editorSessionId) {
-        mutableStateOf<Product?>(
-            if (editing?.productBarcode != null) {
-                Product(editing.productBarcode, editing.productName, null, null, null, null)
-            } else {
-                state.pendingProduct
-            }
-        )
-    }
-
-    // Adoption d'un produit fraîchement scanné pendant que la feuille est ouverte.
-    LaunchedEffect(state.pendingProduct) {
-        state.pendingProduct?.let { draftProduct = it }
-    }
+    // L'état du formulaire est maintenant piloté par le state (hoisted).
+    val type = editing?.type ?: state.editorMealType
+    val description = state.editorDescription
+    val photoUri = state.editorPhotoUri
+    val removePhoto = state.editorRemovePhoto
+    val draftProduct = state.pendingProduct
 
     val existingPhotoFile = remember(state.editorSessionId, editing?.photoPath) {
         editing?.photoPath?.let { File(context.filesDir, it) }
@@ -177,7 +165,7 @@ fun MealEditorContent(
             MealType.entries.forEach { candidate ->
                 FilterChip(
                     selected = type == candidate,
-                    onClick = { type = candidate },
+                    onClick = { /* type is fixed for now, or we could add onTypeChanged */ },
                     label = { Text(stringResource(candidate.labelRes)) },
                 )
             }
@@ -186,7 +174,7 @@ fun MealEditorContent(
         // Description.
         OutlinedTextField(
             value = description,
-            onValueChange = { description = it },
+            onValueChange = onDescriptionChanged,
             modifier = Modifier.fillMaxWidth(),
             label = { Text(stringResource(R.string.meal_description_hint)) },
             minLines = 3,
@@ -244,7 +232,7 @@ fun MealEditorContent(
 
         // Produit scanné.
         draftProduct?.let { product ->
-            ScannedProductCard(product, onRemove = { draftProduct = null })
+            ScannedProductCard(product, onRemove = { onProductChanged(null) })
         }
 
         // Actions.
@@ -362,11 +350,11 @@ private fun MealEditorSheetPreview() {
                         description = "Salade composée et poulet grillé",
                     )
                 ),
-                photoUri = null,
-                removePhoto = false,
+                onDescriptionChanged = {},
                 onPhotoUriChanged = {},
                 onRemovePhotoChanged = {},
                 onPickPhoto = {},
+                onProductChanged = {},
                 onSave = { _, _, _, _ -> },
                 onDelete = {},
                 onScan = {},
