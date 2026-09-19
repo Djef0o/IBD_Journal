@@ -167,11 +167,13 @@ fun CalendarContent(
             )
         },
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = { showChooser = true },
-                icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
-                text = { Text(stringResource(R.string.add_meal)) },
-            )
+            if (state.zoom != ZoomLevel.JOUR) {
+                ExtendedFloatingActionButton(
+                    onClick = { showChooser = true },
+                    icon = { Icon(Icons.Outlined.Add, contentDescription = null) },
+                    text = { Text(stringResource(R.string.add_meal)) },
+                )
+            }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding)) {
