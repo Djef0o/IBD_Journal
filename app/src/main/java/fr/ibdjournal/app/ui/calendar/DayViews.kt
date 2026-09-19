@@ -235,8 +235,8 @@ fun MealCard(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val photoFile = remember(meal?.photoPath) {
-        meal?.photoPath?.let { File(context.filesDir, it) }
+    val photoFile = remember(meal?.photoUri) {
+        meal?.photoUri?.let { File(context.filesDir, it) }
     }
     ElevatedCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -277,7 +277,7 @@ fun MealCard(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
-                if (photoFile != null || meal.productName != null) {
+                if (photoFile != null || meal.product?.name != null) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (photoFile != null) {
                             AsyncImage(
@@ -289,14 +289,14 @@ fun MealCard(
                                 contentScale = ContentScale.Crop,
                             )
                         }
-                        if (meal.productName != null) {
+                        if (meal.product?.name != null) {
                             Spacer(Modifier.width(8.dp))
                             Surface(
                                 shape = RoundedCornerShape(8.dp),
                                 color = MaterialTheme.colorScheme.secondaryContainer,
                             ) {
                                 Text(
-                                    text = meal.productName,
+                                    text = meal.product.name,
                                     style = MaterialTheme.typography.labelMedium,
                                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                                     maxLines = 1,
@@ -316,6 +316,7 @@ fun MealCard(
 fun StoolSection(
     stools: List<Stool>,
     onAdd: () -> Unit,
+    onEdit: (Stool) -> Unit,
     onDelete: (Stool) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -331,44 +332,93 @@ fun StoolSection(
                 text = stringResource(R.string.stools),
                 style = MaterialTheme.typography.titleMedium,
             )
-            Spacer(Modifier.weight(1f))
-            OutlinedButton(onClick = onAdd) {
-                Text(stringResource(R.string.add_stool))
-            }
         }
-        if (stools.isEmpty()) {
-            Text(
-                text = stringResource(R.string.no_stools),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            stools.forEach { stool ->
+
+        ElevatedCard(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onAdd
+        ) {
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = Icons.Outlined.WaterDrop,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp),
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        text = DateFormats.time(stool.createdAt),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        text = stringResource(R.string.stools),
+                        style = MaterialTheme.typography.titleMedium,
                     )
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        text = stool.comment.ifBlank { "—" },
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f),
-                    )
-                    IconButton(onClick = { onDelete(stool) }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Delete,
-                            contentDescription = stringResource(R.string.delete),
-                            tint = MaterialTheme.colorScheme.error,
-                        )
+                }
+                Text(
+                    text = stringResource(R.string.add_stool_hint),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+
+        if (stools.isNotEmpty()) {
+            stools.forEach { stool ->
+                ElevatedCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { onEdit(stool) }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        BristolIcon(type = stool.bristolType, modifier = Modifier.size(32.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Type ${stool.bristolType}",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(
+                                    text = DateFormats.time(stool.createdAt),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                            Row {
+                                if (stool.bloodLevel > 0) {
+                                    Text(
+                                        text = "🩸 ${stool.bloodLevel}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFFD32F2F)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                if (stool.mucusLevel > 0) {
+                                    Text(
+                                        text = "✨ ${stool.mucusLevel}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFFFBC02D)
+                                    )
+                                }
+                            }
+                            if (stool.comment.isNotBlank()) {
+                                Text(
+                                    text = stool.comment,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                        IconButton(onClick = { onDelete(stool) }) {
+                            Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = stringResource(R.string.delete),
+                                tint = MaterialTheme.colorScheme.error,
+                            )
+                        }
                     }
                 }
             }
@@ -383,7 +433,7 @@ fun DayPage(
     mealsByDay: Map<LocalDate, List<Meal>>,
     stoolsByDay: Map<LocalDate, List<Stool>>,
     onOpenMeal: (MealType, Meal?) -> Unit,
-    onOpenStoolSheet: () -> Unit,
+    onOpenStoolSheet: (Stool?) -> Unit,
     onDeleteMeal: (Meal) -> Unit,
     onDeleteStool: (Stool) -> Unit,
     modifier: Modifier = Modifier,
@@ -419,7 +469,8 @@ fun DayPage(
         HorizontalDivider()
         StoolSection(
             stools = stoolsByDay[date].orEmpty(),
-            onAdd = onOpenStoolSheet,
+            onAdd = { onOpenStoolSheet(null) },
+            onEdit = { onOpenStoolSheet(it) },
             onDelete = onDeleteStool,
         )
         Spacer(Modifier.height(72.dp)) // laisse la place au FAB
@@ -433,7 +484,7 @@ fun DaySummaryCard(
     meals: List<Meal>,
     stools: List<Stool>,
     onOpenMeal: (MealType, Meal?) -> Unit,
-    onOpenStoolSheet: () -> Unit,
+    onOpenStoolSheet: (Stool?) -> Unit,
     onOpenDay: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -495,7 +546,7 @@ fun DaySummaryCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onOpenStoolSheet)
+                    .clickable(onClick = { onOpenStoolSheet(null) })
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -510,7 +561,8 @@ fun DaySummaryCard(
                     text = if (stools.isEmpty()) {
                         stringResource(R.string.no_stools)
                     } else {
-                        stools.first().comment.ifBlank { stringResource(R.string.stool_count, stools.size) }
+                        val stool = stools.first()
+                        "Type ${stool.bristolType}" + (if (stool.bloodLevel > 0) " 🩸" else "") + (if (stool.comment.isNotBlank()) ": ${stool.comment}" else "")
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
@@ -556,7 +608,19 @@ fun DayPagePreview() {
                 mealsByDay = mapOf(
                     today to listOf(
                         Meal(date = today, type = MealType.BREAKFAST, description = "Omelette"),
-                        Meal(date = today, type = MealType.LUNCH, description = "Salade César", productName = "Salade Monoprix")
+                        Meal(
+                            date = today,
+                            type = MealType.LUNCH,
+                            description = "Salade César",
+                            product = fr.ibdjournal.app.data.model.Product(
+                                barcode = "123",
+                                name = "Salade Monoprix",
+                                brand = null,
+                                nutriscore = null,
+                                imageUrl = null,
+                                ingredients = null
+                            )
+                        )
                     )
                 ),
                 stoolsByDay = mapOf(

@@ -25,6 +25,11 @@ data class MealEntity(
 data class StoolEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val dateEpochDay: Long,
+    val bristolType: Int,
+    val bloodLevel: Int,
+    val mucusLevel: Int,
+    val painLevel: Int,
+    val fatigueLevel: Int,
     val comment: String = "",
     val createdAt: Long = System.currentTimeMillis(),
 )
@@ -48,9 +53,17 @@ fun MealEntity.toMeal() = Meal(
     date = LocalDate.ofEpochDay(dateEpochDay),
     type = mealType,
     description = description,
-    photoPath = photoPath,
-    productBarcode = productBarcode,
-    productName = productName,
+    photoUri = photoPath,
+    product = productBarcode?.let {
+        Product(
+            barcode = it,
+            name = productName,
+            brand = null,
+            nutriscore = null,
+            imageUrl = null,
+            ingredients = null
+        )
+    },
 )
 
 fun Meal.toMealEntity() = MealEntity(
@@ -58,14 +71,31 @@ fun Meal.toMealEntity() = MealEntity(
     dateEpochDay = date.toEpochDay(),
     mealType = type,
     description = description,
-    photoPath = photoPath,
-    productBarcode = productBarcode,
-    productName = productName,
+    photoPath = photoUri,
+    productBarcode = product?.barcode,
+    productName = product?.name,
 )
 
 fun StoolEntity.toStool() = Stool(
     id = id,
     date = LocalDate.ofEpochDay(dateEpochDay),
+    bristolType = bristolType,
+    bloodLevel = bloodLevel,
+    mucusLevel = mucusLevel,
+    painLevel = painLevel,
+    fatigueLevel = fatigueLevel,
+    comment = comment,
+    createdAt = createdAt,
+)
+
+fun Stool.toStoolEntity() = StoolEntity(
+    id = id,
+    dateEpochDay = date.toEpochDay(),
+    bristolType = bristolType,
+    bloodLevel = bloodLevel,
+    mucusLevel = mucusLevel,
+    painLevel = painLevel,
+    fatigueLevel = fatigueLevel,
     comment = comment,
     createdAt = createdAt,
 )

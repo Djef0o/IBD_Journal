@@ -57,7 +57,9 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "ibd_diary.db").build()
+        Room.databaseBuilder(context, AppDatabase::class.java, "ibd_diary.db")
+            .fallbackToDestructiveMigration()
+            .build()
 
     @Provides
     fun provideMealDao(db: AppDatabase): MealDao = db.mealDao()

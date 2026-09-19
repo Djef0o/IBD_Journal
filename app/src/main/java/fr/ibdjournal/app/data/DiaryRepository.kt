@@ -9,6 +9,7 @@ import fr.ibdjournal.app.data.local.toMealEntity
 import fr.ibdjournal.app.data.local.toProduct
 import fr.ibdjournal.app.data.local.toProductEntity
 import fr.ibdjournal.app.data.local.toStool
+import fr.ibdjournal.app.data.local.toStoolEntity
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.data.model.ProductLookup
@@ -49,7 +50,7 @@ class DiaryRepository @Inject constructor(
     suspend fun saveMeal(meal: Meal) = mealDao.upsert(meal.toMealEntity())
 
     suspend fun deleteMeal(meal: Meal) {
-        meal.photoPath?.let { deletePhoto(it) }
+        meal.photoUri?.let { deletePhoto(it) }
         mealDao.delete(meal.toMealEntity())
     }
 
@@ -74,13 +75,8 @@ class DiaryRepository @Inject constructor(
 
     // --- Selles ---
 
-    suspend fun addStool(date: LocalDate, comment: String) {
-        stoolDao.insert(
-            fr.ibdjournal.app.data.local.StoolEntity(
-                dateEpochDay = date.toEpochDay(),
-                comment = comment,
-            )
-        )
+    suspend fun saveStool(stool: Stool) {
+        stoolDao.upsert(stool.toStoolEntity())
     }
 
     suspend fun deleteStool(stool: Stool) = stoolDao.deleteById(stool.id)

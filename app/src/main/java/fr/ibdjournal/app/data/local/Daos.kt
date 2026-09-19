@@ -30,7 +30,7 @@ interface StoolDao {
     fun observeBetween(fromEpochDay: Long, toEpochDay: Long): Flow<List<StoolEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insert(stool: StoolEntity): Long
+    suspend fun upsert(stool: StoolEntity): Long
 
     @Query("DELETE FROM stools WHERE id = :id")
     suspend fun deleteById(id: Long)

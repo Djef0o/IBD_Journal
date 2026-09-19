@@ -87,6 +87,9 @@ dependencies {
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
+    implementation(libs.androidx.navigation.compose)
 
     // Persistence
     implementation(libs.androidx.room.runtime)
@@ -112,4 +115,7 @@ dependencies {
     // Image loading
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+
+    // WorkManager
+    implementation(libs.androidx.work.runtime.ktx)
 }

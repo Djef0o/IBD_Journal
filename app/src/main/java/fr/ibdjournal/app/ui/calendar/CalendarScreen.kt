@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ChevronLeft
 import androidx.compose.material.icons.outlined.ChevronRight
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -55,7 +56,10 @@ import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import java.time.LocalDate
 
 @Composable
-fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
+fun CalendarScreen(
+    onOpenSettings: () -> Unit,
+    viewModel: CalendarViewModel = hiltViewModel()
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     CalendarContent(
@@ -74,12 +78,14 @@ fun CalendarScreen(viewModel: CalendarViewModel = hiltViewModel()) {
         onCloseScanner = viewModel::closeScanner,
         onScannedProduct = viewModel::onScannedProduct,
         onCloseStoolSheet = viewModel::closeStoolSheet,
-        onAddStool = viewModel::addStool,
+        onSaveStool = viewModel::saveStool,
         onFinishOnboarding = viewModel::finishOnboarding,
         onEditorDescriptionChanged = viewModel::onEditorDescriptionChanged,
         onEditorPhotoUriChanged = viewModel::onEditorPhotoUriChanged,
         onEditorRemovePhotoChanged = viewModel::onEditorRemovePhotoChanged,
         onEditorProductChanged = viewModel::onEditorProductChanged,
+        onEditorTypeChanged = viewModel::onEditorTypeChanged,
+        onOpenSettings = onOpenSettings,
     )
 }
 
@@ -92,7 +98,7 @@ fun CalendarContent(
     onSelectDate: (LocalDate) -> Unit,
     onSetZoom: (ZoomLevel) -> Unit,
     onOpenMealEditor: (MealType, Meal?) -> Unit,
-    onOpenStoolSheet: () -> Unit,
+    onOpenStoolSheet: (Stool?) -> Unit,
     onDeleteMeal: (Meal) -> Unit,
     onDeleteStool: (Stool) -> Unit,
     onCloseMealEditor: () -> Unit,
@@ -101,12 +107,14 @@ fun CalendarContent(
     onCloseScanner: () -> Unit,
     onScannedProduct: (Product) -> Unit,
     onCloseStoolSheet: () -> Unit,
-    onAddStool: (String) -> Unit,
+    onSaveStool: (Int, Int, Int, Int, Int, String) -> Unit,
     onFinishOnboarding: () -> Unit,
     onEditorDescriptionChanged: (String) -> Unit,
     onEditorPhotoUriChanged: (Uri?) -> Unit,
     onEditorRemovePhotoChanged: (Boolean) -> Unit,
     onEditorProductChanged: (Product?) -> Unit,
+    onEditorTypeChanged: (MealType) -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     var showChooser by remember { mutableStateOf(false) }
 
@@ -148,6 +156,12 @@ fun CalendarContent(
                     }
                     TextButton(onClick = onGoToToday) {
                         Text(stringResource(R.string.today))
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(
+                            imageVector = Icons.Outlined.Settings,
+                            contentDescription = null
+                        )
                     }
                 },
             )
@@ -246,7 +260,7 @@ fun CalendarContent(
                     },
                     modifier = Modifier.clickable {
                         showChooser = false
-                        onOpenStoolSheet()
+                        onOpenStoolSheet(null)
                     },
                 )
             }
@@ -265,14 +279,16 @@ fun CalendarContent(
             onPhotoUriChanged = onEditorPhotoUriChanged,
             onRemovePhotoChanged = onEditorRemovePhotoChanged,
             onProductChanged = onEditorProductChanged,
+            onTypeChanged = onEditorTypeChanged,
         )
     }
 
     // Ajout d'une selle.
     if (state.showStoolSheet) {
         StoolSheet(
+            stool = state.editingStool,
             onDismiss = onCloseStoolSheet,
-            onSave = onAddStool,
+            onSave = onSaveStool,
         )
     }
 
@@ -312,12 +328,14 @@ fun CalendarPreview() {
             onCloseScanner = {},
             onScannedProduct = {},
             onCloseStoolSheet = {},
-            onAddStool = {},
+            onSaveStool = { _, _, _, _, _, _ -> },
             onFinishOnboarding = {},
             onEditorDescriptionChanged = {},
             onEditorPhotoUriChanged = {},
             onEditorRemovePhotoChanged = {},
             onEditorProductChanged = {},
+            onEditorTypeChanged = {},
+            onOpenSettings = {},
         )
     }
 }

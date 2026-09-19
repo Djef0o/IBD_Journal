@@ -1,54 +1,44 @@
 package fr.ibdjournal.app.ui.calendar
 
 import android.net.Uri
-import androidx.annotation.StringRes
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.data.model.Stool
-import java.time.DayOfWeek
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.temporal.TemporalAdjusters
-import javax.inject.Inject
+import fr.ibdjournal.app.ui.theme.IBDJournalTheme
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.Surface
-import androidx.compose.ui.tooling.preview.Preview
-import fr.ibdjournal.app.ui.theme.IBDJournalTheme
+import java.time.LocalDate
+import java.time.YearMonth
+import javax.inject.Inject
 
-/**
- * Niveau de zoom du calendrier.
- * L'ordre définit l'ordre des pages du pager : glisser à gauche zoome (mois → semaine → jour).
- */
-enum class ZoomLevel(@StringRes val labelRes: Int) {
-    MOIS(R.string.zoom_month),
-    SEMAINE(R.string.zoom_week),
-    JOUR(R.string.zoom_day),
+enum class ZoomLevel(val labelRes: Int) {
+    MOIS(fr.ibdjournal.app.R.string.zoom_month),
+    SEMAINE(fr.ibdjournal.app.R.string.zoom_week),
+    JOUR(fr.ibdjournal.app.R.string.zoom_day)
 }
 
 data class CalendarUiState(
     val selectedDate: LocalDate = LocalDate.now(),
     val zoom: ZoomLevel = ZoomLevel.JOUR,
     val displayedMonth: YearMonth = YearMonth.now(),
-    val displayedWeekStart: LocalDate = LocalDate.now()
-        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)),
+    val displayedWeekStart: LocalDate = LocalDate.now(),
     val mealsByDay: Map<LocalDate, List<Meal>> = emptyMap(),
     val stoolsByDay: Map<LocalDate, List<Stool>> = emptyMap(),
     val showMealEditor: Boolean = false,
@@ -59,9 +49,10 @@ data class CalendarUiState(
     val editorPhotoUri: Uri? = null,
     val editorRemovePhoto: Boolean = false,
     val showStoolSheet: Boolean = false,
+    val editingStool: Stool? = null,
     val showScanner: Boolean = false,
     val pendingProduct: Product? = null,
-    val onboardingDone: Boolean = false,
+    val onboardingDone: Boolean = true,
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -71,7 +62,7 @@ class CalendarViewModel @Inject constructor(
     private val appPrefs: AppPrefs,
 ) : ViewModel() {
 
-    private val selectedDate = MutableStateFlow(LocalDate.now())
+    private val selectedDate = MutableStateFlow<LocalDate?>(LocalDate.now())
     private val zoom = MutableStateFlow(ZoomLevel.JOUR)
     private val monthOffset = MutableStateFlow(0)
     private val weekOffset = MutableStateFlow(0)
@@ -85,117 +76,76 @@ class CalendarViewModel @Inject constructor(
     private val editorPhotoUri = MutableStateFlow<Uri?>(null)
     private val editorRemovePhoto = MutableStateFlow(false)
     private val showStoolSheet = MutableStateFlow(false)
+    private val editingStool = MutableStateFlow<Stool?>(null)
     private val showScanner = MutableStateFlow(false)
     private val pendingProduct = MutableStateFlow<Product?>(null)
 
-    // --- Regroupements intermédiaires (combine ne prend que 5 flux typés) ---
-
-    private data class NavState(
-        val selectedDate: LocalDate,
-        val zoom: ZoomLevel,
-        val monthOffset: Int,
-        val weekOffset: Int,
-    )
-
-    private data class SheetState(
-        val showMealEditor: Boolean,
-        val editorSessionId: Int,
-        val editingMeal: Meal?,
-        val editorMealType: MealType,
-        val editorDescription: String,
-        val editorPhotoUri: Uri?,
-        val editorRemovePhoto: Boolean,
-        val showStoolSheet: Boolean,
-        val showScanner: Boolean,
-        val pendingProduct: Product?,
-    )
-
-    /** Fenêtre affichée par la vue courante (mois, semaine ou jour). */
-    private val window: Flow<Pair<LocalDate, LocalDate>> =
-        combine(zoom, monthOffset, weekOffset, dayOffset) { z, mo, wo, doff ->
-            when (z) {
-                ZoomLevel.MOIS -> YearMonth.now().plusMonths(mo.toLong())
-                    .let { it.atDay(1) to it.atEndOfMonth() }
-
-                ZoomLevel.SEMAINE -> {
-                    val start = LocalDate.now()
-                        .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                        .plusWeeks(wo.toLong())
-                    start to start.plusDays(6)
-                }
-
-                ZoomLevel.JOUR -> LocalDate.now().plusDays(doff.toLong()).let { it to it }
+    private val window: Flow<Pair<LocalDate, LocalDate>> = combine(zoom, monthOffset, weekOffset, dayOffset) { z, m, w, d ->
+        when (z) {
+            ZoomLevel.MOIS -> {
+                val month = YearMonth.now().plusMonths(m.toLong())
+                month.atDay(1) to month.atEndOfMonth()
             }
-        }.distinctUntilChanged()
-
-    /** Fenêtre de requête : la vue courante, étendue à la date sélectionnée. */
-    private val queryRange: Flow<Pair<LocalDate, LocalDate>> =
-        combine(selectedDate, window) { sel, (from, to) -> minOf(sel, from) to maxOf(sel, to) }
-            .distinctUntilChanged()
-
-    private val navState: Flow<NavState> =
-        combine(selectedDate, zoom, monthOffset, weekOffset) { sel, z, mo, wo ->
-            NavState(sel, z, mo, wo)
+            ZoomLevel.SEMAINE -> {
+                val start = LocalDate.now().plusWeeks(w.toLong()).with(java.time.DayOfWeek.MONDAY)
+                start to start.plusDays(6)
+            }
+            ZoomLevel.JOUR -> {
+                val day = LocalDate.now().plusDays(d.toLong())
+                day to day
+            }
         }
+    }
 
-    private val sheetState: Flow<SheetState> =
-        combine(
-            showMealEditor,
-            editorSessionId,
-            editingMeal,
-            editorMealType,
-            editorDescription,
-            editorPhotoUri,
-            editorRemovePhoto,
-            showStoolSheet,
-            showScanner,
-            pendingProduct
-        ) { args ->
-            SheetState(
-                showMealEditor = args[0] as Boolean,
-                editorSessionId = args[1] as Int,
-                editingMeal = args[2] as Meal?,
-                editorMealType = args[3] as MealType,
-                editorDescription = args[4] as String,
-                editorPhotoUri = args[5] as Uri?,
-                editorRemovePhoto = args[6] as Boolean,
-                showStoolSheet = args[7] as Boolean,
-                showScanner = args[8] as Boolean,
-                pendingProduct = args[9] as Product?,
-            )
-        }
+    private val queryRange: Flow<Pair<LocalDate, LocalDate>> = window.map { (start, end) ->
+        start.minusDays(7) to end.plusDays(7)
+    }
+
+    private val mealsFlow = queryRange.flatMapLatest { (start, end) ->
+        repository.observeMeals(start, end)
+    }
+
+    private val stoolsFlow = queryRange.flatMapLatest { (start, end) ->
+        repository.observeStools(start, end)
+    }
 
     val uiState: StateFlow<CalendarUiState> = combine(
-        navState,
-        queryRange.flatMapLatest { (from, to) -> repository.observeMeals(from, to) },
-        queryRange.flatMapLatest { (from, to) -> repository.observeStools(from, to) },
-        sheetState,
+        selectedDate, zoom, monthOffset, weekOffset,
+        mealsFlow,
+        stoolsFlow,
+        showMealEditor, editingMeal, editorMealType, editorDescription, editorPhotoUri, editorRemovePhoto,
+        showStoolSheet, editingStool, showScanner, pendingProduct,
         appPrefs.onboardingDone,
-    ) { nav, meals, stools, sheet, onboarding ->
+    ) { params ->
+        val date = params[0] as LocalDate
+        val z = params[1] as ZoomLevel
+        val m = params[2] as Int
+        val w = params[3] as Int
+        val meals = params[4] as List<Meal>
+        val stools = params[5] as List<Stool>
+        
         CalendarUiState(
-            selectedDate = nav.selectedDate,
-            zoom = nav.zoom,
-            displayedMonth = YearMonth.now().plusMonths(nav.monthOffset.toLong()),
-            displayedWeekStart = LocalDate.now()
-                .with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
-                .plusWeeks(nav.weekOffset.toLong()),
+            selectedDate = date,
+            zoom = z,
+            displayedMonth = YearMonth.now().plusMonths(m.toLong()),
+            displayedWeekStart = LocalDate.now().plusWeeks(w.toLong()).with(java.time.DayOfWeek.MONDAY),
             mealsByDay = meals.groupBy { it.date },
             stoolsByDay = stools.groupBy { it.date },
-            showMealEditor = sheet.showMealEditor,
-            editorSessionId = sheet.editorSessionId,
-            editingMeal = sheet.editingMeal,
-            editorMealType = sheet.editorMealType,
-            editorDescription = sheet.editorDescription,
-            editorPhotoUri = sheet.editorPhotoUri,
-            editorRemovePhoto = sheet.editorRemovePhoto,
-            showStoolSheet = sheet.showStoolSheet,
-            showScanner = sheet.showScanner,
-            pendingProduct = sheet.pendingProduct,
-            onboardingDone = onboarding,
+            showMealEditor = params[6] as Boolean,
+            editingMeal = params[7] as Meal?,
+            editorMealType = params[8] as MealType,
+            editorDescription = params[9] as String,
+            editorPhotoUri = params[10] as Uri?,
+            editorRemovePhoto = params[11] as Boolean,
+            showStoolSheet = params[12] as Boolean,
+            editingStool = params[13] as Stool?,
+            showScanner = params[14] as Boolean,
+            pendingProduct = params[15] as Product?,
+            onboardingDone = params[16] as Boolean,
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), CalendarUiState())
 
-    // --- Navigation dans le calendrier ---
+    // --- Actions ---
 
     fun selectDate(date: LocalDate) {
         selectedDate.value = date
@@ -205,14 +155,13 @@ class CalendarViewModel @Inject constructor(
         zoom.value = level
     }
 
-    /** -1 = précédent, +1 = suivant (mois, semaine ou jour selon la vue). */
     fun navigateTo(direction: Int) {
         when (zoom.value) {
-            ZoomLevel.MOIS -> monthOffset.update { it + direction }
-            ZoomLevel.SEMAINE -> weekOffset.update { it + direction }
+            ZoomLevel.MOIS -> monthOffset.value += direction
+            ZoomLevel.SEMAINE -> weekOffset.value += direction
             ZoomLevel.JOUR -> {
-                dayOffset.update { it + direction }
-                selectedDate.value = LocalDate.now().plusDays(dayOffset.value.toLong())
+                dayOffset.value += direction
+                selectedDate.value = selectedDate.value?.plusDays(direction.toLong())
             }
         }
     }
@@ -226,65 +175,61 @@ class CalendarViewModel @Inject constructor(
 
     // --- Repas ---
 
-    fun openMealEditor(type: MealType, meal: Meal? = null) {
-        editorMealType.value = type
+    fun openMealEditor(type: MealType, meal: Meal?) {
         editingMeal.value = meal
+        editorMealType.value = type
         editorDescription.value = meal?.description ?: ""
-        editorPhotoUri.value = null
+        editorPhotoUri.value = meal?.photoUri?.let { Uri.parse(it) }
         editorRemovePhoto.value = false
-        pendingProduct.value = if (meal?.productBarcode != null) {
-            Product(meal.productBarcode, meal.productName, null, null, null, null)
-        } else null
-        editorSessionId.update { it + 1 }
+        pendingProduct.value = meal?.product
         showMealEditor.value = true
     }
 
     fun closeMealEditor() {
         showMealEditor.value = false
-        editingMeal.value = null
     }
 
     fun saveMeal(
         description: String,
         photoUri: Uri?,
         removePhoto: Boolean,
-        product: Product?,
+        product: Product?
     ) {
-        val editing = editingMeal.value
-        val type = editorMealType.value
         viewModelScope.launch {
-            val existingPath = editing?.photoPath
-            val newPath = when {
-                removePhoto -> null
-                photoUri != null -> repository.importPhoto(photoUri)
-                else -> existingPath
+            val existing = editingMeal.value
+            val existingPath = existing?.photoUri
+            
+            val newPhotoUri = if (removePhoto) {
+                if (existingPath != null) repository.deletePhoto(existingPath)
+                null
+            } else {
+                photoUri?.toString() ?: existingPath
             }
-            repository.saveMeal(
-                Meal(
-                    id = editing?.id ?: 0,
-                    date = editing?.date ?: selectedDate.value,
-                    type = type,
-                    description = description.trim(),
-                    photoPath = newPath,
-                    productBarcode = product?.barcode ?: editing?.productBarcode,
-                    productName = product?.name ?: editing?.productName,
-                )
+
+            val meal = Meal(
+                id = existing?.id ?: 0,
+                date = selectedDate.value ?: LocalDate.now(),
+                type = editorMealType.value,
+                description = description,
+                photoUri = newPhotoUri,
+                product = product,
             )
-            if (removePhoto && existingPath != null) repository.deletePhoto(existingPath)
-            closeMealEditor()
+            repository.saveMeal(meal)
+            showMealEditor.value = false
         }
     }
 
     fun deleteMeal(meal: Meal) {
         viewModelScope.launch {
             repository.deleteMeal(meal)
-            if (editingMeal.value?.id == meal.id) closeMealEditor()
+            showMealEditor.value = false
         }
     }
 
     // --- Selles ---
 
-    fun openStoolSheet() {
+    fun openStoolSheet(stool: Stool?) {
+        editingStool.value = stool
         showStoolSheet.value = true
     }
 
@@ -292,9 +237,29 @@ class CalendarViewModel @Inject constructor(
         showStoolSheet.value = false
     }
 
-    fun addStool(comment: String) {
+    fun saveStool(
+        bristolType: Int,
+        bloodLevel: Int,
+        mucusLevel: Int,
+        painLevel: Int,
+        fatigueLevel: Int,
+        comment: String,
+    ) {
         viewModelScope.launch {
-            repository.addStool(selectedDate.value, comment)
+            val existing = editingStool.value
+            repository.saveStool(
+                Stool(
+                    id = existing?.id ?: 0,
+                    date = selectedDate.value ?: LocalDate.now(),
+                    bristolType = bristolType,
+                    bloodLevel = bloodLevel,
+                    mucusLevel = mucusLevel,
+                    painLevel = painLevel,
+                    fatigueLevel = fatigueLevel,
+                    comment = comment,
+                    createdAt = existing?.createdAt ?: System.currentTimeMillis(),
+                )
+            )
             showStoolSheet.value = false
         }
     }
@@ -303,26 +268,23 @@ class CalendarViewModel @Inject constructor(
         viewModelScope.launch { repository.deleteStool(stool) }
     }
 
-    // --- Scanner de code-barres ---
+    // --- Scanner ---
 
     fun openScanner() {
-        showMealEditor.value = false
         showScanner.value = true
     }
 
     fun closeScanner() {
         showScanner.value = false
-        showMealEditor.value = true
     }
 
-    /** Un produit a été scanné : on le transmet à l'éditeur de repas ouvert. */
     fun onScannedProduct(product: Product) {
         pendingProduct.value = product
         showScanner.value = false
-        showMealEditor.value = true
+        // L'UI réagit via le state pendingProduct dans la sheet
     }
 
-    // --- Actions de l'éditeur (hoisted state) ---
+    // --- Callbacks éditeur ---
 
     fun onEditorDescriptionChanged(desc: String) {
         editorDescription.value = desc
@@ -330,16 +292,18 @@ class CalendarViewModel @Inject constructor(
 
     fun onEditorPhotoUriChanged(uri: Uri?) {
         editorPhotoUri.value = uri
-        if (uri != null) editorRemovePhoto.value = false
     }
 
     fun onEditorRemovePhotoChanged(remove: Boolean) {
         editorRemovePhoto.value = remove
-        if (remove) editorPhotoUri.value = null
     }
 
     fun onEditorProductChanged(product: Product?) {
         pendingProduct.value = product
+    }
+
+    fun onEditorTypeChanged(type: MealType) {
+        editorMealType.value = type
     }
 
     // --- Bienvenue ---
@@ -354,7 +318,7 @@ class CalendarViewModel @Inject constructor(
 private fun StoolSheetContentPreview() {
     IBDJournalTheme {
         Surface {
-            StoolSheetContent(onSave = {})
+            StoolSheetContent(onSave = { _, _, _, _, _, _ -> })
         }
     }
 }
@@ -363,28 +327,6 @@ private fun StoolSheetContentPreview() {
 @Composable
 private fun CalendarScreenPreview() {
     IBDJournalTheme {
-        CalendarContent(
-            state = CalendarUiState(onboardingDone = true),
-            onNavigateTo = {},
-            onGoToToday = {},
-            onSelectDate = {},
-            onSetZoom = {},
-            onOpenMealEditor = { _, _ -> },
-            onOpenStoolSheet = {},
-            onDeleteMeal = {},
-            onDeleteStool = {},
-            onCloseMealEditor = {},
-            onSaveMeal = { _, _, _, _ -> },
-            onOpenScanner = {},
-            onCloseScanner = {},
-            onScannedProduct = {},
-            onCloseStoolSheet = {},
-            onAddStool = {},
-            onFinishOnboarding = {},
-            onEditorDescriptionChanged = {},
-            onEditorPhotoUriChanged = {},
-            onEditorRemovePhotoChanged = {},
-            onEditorProductChanged = {},
-        )
+        // Mock UI state for preview if needed
     }
 }

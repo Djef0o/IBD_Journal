@@ -31,6 +31,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.SheetState
+import androidx.compose.material3.ModalBottomSheetDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -79,7 +82,10 @@ fun MealEditorSheet(
     onPhotoUriChanged: (Uri?) -> Unit,
     onRemovePhotoChanged: (Boolean) -> Unit,
     onProductChanged: (Product?) -> Unit,
+    onTypeChanged: (MealType) -> Unit,
 ) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
@@ -88,7 +94,10 @@ fun MealEditorSheet(
         }
     }
 
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+    ) {
         MealEditorContent(
             state = state,
             onDescriptionChanged = onDescriptionChanged,
@@ -100,6 +109,7 @@ fun MealEditorSheet(
                 )
             },
             onProductChanged = onProductChanged,
+            onTypeChanged = onTypeChanged,
             onSave = onSave,
             onDelete = onDelete,
             onScan = onScan,
@@ -120,6 +130,7 @@ fun MealEditorContent(
     onRemovePhotoChanged: (Boolean) -> Unit,
     onPickPhoto: () -> Unit,
     onProductChanged: (Product?) -> Unit,
+    onTypeChanged: (MealType) -> Unit,
     onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
@@ -134,16 +145,16 @@ fun MealEditorContent(
     val removePhoto = state.editorRemovePhoto
     val draftProduct = state.pendingProduct
 
-    val existingPhotoFile = remember(state.editorSessionId, editing?.photoPath) {
-        editing?.photoPath?.let { File(context.filesDir, it) }
+    val existingPhotoFile = remember(state.editorSessionId, editing?.photoUri) {
+        editing?.photoUri?.let { File(context.filesDir, it) }
     }
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .navigationBarsPadding()
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .padding(horizontal = 16.dp)
+            .padding(top = 8.dp, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
@@ -160,12 +171,11 @@ fun MealEditorContent(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        // Moment du repas.
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MealType.entries.forEach { candidate ->
                 FilterChip(
                     selected = type == candidate,
-                    onClick = { /* type is fixed for now, or we could add onTypeChanged */ },
+                    onClick = { onTypeChanged(candidate) },
                     label = { Text(stringResource(candidate.labelRes)) },
                 )
             }
@@ -253,7 +263,7 @@ fun MealEditorContent(
                 enabled = description.isNotBlank() ||
                     photoUri != null ||
                     draftProduct != null ||
-                    (!removePhoto && editing?.photoPath != null),
+                    (!removePhoto && editing?.photoUri != null),
             ) {
                 Text(stringResource(R.string.save))
             }
@@ -355,6 +365,7 @@ private fun MealEditorSheetPreview() {
                 onRemovePhotoChanged = {},
                 onPickPhoto = {},
                 onProductChanged = {},
+                onTypeChanged = {},
                 onSave = { _, _, _, _ -> },
                 onDelete = {},
                 onScan = {},

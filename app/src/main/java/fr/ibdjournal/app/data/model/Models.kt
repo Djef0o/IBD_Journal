@@ -17,15 +17,19 @@ data class Meal(
     val date: LocalDate,
     val type: MealType,
     val description: String,
-    val photoPath: String? = null,
-    val productBarcode: String? = null,
-    val productName: String? = null,
+    val photoUri: String? = null,
+    val product: Product? = null,
 )
 
-/** Une selle du jour, avec commentaire facultatif. */
+/** Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). */
 data class Stool(
     val id: Long = 0,
     val date: LocalDate,
+    val bristolType: Int = 4, // 1 à 7
+    val bloodLevel: Int = 0, // 0 à 5
+    val mucusLevel: Int = 0, // 0 à 5
+    val painLevel: Int = 0, // 0 à 5
+    val fatigueLevel: Int = 0, // 0 à 5
     val comment: String = "",
     val createdAt: Long = System.currentTimeMillis(),
 )
