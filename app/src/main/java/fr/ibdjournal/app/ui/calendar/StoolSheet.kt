@@ -276,7 +276,7 @@ fun BristolItem(type: Int, isSelected: Boolean, onClick: () -> Unit) {
             Box(
                 modifier = Modifier
                     .size(60.dp)
-                    .background(Color.LightGray.copy(alpha = 0.3f), CircleShape),
+                    .background(Color.White, CircleShape),
                 contentAlignment = Alignment.Center
             ) {
                 BristolIcon(type = type, modifier = Modifier.size(40.dp))

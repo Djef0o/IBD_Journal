@@ -32,7 +32,7 @@
     <string name="empty_day">Aucune entrée pour ce jour.</string>
 
     <!-- Stools -->
-    <string name="stools">Selles</string>
+    <string name="stools">Selle</string>
     <string name="add_stool">Ajouter une selle</string>
     <string name="add_stool_hint">Appuyez pour ajouter une selle</string>
     <string name="new_stool">Nouvelle selle</string>
@@ -81,4 +81,7 @@
     <string name="modify">Modifier</string>
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>
+    <string name="export_data">Exporter les données</string>
+    <string name="import_data">Importer les données</string>
+    <string name="data_management">Gestion des données</string>
 </resources>

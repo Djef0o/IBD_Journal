@@ -2,9 +2,23 @@ package fr.ibdjournal.app.data.model
 
 import androidx.annotation.StringRes
 import fr.ibdjournal.app.R
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import java.time.LocalDate
 
+object LocalDateSerializer : KSerializer<LocalDate> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.toString())
+    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
+}
+
 /** Les trois moments de repas suivis chaque jour. */
+@Serializable
 enum class MealType(@StringRes val labelRes: Int) {
     BREAKFAST(R.string.meal_breakfast),
     LUNCH(R.string.meal_lunch),
@@ -12,8 +26,10 @@ enum class MealType(@StringRes val labelRes: Int) {
 }
 
 /** Un repas enregistré pour un jour donné. */
+@Serializable
 data class Meal(
     val id: Long = 0,
+    @Serializable(with = LocalDateSerializer::class)
     val date: LocalDate,
     val type: MealType,
     val description: String,
@@ -22,8 +38,10 @@ data class Meal(
 )
 
 /** Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). */
+@Serializable
 data class Stool(
     val id: Long = 0,
+    @Serializable(with = LocalDateSerializer::class)
     val date: LocalDate,
     val bristolType: Int = 4, // 1 à 7
     val bloodLevel: Int = 0, // 0 à 5
@@ -35,6 +53,7 @@ data class Stool(
 )
 
 /** Produit alimentaire (issu d'Open Food Facts ou du cache local). */
+@Serializable
 data class Product(
     val barcode: String,
     val name: String?,
@@ -42,6 +61,13 @@ data class Product(
     val nutriscore: String?,
     val imageUrl: String?,
     val ingredients: String?,
+)
+
+/** Objet racine pour l'export/import JSON. */
+@Serializable
+data class BackupData(
+    val meals: List<Meal>,
+    val stools: List<Stool>
 )
 
 /** Résultat d'une recherche de produit par code-barres. */

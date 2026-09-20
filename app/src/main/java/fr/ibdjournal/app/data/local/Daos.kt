@@ -21,6 +21,12 @@ interface MealDao {
 
     @Delete
     suspend fun delete(meal: MealEntity)
+
+    @Query("SELECT * FROM meals")
+    suspend fun getAll(): List<MealEntity>
+
+    @Query("DELETE FROM meals")
+    suspend fun deleteAll()
 }
 
 @Dao
@@ -34,6 +40,12 @@ interface StoolDao {
 
     @Query("DELETE FROM stools WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    @Query("SELECT * FROM stools")
+    suspend fun getAll(): List<StoolEntity>
+
+    @Query("DELETE FROM stools")
+    suspend fun deleteAll()
 }
 
 @Dao

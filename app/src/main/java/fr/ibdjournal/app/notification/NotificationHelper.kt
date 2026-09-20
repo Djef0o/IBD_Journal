@@ -45,6 +45,11 @@ class NotificationHelper @Inject constructor(
         WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
     }
 
+    /** Affiche la notification de rappel. */
+    fun showStoolReminder() {
+        showReminder(context)
+    }
+
     // Prochaine occurrence de HH:MM (demain si l'heure est déjà passée aujourd'hui).
     private fun nextOccurrence(hour: Int, minute: Int): LocalDateTime {
         val now = LocalDateTime.now()

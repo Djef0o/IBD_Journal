@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.outlined.Download
+import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -56,6 +59,8 @@ fun SettingsScreen(
         onBack = onBack,
         onReminderEnabled = viewModel::setReminderEnabled,
         onReminderTimeChanged = viewModel::setReminderTime,
+        onExport = viewModel::exportData,
+        onImport = viewModel::importData,
     )
 }
 
@@ -66,9 +71,23 @@ fun SettingsContent(
     onBack: () -> Unit,
     onReminderEnabled: (Boolean) -> Unit,
     onReminderTimeChanged: (Int, Int) -> Unit,
+    onExport: (java.io.OutputStream) -> Unit,
+    onImport: (java.io.InputStream) -> Unit,
 ) {
     val context = LocalContext.current
     var showTimePicker by remember { mutableStateOf(false) }
+
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/json")
+    ) { uri ->
+        uri?.let { context.contentResolver.openOutputStream(it)?.let(onExport) }
+    }
+
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { context.contentResolver.openInputStream(it)?.let(onImport) }
+    }
 
     // Android 13+ : la permission POST_NOTIFICATIONS est demandée à l'activation du rappel.
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -124,6 +143,27 @@ fun SettingsContent(
                     }
                 },
             )
+            Spacer(Modifier.height(16.dp))
+            Text(
+                text = stringResource(R.string.data_management),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.export_data)) },
+                leadingContent = { Icon(Icons.Outlined.Download, contentDescription = null) },
+                modifier = Modifier.clickable {
+                    exportLauncher.launch("ibd_journal_backup.json")
+                }
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.import_data)) },
+                leadingContent = { Icon(Icons.Outlined.Upload, contentDescription = null) },
+                modifier = Modifier.clickable {
+                    importLauncher.launch(arrayOf("application/json"))
+                }
+            )
         }
     }
 
@@ -176,6 +216,8 @@ private fun SettingsPreview() {
             onBack = {},
             onReminderEnabled = {},
             onReminderTimeChanged = { _, _ -> },
+            onExport = {},
+            onImport = {},
         )
     }
 }

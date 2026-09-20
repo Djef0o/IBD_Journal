@@ -97,16 +97,28 @@ private fun DayCell(
     isSelected: Boolean,
     isToday: Boolean,
     meals: List<Meal>,
-    stoolCount: Int,
+    stools: List<Stool>,
     showWeekday: Boolean,
     onSelect: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val background = if (isSelected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent
+    val bristolColor = when {
+        stools.any { it.bristolType in 5..7 } -> Color(0xFFEF6C00) // Orange
+        stools.any { it.bristolType in 3..4 } -> Color(0xFF2E7D32) // Vert
+        else -> Color(0xFF3E2723) // Marron foncé (1, 2 ou vide)
+    }
+
+    val background = if (isSelected) {
+        MaterialTheme.colorScheme.secondaryContainer
+    } else {
+        bristolColor
+    }
+
     val numberColor = when {
         isSelected -> MaterialTheme.colorScheme.onSecondaryContainer
-        else -> MaterialTheme.colorScheme.onSurface
+        else -> Color.White // On force blanc sur les couleurs Bristol foncées
     }
+
     Column(
         modifier = modifier.clickable(onClick = onSelect).padding(vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -126,7 +138,10 @@ private fun DayCell(
                 .background(background)
                 .then(
                     if (isToday) {
-                        Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    } else if (isSelected) {
+                         // On ajoute une petite bordure pour bien voir la sélection si elle se confond
+                        Modifier.border(1.dp, MaterialTheme.colorScheme.outline, CircleShape)
                     } else {
                         Modifier
                     }
@@ -140,7 +155,7 @@ private fun DayCell(
                 color = numberColor,
             )
         }
-        MealDots(meals, stoolCount)
+        MealDots(meals, stools.size)
     }
 }
 
@@ -183,7 +198,7 @@ fun MonthGrid(
                             isSelected = date == selected,
                             isToday = date == today,
                             meals = mealsByDay[date].orEmpty(),
-                            stoolCount = stoolsByDay[date].orEmpty().size,
+                            stools = stoolsByDay[date].orEmpty(),
                             showWeekday = false,
                             onSelect = { onSelect(date) },
                             modifier = Modifier.weight(1f),
@@ -216,7 +231,7 @@ fun WeekRow(
                 isSelected = date == selected,
                 isToday = date == today,
                 meals = mealsByDay[date].orEmpty(),
-                stoolCount = stoolsByDay[date].orEmpty().size,
+                stools = stoolsByDay[date].orEmpty(),
                 showWeekday = true,
                 onSelect = { onSelect(date) },
                 modifier = Modifier.weight(1f),
@@ -321,19 +336,6 @@ fun StoolSection(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(
-                imageVector = Icons.Outlined.WaterDrop,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.stools),
-                style = MaterialTheme.typography.titleMedium,
-            )
-        }
-
         ElevatedCard(
             modifier = Modifier.fillMaxWidth(),
             onClick = onAdd
@@ -399,6 +401,22 @@ fun StoolSection(
                                         text = "✨ ${stool.mucusLevel}",
                                         style = MaterialTheme.typography.bodySmall,
                                         color = Color(0xFFFBC02D)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                if (stool.painLevel > 0) {
+                                    Text(
+                                        text = "⚡ ${stool.painLevel}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF7B1FA2)
+                                    )
+                                    Spacer(Modifier.width(8.dp))
+                                }
+                                if (stool.fatigueLevel > 0) {
+                                    Text(
+                                        text = "💤 ${stool.fatigueLevel}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = Color(0xFF388E3C)
                                     )
                                 }
                             }
@@ -546,7 +564,7 @@ fun DaySummaryCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = { onOpenStoolSheet(null) })
+                    .clickable(onClick = { onOpenStoolSheet(stools.firstOrNull()) })
                     .padding(vertical = 6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -569,6 +587,13 @@ fun DaySummaryCard(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
+                if (stools.isNotEmpty()) {
+                    Text(
+                        text = stringResource(R.string.edit),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
             }
         }
     }
