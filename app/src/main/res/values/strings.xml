@@ -50,6 +50,16 @@
     <string name="level_hint_fatigue">0 = forme • 5 = épuisé</string>
     <string name="stool_comment_hint">Commentaire libre…</string>
     <string name="no_stools">Aucune selle enregistrée.</string>
+    <string name="stool_recorded_format">Selle de type %1$d enregistrée !</string>
+    <string name="stool_recorded_type_0">Pas de selle (Type 0) enregistrée !</string>
+    <string name="stool_type_0">Type 0</string>
+    <string name="stool_type_1">Type 1</string>
+    <string name="stool_type_2">Type 2</string>
+    <string name="stool_type_3">Type 3</string>
+    <string name="stool_type_4">Type 4</string>
+    <string name="stool_type_5">Type 5</string>
+    <string name="stool_type_6">Type 6</string>
+    <string name="stool_type_7">Type 7</string>
 
     <!-- Scanner -->
     <string name="scan_title">Scanner un code-barres</string>
@@ -78,6 +88,10 @@
     <string name="daily_reminder">Rappel quotidien</string>
     <string name="daily_reminder_desc">Recevoir une notification pour enregistrer vos selles</string>
     <string name="reminder_time">Heure du rappel</string>
+    <string name="test_notification">Tester la notification</string>
+    <string name="test_notification_desc">Envoyer immédiatement une notification de démonstration</string>
+    <string name="notification_permission_warning">L\'autorisation de notification n\'est pas accordée.</string>
+    <string name="notification_permission_grant">Autoriser</string>
     <string name="modify">Modifier</string>
     <string name="ok">OK</string>
     <string name="cancel">Annuler</string>

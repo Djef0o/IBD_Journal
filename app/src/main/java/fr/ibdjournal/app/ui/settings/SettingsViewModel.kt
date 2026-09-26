@@ -2,7 +2,6 @@ package fr.ibdjournal.app.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.work.ExistingPeriodicWorkPolicy
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.DataBackupManager
@@ -34,7 +33,6 @@ class SettingsViewModel @Inject constructor(
                 notificationHelper.scheduleDailyReminder(
                     current.hour,
                     current.minute,
-                    ExistingPeriodicWorkPolicy.UPDATE,
                 )
             } else {
                 notificationHelper.cancelDailyReminder()
@@ -50,10 +48,13 @@ class SettingsViewModel @Inject constructor(
                 notificationHelper.scheduleDailyReminder(
                     hour,
                     minute,
-                    ExistingPeriodicWorkPolicy.UPDATE,
                 )
             }
         }
+    }
+
+    fun sendTestNotification() {
+        notificationHelper.showStoolReminder()
     }
 
     fun exportData(outputStream: OutputStream) {
