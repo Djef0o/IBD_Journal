@@ -56,6 +56,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun sendTestNotification() {
+        notificationHelper.showStoolReminder()
+    }
+
     fun exportData(outputStream: OutputStream) {
         viewModelScope.launch {
             backupManager.exportData(outputStream)

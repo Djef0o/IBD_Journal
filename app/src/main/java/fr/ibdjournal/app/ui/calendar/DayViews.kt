@@ -103,9 +103,10 @@ private fun DayCell(
     modifier: Modifier = Modifier,
 ) {
     val bristolColor = when {
+        stools.isEmpty() -> Color.Transparent
         stools.any { it.bristolType in 5..7 } -> Color(0xFFEF6C00) // Orange
         stools.any { it.bristolType in 3..4 } -> Color(0xFF2E7D32) // Vert
-        else -> Color(0xFF3E2723) // Marron foncé (1, 2 ou vide)
+        else -> Color(0xFF3E2723) // Marron foncé (1, 2)
     }
 
     val background = if (isSelected) {
@@ -116,7 +117,8 @@ private fun DayCell(
 
     val numberColor = when {
         isSelected -> MaterialTheme.colorScheme.onSecondaryContainer
-        else -> Color.White // On force blanc sur les couleurs Bristol foncées
+        background == Color.Transparent -> MaterialTheme.colorScheme.onSurface
+        else -> Color.White // Texte blanc sur les couleurs Bristol
     }
 
     Column(

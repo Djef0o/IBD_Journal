@@ -11,6 +11,7 @@ import fr.ibdjournal.app.R
 @Composable
 fun BristolIcon(type: Int, modifier: Modifier = Modifier) {
     val resId = when (type) {
+        0 -> R.drawable.ic_bristol_0
         1 -> R.drawable.ic_bristol_1
         2 -> R.drawable.ic_bristol_2
         3 -> R.drawable.ic_bristol_3
