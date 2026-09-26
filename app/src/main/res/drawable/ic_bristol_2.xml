@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Ball 10 (Left End Cap) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M5,24A5,5 0,1,1 15,24A5,5 0,0,1 5,24Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M5.5,23.5A4,4 0,1,1 13.5,23.5A4,4 0,0,1 5.5,23.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M6.5,22.5A2.5,2.5 0,1,1 11.5,22.5A2.5,2.5 0,0,1 6.5,22.5Z" />
+
+    <!-- Ball 11 (Right End Cap) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M33,24A5,5 0,1,1 43,24A5,5 0,0,1 33,24Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M33.5,23.5A4,4 0,1,1 41.5,23.5A4,4 0,0,1 33.5,23.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M34.5,22.5A2.5,2.5 0,1,1 39.5,22.5A2.5,2.5 0,0,1 34.5,22.5Z" />
+
+    <!-- Ball 4 (Mid-Left Top) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M11.5,18A5.5,5.5 0,1,1 22.5,18A5.5,5.5 0,0,1 11.5,18Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M12,17.5A4.5,4.5 0,1,1 21,17.5A4.5,4.5 0,0,1 12,17.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M13,16.5A3,3 0,1,1 19,16.5A3,3 0,0,1 13,16.5Z" />
+
+    <!-- Ball 5 (Mid-Left Bottom) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M11.5,30A5.5,5.5 0,1,1 22.5,30A5.5,5.5 0,0,1 11.5,30Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M12,29.5A4.5,4.5 0,1,1 21,29.5A4.5,4.5 0,0,1 12,29.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M13,28.5A3,3 0,1,1 19,28.5A3,3 0,0,1 13,28.5Z" />
+
+    <!-- Ball 7 (Mid-Right Top) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M25.5,18A5.5,5.5 0,1,1 36.5,18A5.5,5.5 0,0,1 25.5,18Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M26,17.5A4.5,4.5 0,1,1 35,17.5A4.5,4.5 0,0,1 26,17.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M27,16.5A3,3 0,1,1 33,16.5A3,3 0,0,1 27,16.5Z" />
+
+    <!-- Ball 8 (Mid-Right Bottom) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M25.5,30A5.5,5.5 0,1,1 36.5,30A5.5,5.5 0,0,1 25.5,30Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M26,29.5A4.5,4.5 0,1,1 35,29.5A4.5,4.5 0,0,1 26,29.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M27,28.5A3,3 0,1,1 33,28.5A3,3 0,0,1 27,28.5Z" />
+
+    <!-- Ball 6 (Mid-Left Center) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M10,24A6,6 0,1,1 22,24A6,6 0,0,1 10,24Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M10.5,23.5A5,5 0,1,1 20.5,23.5A5,5 0,0,1 10.5,23.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M11.5,22.5A3.5,3.5 0,1,1 18.5,22.5A3.5,3.5 0,0,1 11.5,22.5Z" />
+
+    <!-- Ball 9 (Mid-Right Center) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M26,24A6,6 0,1,1 38,24A6,6 0,0,1 26,24Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M26.5,23.5A5,5 0,1,1 36.5,23.5A5,5 0,0,1 26.5,23.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M27.5,22.5A3.5,3.5 0,1,1 34.5,22.5A3.5,3.5 0,0,1 27.5,22.5Z" />
+
+    <!-- Ball 2 (Center Top) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M18.5,16A5.5,5.5 0,1,1 29.5,16A5.5,5.5 0,0,1 18.5,16Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M19,15.5A4.5,4.5 0,1,1 28,15.5A4.5,4.5 0,0,1 19,15.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M20,14.5A3,3 0,1,1 26,14.5A3,3 0,0,1 20,14.5Z" />
+
+    <!-- Ball 3 (Center Bottom) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M18.5,32A5.5,5.5 0,1,1 29.5,32A5.5,5.5 0,0,1 18.5,32Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M19,31.5A4.5,4.5 0,1,1 28,31.5A4.5,4.5 0,0,1 19,31.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M20,30.5A3,3 0,1,1 26,30.5A3,3 0,0,1 20,30.5Z" />
+
+    <!-- Ball 1 (Center Core) -->
+    <path
+        android:fillColor="#3E1E0E"
+        android:pathData="M17.5,24A6.5,6.5 0,1,1 30.5,24A6.5,6.5 0,0,1 17.5,24Z" />
+    <path
+        android:fillColor="#5C2E17"
+        android:pathData="M18,23.5A5.5,5.5 0,1,1 29,23.5A5.5,5.5 0,0,1 18,23.5Z" />
+    <path
+        android:fillColor="#8C4E2B"
+        android:pathData="M19,22.5A4,4 0,1,1 27,22.5A4,4 0,0,1 19,22.5Z" />
+
+</vector>

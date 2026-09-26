@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="8dp">
+
+    <TextView
+        android:id="@+id/notification_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/stool_type_question"
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:paddingBottom="6dp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:gravity="center_vertical">
+
+        <!-- Type 0 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_0"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_0"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_0"
+                android:contentDescription="@string/stool_type_0" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_0"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 1 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_1"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_1"
+                android:contentDescription="@string/stool_type_1" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_1"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 2 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_2"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_2"
+                android:contentDescription="@string/stool_type_2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_2"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 3 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_3"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_3"
+                android:contentDescription="@string/stool_type_3" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_3"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 4 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_4"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_4"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_4"
+                android:contentDescription="@string/stool_type_4" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_4"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 5 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_5"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_5"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_5"
+                android:contentDescription="@string/stool_type_5" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_5"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 6 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_6"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_6"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_6"
+                android:contentDescription="@string/stool_type_6" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_6"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+        <!-- Type 7 -->
+        <LinearLayout
+            android:id="@+id/item_bristol_7"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true">
+
+            <ImageView
+                android:id="@+id/btn_bristol_7"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:src="@drawable/ic_bristol_7"
+                android:contentDescription="@string/stool_type_7" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/stool_type_7"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
