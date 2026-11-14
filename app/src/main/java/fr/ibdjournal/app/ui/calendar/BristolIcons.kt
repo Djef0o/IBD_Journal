@@ -5,11 +5,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 
 @Composable
-fun BristolIcon(type: Int, modifier: Modifier = Modifier) {
+fun BristolIcon(type: Int, modifier: Modifier = Modifier.size(48.dp)) {
     val resId = when (type) {
         0 -> R.drawable.ic_bristol_0
         1 -> R.drawable.ic_bristol_1
@@ -25,8 +26,8 @@ fun BristolIcon(type: Int, modifier: Modifier = Modifier) {
     if (resId != null) {
         Image(
             painter = painterResource(id = resId),
-            contentDescription = "Bristol Type $type",
-            modifier = modifier.size(48.dp)
+            contentDescription = stringResource(R.string.bristol_icon_desc, type),
+            modifier = modifier
         )
     }
 }

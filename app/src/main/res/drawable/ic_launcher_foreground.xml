@@ -4,13 +4,21 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Simple calendar + check mark glyph for the daily tracking app -->
-    <group android:scaleX="0.55" android:scaleY="0.55" android:pivotX="54" android:pivotY="54">
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M30,26 h48 a6,6 0 0 1 6,6 v44 a6,6 0 0 1 -6,6 h-48 a6,6 0 0 1 -6,-6 v-44 a6,6 0 0 1 6,-6 z M32,32 v8 h44 v-8 z M30,44 v38 a4,4 0 0 0 4,4 h40 a4,4 0 0 0 4,-4 v-38 z M40,22 a2,2 0 0 1 4,0 v6 a2,2 0 0 1 -4,0 z M64,22 a2,2 0 0 1 4,0 v6 a2,2 0 0 1 -4,0 z" />
-        <path
-            android:fillColor="#0B6E63"
-            android:pathData="M46,62 l6,6 l10,-12 a3,3 0 0 1 4.5,4 l-12.5,14.5 a3,3 0 0 1 -4.4,0.2 l-8,-8 a3,3 0 0 1 4.4,-4.2 z" />
-    </group>
+    <!-- Page de carnet -->
+    <path
+        android:fillColor="#F6F2EA"
+        android:pathData="M42,20 H66 A12,12 0 0 1 78,32 V76 A12,12 0 0 1 66,88 H42 A12,12 0 0 1 30,76 V32 A12,12 0 0 1 42,20 Z" />
+    <!-- Lignes -->
+    <path
+        android:fillColor="#0F7A6D"
+        android:fillAlpha="0.55"
+        android:pathData="M44.5,38 H63.5 A2.5,2.5 0 0 1 66,40.5 A2.5,2.5 0 0 1 63.5,43 H44.5 A2.5,2.5 0 0 1 42,40.5 A2.5,2.5 0 0 1 44.5,38 Z" />
+    <path
+        android:fillColor="#0F7A6D"
+        android:fillAlpha="0.35"
+        android:pathData="M44.5,49 H57.5 A2.5,2.5 0 0 1 60,51.5 A2.5,2.5 0 0 1 57.5,54 H44.5 A2.5,2.5 0 0 1 42,51.5 A2.5,2.5 0 0 1 44.5,49 Z" />
+    <!-- Goutte -->
+    <path
+        android:fillColor="#0F7A6D"
+        android:pathData="M54,57 C48,65 45,69 45,74 a9,9 0 0 0 18,0 c0,-5 -3,-9 -9,-17 Z" />
 </vector>

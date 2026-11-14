@@ -9,13 +9,16 @@ import fr.ibdjournal.app.data.local.toStoolEntity
 import fr.ibdjournal.app.data.model.BackupData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.serialization.encodeToString
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromStream
+import kotlinx.serialization.json.encodeToStream
 import java.io.InputStream
 import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
+@OptIn(ExperimentalSerializationApi::class)
 @Singleton
 class DataBackupManager @Inject constructor(
     private val database: AppDatabase
@@ -26,23 +29,25 @@ class DataBackupManager @Inject constructor(
     }
 
     suspend fun exportData(outputStream: OutputStream) = withContext(Dispatchers.IO) {
-        val meals = database.mealDao().getAll().map { it.toMeal() }
-        val stools = database.stoolDao().getAll().map { it.toStool() }
-        val backup = BackupData(meals = meals, stools = stools)
-        val jsonString = json.encodeToString(backup)
-        outputStream.use { it.write(jsonString.toByteArray()) }
+        // Lecture dans une transaction : repas et selles forment un instantané cohérent.
+        val backup = database.withTransaction {
+            BackupData(
+                meals = database.mealDao().getAll().map { it.toMeal() },
+                stools = database.stoolDao().getAll().map { it.toStool() },
+            )
+        }
+        // Écriture en flux : ni chaîne JSON complète ni copie en ByteArray en mémoire.
+        outputStream.buffered().use { json.encodeToStream(backup, it) }
     }
 
     suspend fun importData(inputStream: InputStream) = withContext(Dispatchers.IO) {
-        val jsonString = inputStream.use { it.readBytes().decodeToString() }
-        val backup = json.decodeFromString<BackupData>(jsonString)
+        val backup = inputStream.buffered().use { json.decodeFromStream<BackupData>(it) }
 
         database.withTransaction {
             database.mealDao().deleteAll()
             database.stoolDao().deleteAll()
-
-            backup.meals.forEach { database.mealDao().upsert(it.toMealEntity()) }
-            backup.stools.forEach { database.stoolDao().upsert(it.toStoolEntity()) }
+            database.mealDao().insertAll(backup.meals.map { it.toMealEntity() })
+            database.stoolDao().insertAll(backup.stools.map { it.toStoolEntity() })
         }
     }
 }

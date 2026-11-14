@@ -11,3 +11,6 @@ captures/
 # Signing (local secrets)
 keystore.properties
 keystore/
+
+# Sauvegardes locales de données personnelles
+.backup/

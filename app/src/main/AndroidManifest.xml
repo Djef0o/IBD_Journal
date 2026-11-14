@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -14,13 +16,15 @@
     <application
         android:name=".IBDJournalApp"
         android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.IBDJournal">
 
-        <!-- Désactive l'initialisation par défaut de WorkManager pour utiliser HiltWorkerFactory -->
+        <!-- Pas d'initialisation de WorkManager au démarrage : à la demande via Configuration.Provider -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -33,6 +37,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:launchMode="singleTask"
             android:exported="true"
             android:theme="@style/Theme.IBDJournal">
             <intent-filter>
@@ -41,9 +46,75 @@
             </intent-filter>
         </activity>
 
+        <!-- Tous les intents sont explicites : inutile d'exposer le récepteur aux autres apps. -->
         <receiver
             android:name=".notification.NotificationReceiver"
-            android:exported="true" />
+            android:exported="false" />
+
+        <!-- Replanifie le rappel après redémarrage, mise à jour ou changement d'heure/fuseau. -->
+        <receiver
+            android:name=".notification.ReminderRescheduleReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Avant Android 13 : AppCompat mémorise lui-même la langue choisie dans l'app. -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
+        <!-- Sauvegarde cloud — Dropbox : reçoit la redirection OAuth (PKCE) du SDK officiel sur
+             le schéma db-<APP_KEY> (clé lue dans local.properties, voir app/build.gradle.kts). -->
+        <activity
+            android:name="com.dropbox.core.android.AuthActivity"
+            android:configChanges="orientation|keyboard"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <data android:scheme="db-${dropboxAppKey}" />
+
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <!-- Requis par le SDK Dropbox (authentification via l'app Dropbox, targetSdk 33+). -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+
+        <!-- Sauvegarde cloud — OneDrive : redirection OAuth <applicationId>://onedrive-auth
+             (URI à déclarer dans Azure, plateforme « Mobile and desktop applications »). -->
+        <activity
+            android:name=".backup.OneDriveAuthRedirectActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:noHistory="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.BROWSABLE" />
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data
+                    android:host="onedrive-auth"
+                    android:scheme="${applicationId}" />
+            </intent-filter>
+        </activity>
     </application>
 
 </manifest>

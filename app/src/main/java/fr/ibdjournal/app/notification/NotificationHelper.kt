@@ -6,71 +6,110 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.ibdjournal.app.MainActivity
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.AppPrefs
 import java.time.LocalDateTime
 import java.time.ZoneId
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.first
 
 /**
- * Programme le rappel quotidien précis à l'aide d'AlarmManager (setExactAndAllowWhileIdle)
- * et affiche la notification interactive avec les 8 choix de Bristol (0 à 7).
+ * Programme le rappel quotidien avec AlarmManager.setExactAndAllowWhileIdle et affiche la
+ * notification interactive avec les 8 choix de Bristol (0 à 7).
+ *
+ * Volontairement pas de setAlarmClock : il affiche une icône de réveil dans la barre
+ * d'état et se présente comme « prochaine alarme » au système, ce qui n'est pas le rôle
+ * d'un rappel. La fiabilité repose sur :
+ * - une alarme exacte autorisée en Doze (permission « alarmes exactes ») ;
+ * - l'exemption d'optimisation de batterie, proposée dans les réglages, pour que les
+ *   surcouches (Honor, Xiaomi, Samsung…) ne gèlent pas l'app ;
+ * - la replanification au démarrage, à la mise à jour et au changement d'heure
+ *   ([ReminderRescheduleReceiver]) ainsi qu'à chaque déclenchement.
+ *
+ * Une seule alarme « quotidienne » existe à la fois : [scheduleDailyReminder] annule
+ * systématiquement l'occurrence précédente avant d'en poser une nouvelle. C'est ce qui
+ * garantit qu'un changement d'heure dans l'application remplace bien l'ancien horaire.
  */
 @Singleton
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
 
+    private val alarmManager: AlarmManager
+        get() = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    /**
+     * Depuis Android 12, l'autorisation « alarmes exactes » peut être refusée ou révoquée
+     * par l'utilisateur. Sans elle, le rappel reste programmé mais peut être retardé par
+     * le mode Doze : l'heure n'est alors plus garantie.
+     */
+    fun canScheduleExactAlarms(): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+
     fun scheduleDailyReminder(hour: Int, minute: Int) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, NotificationReceiver::class.java).apply {
-            action = ACTION_ALARM_REMINDER
-            putExtra(EXTRA_HOUR, hour)
-            putExtra(EXTRA_MINUTE, minute)
-            setPackage(context.packageName)
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            ALARM_REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+        // Même PendingIntent (même action + même requestCode) : le recréer avec
+        // FLAG_UPDATE_CURRENT remplace l'occurrence en attente au lieu d'en ajouter une.
+        val pendingIntent = alarmPendingIntent(hour, minute)
+        alarmManager.cancel(pendingIntent)
 
         val triggerAtMillis = nextOccurrenceMillis(hour, minute)
 
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent,
-            )
-        } catch (_: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerAtMillis,
-                pendingIntent,
-            )
+        if (canScheduleExactAlarms()) {
+            try {
+                alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerAtMillis,
+                    pendingIntent,
+                )
+                return
+            } catch (_: SecurityException) {
+                // Autorisation révoquée entre le test et l'appel.
+            }
         }
+
+        // Sans alarmes exactes : le système peut décaler le rappel de quelques minutes.
+        alarmManager.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            triggerAtMillis,
+            pendingIntent,
+        )
     }
 
     fun cancelDailyReminder() {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, NotificationReceiver::class.java).apply {
-            action = ACTION_ALARM_REMINDER
-            setPackage(context.packageName)
+        alarmManager.cancel(alarmPendingIntent())
+        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+    }
+
+    /**
+     * Les versions précédentes (WorkManager) laissaient un travail périodique unique nommé
+     * « daily_reminder » dans la base de WorkManager. Cette base survit aux mises à jour de
+     * l'application : sans cette annulation, l'ancien horaire continue de notifier chaque
+     * jour en parallèle de la nouvelle alarme.
+     */
+    fun cancelLegacyWorkManagerReminder() {
+        runCatching {
+            WorkManager.getInstance(context).cancelUniqueWork(LEGACY_WORK_NAME)
         }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            ALARM_REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-        alarmManager.cancel(pendingIntent)
+    }
+
+    /** Replanifie (ou annule) le rappel à partir des préférences enregistrées. */
+    suspend fun rescheduleFromPreferences(prefs: AppPrefs) {
+        // Migration : s'assure qu'aucun ancien rappel WorkManager ne subsiste.
+        cancelLegacyWorkManagerReminder()
+        val settings = prefs.notificationSettings.first()
+        if (settings.enabled) {
+            scheduleDailyReminder(settings.hour, settings.minute)
+        } else {
+            cancelDailyReminder()
+        }
     }
 
     /** Affiche la notification de rappel. */
@@ -80,12 +119,30 @@ class NotificationHelper @Inject constructor(
 
     // Prochaine occurrence de HH:MM (demain si l'heure est déjà passée aujourd'hui).
     private fun nextOccurrenceMillis(hour: Int, minute: Int): Long {
-        val now = LocalDateTime.now()
+        val zone = ZoneId.systemDefault()
+        val now = LocalDateTime.now(zone)
         var target = now.toLocalDate().atTime(hour, minute)
         if (!target.isAfter(now)) {
             target = target.plusDays(1)
         }
-        return target.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+        return target.atZone(zone).toInstant().toEpochMilli()
+    }
+
+    private fun alarmPendingIntent(hour: Int? = null, minute: Int? = null): PendingIntent {
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = ACTION_ALARM_REMINDER
+            setPackage(context.packageName)
+            if (hour != null && minute != null) {
+                putExtra(EXTRA_HOUR, hour)
+                putExtra(EXTRA_MINUTE, minute)
+            }
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            ALARM_REQUEST_CODE,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
     }
 
     companion object {
@@ -95,6 +152,9 @@ class NotificationHelper @Inject constructor(
         const val EXTRA_HOUR = "extra_hour"
         const val EXTRA_MINUTE = "extra_minute"
         private const val ALARM_REQUEST_CODE = 2001
+
+        /** Nom du travail périodique WorkManager de l'ancienne implémentation. */
+        private const val LEGACY_WORK_NAME = "daily_reminder"
 
         /** Affiche la notification de rappel avec les 8 icônes d'enregistrement direct (0 à 7). */
         fun showReminder(context: Context) {
@@ -143,7 +203,7 @@ class NotificationHelper @Inject constructor(
             }
 
             val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setSmallIcon(R.drawable.ic_stat_reminder)
                 .setContentTitle(context.getString(R.string.daily_reminder))
                 .setContentText(context.getString(R.string.daily_reminder_desc))
                 .setStyle(NotificationCompat.DecoratedCustomViewStyle())

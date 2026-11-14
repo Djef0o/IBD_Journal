@@ -1,8 +1,10 @@
 package fr.ibdjournal.app.data.local
 
+import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Relation
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
@@ -46,7 +48,22 @@ data class ProductEntity(
     val fetchedAt: Long = System.currentTimeMillis(),
 )
 
+/**
+ * Repas avec la fiche produit complète du cache Open Food Facts. Le repas ne stocke
+ * que code-barres et nom ; image, marque et Nutri-Score viennent de `products`.
+ */
+data class MealWithProduct(
+    @Embedded val meal: MealEntity,
+    @Relation(parentColumn = "productBarcode", entityColumn = "barcode")
+    val product: ProductEntity?,
+)
+
 // --- Mappeurs entité <-> modèle de domaine ---
+
+fun MealWithProduct.toMeal(): Meal {
+    val base = meal.toMeal()
+    return if (product != null) base.copy(product = product.toProduct()) else base
+}
 
 fun MealEntity.toMeal() = Meal(
     id = id,

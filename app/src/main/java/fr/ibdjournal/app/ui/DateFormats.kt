@@ -1,48 +1,68 @@
 package fr.ibdjournal.app.ui
 
+import android.text.format.DateFormat
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.time.format.TextStyle
 import java.util.Locale
 
-/** Formatage des dates en français. */
+/**
+ * Formatage des dates dans la langue de l'app (Locale par défaut, que la langue
+ * choisie dans les réglages met à jour). L'ordre des éléments suit les conventions
+ * de chaque langue : « samedi 14 novembre » / « Saturday, November 14 ».
+ */
 object DateFormats {
 
-    val WEEKDAYS: List<String> = DayOfWeek.entries
-        .map { it.getDisplayName(TextStyle.NARROW, Locale.FRANCE) }
+    private class Formatters(val locale: Locale) {
+        val monthYear = skeleton("MMMMyyyy", FormatStyle.LONG)
+        val dayMonth = skeleton("dMMMM", FormatStyle.LONG)
+        val fullDate = skeleton("EEEEdMMMMyyyy", FormatStyle.FULL)
+        val weekdayDayMonth = skeleton("EEEEdMMMM", FormatStyle.FULL)
+        // Heure courte localisée : 24 h en français, « 8:00 PM » en anglais américain…
+        val time: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
+        val weekdaysNarrow: List<String> =
+            DayOfWeek.entries.map { it.getDisplayName(TextStyle.NARROW, locale) }
 
-    private val monthYearFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.FRANCE)
-    private val dayMonthFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale.FRANCE)
-    private val fullDateFormatter = DateTimeFormatter.ofPattern("EEEE d MMMM yyyy", Locale.FRANCE)
-    private val weekdayFormatter = DateTimeFormatter.ofPattern("EEEE", Locale.FRANCE)
-    private val timeFormatter = DateTimeFormatter.ofPattern("HH:mm", Locale.FRANCE)
-
-    fun monthYear(month: YearMonth): String = capitalize(month.atDay(1).format(monthYearFormatter))
-
-    fun dayMonth(date: LocalDate): String = capitalize(date.format(dayMonthFormatter))
-
-    fun fullDate(date: LocalDate): String = capitalize(date.format(fullDateFormatter))
-
-    fun weekday(date: LocalDate): String = capitalize(date.format(weekdayFormatter))
-
-    fun time(epochMillis: Long): String =
-        Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(timeFormatter)
-
-    /** "24 août – 30 août", avec l'année si la semaine chevauche deux années. */
-    fun weekRange(start: LocalDate): String {
-        val end = start.plusDays(6)
-        val endLabel = if (end.year != start.year) {
-            capitalize(end.format(DateTimeFormatter.ofPattern("d MMMM yyyy", Locale.FRANCE)))
-        } else {
-            dayMonth(end)
-        }
-        return "${dayMonth(start)} – $endLabel"
+        /** Motif ICU adapté à la langue ; repli sur le format localisé standard. */
+        private fun skeleton(skeleton: String, fallback: FormatStyle): DateTimeFormatter =
+            runCatching {
+                DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+            }.getOrElse { DateTimeFormatter.ofLocalizedDate(fallback).withLocale(locale) }
     }
 
+    @Volatile
+    private var cached: Formatters? = null
+
+    private val formatters: Formatters
+        get() {
+            val locale = Locale.getDefault()
+            return cached?.takeIf { it.locale == locale } ?: Formatters(locale).also { cached = it }
+        }
+
+    /** Initiales des jours, lundi en premier : « L M M J V S D ». */
+    val weekdaysNarrow: List<String> get() = formatters.weekdaysNarrow
+
+    fun weekdayNarrow(day: DayOfWeek): String = formatters.weekdaysNarrow[day.ordinal]
+
+    fun monthYear(month: YearMonth): String = capitalize(month.atDay(1).format(formatters.monthYear))
+
+    fun dayMonth(date: LocalDate): String = capitalize(date.format(formatters.dayMonth))
+
+    fun fullDate(date: LocalDate): String = capitalize(date.format(formatters.fullDate))
+
+    fun weekdayDayMonth(date: LocalDate): String = capitalize(date.format(formatters.weekdayDayMonth))
+
+    fun time(epochMillis: Long): String =
+        Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(formatters.time)
+
+    fun time(hour: Int, minute: Int): String = LocalTime.of(hour, minute).format(formatters.time)
+
     fun capitalize(text: String): String =
-        text.replaceFirstChar { it.titlecase(Locale.FRANCE) }
+        text.replaceFirstChar { it.titlecase(formatters.locale) }
 }

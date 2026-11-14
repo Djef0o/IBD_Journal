@@ -7,6 +7,7 @@ import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.data.model.ProductLookup
 import javax.inject.Inject
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -39,13 +40,33 @@ class ScannerViewModel @Inject constructor(
     val state: StateFlow<ScanState> = _state.asStateFlow()
 
     private var processing = false
+    private var lookupJob: Job? = null
 
-    /** Appelé par l'analyseur d'images à chaque code-barres détecté. */
+    /**
+     * Ce ViewModel vit aussi longtemps que l'écran hôte (accueil, journée), pas que le
+     * scanner : on repart d'un état vierge à chaque fermeture, sinon le produit du scan
+     * précédent réapparaît à l'ouverture suivante.
+     */
+    fun reset() {
+        lookupJob?.cancel()
+        lookupJob = null
+        processing = false
+        _state.value = ScanState.Waiting
+    }
+
+    /** Appelé par l'analyseur d'images à chaque code-barres détecté (plusieurs fois par seconde). */
     fun onBarcodeDetected(barcode: String) {
-        if (processing) return
+        // Le même code reste dans le cadre pendant que le résultat s'affiche :
+        // inutile de relancer la recherche (et de faire clignoter l'état) à chaque image.
+        val shown = when (val current = _state.value) {
+            is ScanState.Found -> current.product.barcode
+            is ScanState.NotFound -> current.barcode
+            else -> null
+        }
+        if (processing || barcode == shown) return
         processing = true
         _state.value = ScanState.Scanning
-        viewModelScope.launch {
+        lookupJob = viewModelScope.launch {
             _state.value = when (val result = repository.lookupProduct(barcode)) {
                 is ProductLookup.Found -> ScanState.Found(result.product)
                 is ProductLookup.NotFound -> ScanState.NotFound(barcode)

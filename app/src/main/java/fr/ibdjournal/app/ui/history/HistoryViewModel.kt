@@ -1,0 +1,48 @@
+package fr.ibdjournal.app.ui.history
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.ibdjournal.app.data.DiaryRepository
+import fr.ibdjournal.app.data.model.Stool
+import java.time.LocalDate
+import java.time.YearMonth
+import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+
+data class HistoryUiState(
+    val month: YearMonth = YearMonth.now(),
+    val stoolsByDay: Map<LocalDate, List<Stool>> = emptyMap(),
+)
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@HiltViewModel
+class HistoryViewModel @Inject constructor(
+    private val repository: DiaryRepository,
+) : ViewModel() {
+
+    private val monthOffset = MutableStateFlow(0)
+
+    val uiState: StateFlow<HistoryUiState> = monthOffset
+        .flatMapLatest { offset ->
+            val month = YearMonth.now().plusMonths(offset.toLong())
+            repository.observeStools(month.atDay(1), month.atEndOfMonth()).map { stools ->
+                HistoryUiState(month = month, stoolsByDay = stools.groupBy { it.date })
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryUiState())
+
+    fun previousMonth() {
+        monthOffset.value -= 1
+    }
+
+    fun nextMonth() {
+        monthOffset.value += 1
+    }
+}

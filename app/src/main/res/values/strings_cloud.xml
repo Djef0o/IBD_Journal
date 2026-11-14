@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cloud_backup_title">Cloud backup</string>
+
+    <string name="cloud_provider_google_drive" translatable="false">Google Drive</string>
+    <string name="cloud_provider_dropbox" translatable="false">Dropbox</string>
+    <string name="cloud_provider_onedrive" translatable="false">OneDrive</string>
+
+    <string name="cloud_connect">Connect</string>
+    <string name="cloud_disconnect">Disconnect</string>
+    <string name="cloud_cancel">Cancel</string>
+    <string name="cloud_change">Change</string>
+
+    <string name="cloud_status_not_configured">Not configured in this build</string>
+    <string name="cloud_status_disconnected">Not connected</string>
+    <string name="cloud_status_connecting">Connecting…</string>
+    <string name="cloud_status_connected">Connected</string>
+    <string name="cloud_status_connected_as">Connected as %1$s</string>
+    <string name="cloud_status_last_backup">Last backup: %1$s</string>
+    <string name="cloud_status_no_backup_yet">No backup yet</string>
+
+    <string name="cloud_error_network">No connection to the service</string>
+    <string name="cloud_error_auth_required">Access expired or revoked — disconnect and connect again</string>
+    <string name="cloud_error_not_configured">This service is not set up correctly in this build</string>
+    <string name="cloud_error_google_not_configured">Google authorization is not set up for this build (Android OAuth client, package name or SHA-1 fingerprint, or Drive API not enabled)</string>
+    <string name="cloud_error_storage_full">Cloud storage is full</string>
+    <string name="cloud_error_server">Service temporarily unavailable</string>
+    <string name="cloud_error_unknown">Operation failed</string>
+
+    <string name="cloud_backup_now">Back up now</string>
+    <string name="cloud_backup_now_desc">Upload a copy of the diary to every connected service</string>
+    <string name="cloud_backup_now_needs_connection">Connect a service first</string>
+    <string name="cloud_backup_running">Backing up…</string>
+    <string name="cloud_backup_done">Backup completed</string>
+    <string name="cloud_backup_failed_for">Backup failed for: %1$s</string>
+
+    <string name="cloud_last_backup">Last cloud backup</string>
+    <string name="cloud_last_backup_never">Never</string>
+
+    <string name="cloud_auto_title">Automatic backup</string>
+    <string name="cloud_auto_off">Off</string>
+    <string name="cloud_auto_daily">Daily</string>
+    <string name="cloud_auto_weekly">Weekly</string>
+    <string name="cloud_auto_wifi_only">Wi-Fi only</string>
+    <string name="cloud_auto_wifi_only_desc">Wait for an unmetered network before backing up</string>
+    <string name="cloud_auto_target">Back up to %1$s</string>
+    <string name="cloud_auto_no_target">Connect a service to enable automatic backups</string>
+
+    <string name="cloud_disconnect_title">Disconnect %1$s?</string>
+    <string name="cloud_disconnect_text">The app will stop backing up there and forget this account. The backup file already saved stays in your storage.</string>
+</resources>

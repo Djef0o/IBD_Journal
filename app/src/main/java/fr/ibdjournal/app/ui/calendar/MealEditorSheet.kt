@@ -73,25 +73,23 @@ import java.time.LocalDate
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealEditorSheet(
-    state: CalendarUiState,
+    state: MealEditorState,
     onDismiss: () -> Unit,
-    onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
+    onSave: () -> Unit,
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
     onDescriptionChanged: (String) -> Unit,
-    onPhotoUriChanged: (Uri?) -> Unit,
-    onRemovePhotoChanged: (Boolean) -> Unit,
+    onPhotoPicked: (Uri) -> Unit,
+    onPhotoRemoved: () -> Unit,
     onProductChanged: (Product?) -> Unit,
     onTypeChanged: (MealType) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    
+
     val photoPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
-        uri?.let {
-            onPhotoUriChanged(it)
-        }
+        uri?.let(onPhotoPicked)
     }
 
     ModalBottomSheet(
@@ -101,8 +99,7 @@ fun MealEditorSheet(
         MealEditorContent(
             state = state,
             onDescriptionChanged = onDescriptionChanged,
-            onPhotoUriChanged = onPhotoUriChanged,
-            onRemovePhotoChanged = onRemovePhotoChanged,
+            onPhotoRemoved = onPhotoRemoved,
             onPickPhoto = {
                 photoPicker.launch(
                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -121,32 +118,32 @@ fun MealEditorSheet(
  * Contenu de l'éditeur de repas, séparé pour être prévisualisé sans ModalBottomSheet
  * ni ActivityResultLauncher (qui ne fonctionnent pas en Preview).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealEditorContent(
-    state: CalendarUiState,
+    state: MealEditorState,
     onDescriptionChanged: (String) -> Unit,
-    onPhotoUriChanged: (Uri?) -> Unit,
-    onRemovePhotoChanged: (Boolean) -> Unit,
+    onPhotoRemoved: () -> Unit,
     onPickPhoto: () -> Unit,
     onProductChanged: (Product?) -> Unit,
     onTypeChanged: (MealType) -> Unit,
-    onSave: (description: String, photoUri: Uri?, removePhoto: Boolean, product: Product?) -> Unit,
+    onSave: () -> Unit,
     onDelete: (Meal) -> Unit,
     onScan: () -> Unit,
 ) {
     val editing = state.editingMeal
     val context = LocalContext.current
 
-    // L'état du formulaire est maintenant piloté par le state (hoisted).
-    val type = editing?.type ?: state.editorMealType
-    val description = state.editorDescription
-    val photoUri = state.editorPhotoUri
-    val removePhoto = state.editorRemovePhoto
-    val draftProduct = state.pendingProduct
+    val type = state.type
+    val description = state.description
+    val photoUri = state.newPhotoUri
+    val removePhoto = state.removePhoto
+    val draftProduct = state.product
 
-    val existingPhotoFile = remember(state.editorSessionId, editing?.photoUri) {
-        editing?.photoUri?.let { File(context.filesDir, it) }
+    // Photo déjà enregistrée : chemin relatif au stockage interne (ou ancienne URI).
+    val existingPhoto: Any? = remember(editing?.photoUri) {
+        editing?.photoUri?.let { path ->
+            if ("://" in path) path else File(context.filesDir, path)
+        }
     }
 
     Column(
@@ -166,7 +163,7 @@ fun MealEditorContent(
             style = MaterialTheme.typography.titleLarge,
         )
         Text(
-            text = DateFormats.fullDate(state.selectedDate),
+            text = DateFormats.fullDate(state.date),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -202,24 +199,21 @@ fun MealEditorContent(
                         .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
                 )
-                TextButton(onClick = {
-                    onPhotoUriChanged(null)
-                    onRemovePhotoChanged(true)
-                }) {
+                TextButton(onClick = onPhotoRemoved) {
                     Text(stringResource(R.string.remove_photo))
                 }
             }
 
-            !removePhoto && existingPhotoFile != null -> {
+            !removePhoto && existingPhoto != null -> {
                 AsyncImage(
-                    model = existingPhotoFile,
+                    model = existingPhoto,
                     contentDescription = stringResource(R.string.photo),
                     modifier = Modifier
                         .size(120.dp)
                         .clip(RoundedCornerShape(12.dp)),
                     contentScale = ContentScale.Crop,
                 )
-                TextButton(onClick = { onRemovePhotoChanged(true) }) {
+                TextButton(onClick = onPhotoRemoved) {
                     Text(stringResource(R.string.remove_photo))
                 }
             }
@@ -256,9 +250,7 @@ fun MealEditorContent(
                 }
             }
             Button(
-                onClick = {
-                    onSave(description, photoUri, removePhoto, draftProduct)
-                },
+                onClick = onSave,
                 modifier = Modifier.weight(1f),
                 enabled = description.isNotBlank() ||
                     photoUri != null ||
@@ -351,22 +343,23 @@ private fun MealEditorSheetPreview() {
     IBDJournalTheme {
         Surface {
             MealEditorContent(
-                state = CalendarUiState(
-                    selectedDate = LocalDate.now(),
+                state = MealEditorState(
+                    date = LocalDate.now(),
                     editingMeal = Meal(
                         id = 1,
                         date = LocalDate.now(),
                         type = MealType.LUNCH,
                         description = "Salade composée et poulet grillé",
-                    )
+                    ),
+                    type = MealType.LUNCH,
+                    description = "Salade composée et poulet grillé",
                 ),
                 onDescriptionChanged = {},
-                onPhotoUriChanged = {},
-                onRemovePhotoChanged = {},
+                onPhotoRemoved = {},
                 onPickPhoto = {},
                 onProductChanged = {},
                 onTypeChanged = {},
-                onSave = { _, _, _, _ -> },
+                onSave = {},
                 onDelete = {},
                 onScan = {},
             )

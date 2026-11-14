@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="cloud_backup_title">Cloud-Sicherung</string>
+
+    <string name="cloud_connect">Verbinden</string>
+    <string name="cloud_disconnect">Trennen</string>
+    <string name="cloud_cancel">Abbrechen</string>
+    <string name="cloud_change">Ändern</string>
+
+    <string name="cloud_status_not_configured">In dieser Version nicht eingerichtet</string>
+    <string name="cloud_status_disconnected">Nicht verbunden</string>
+    <string name="cloud_status_connecting">Verbindung wird hergestellt…</string>
+    <string name="cloud_status_connected">Verbunden</string>
+    <string name="cloud_status_connected_as">Verbunden als %1$s</string>
+    <string name="cloud_status_last_backup">Letzte Sicherung: %1$s</string>
+    <string name="cloud_status_no_backup_yet">Noch keine Sicherung</string>
+
+    <string name="cloud_error_network">Keine Verbindung zum Dienst</string>
+    <string name="cloud_error_auth_required">Zugriff abgelaufen oder widerrufen – trenne die Verbindung und verbinde dich erneut</string>
+    <string name="cloud_error_not_configured">Dieser Dienst ist in dieser Version nicht richtig eingerichtet</string>
+    <string name="cloud_error_google_not_configured">Die Google-Autorisierung ist für diese Version nicht eingerichtet (Android-OAuth-Client, Paketname oder SHA-1-Fingerabdruck, oder Drive-API nicht aktiviert)</string>
+    <string name="cloud_error_storage_full">Cloud-Speicher ist voll</string>
+    <string name="cloud_error_server">Dienst vorübergehend nicht verfügbar</string>
+    <string name="cloud_error_unknown">Vorgang fehlgeschlagen</string>
+
+    <string name="cloud_backup_now">Jetzt sichern</string>
+    <string name="cloud_backup_now_desc">Eine Kopie des Tagebuchs zu jedem verbundenen Dienst hochladen</string>
+    <string name="cloud_backup_now_needs_connection">Verbinde zuerst einen Dienst</string>
+    <string name="cloud_backup_running">Wird gesichert…</string>
+    <string name="cloud_backup_done">Sicherung abgeschlossen</string>
+    <string name="cloud_backup_failed_for">Sicherung fehlgeschlagen für: %1$s</string>
+
+    <string name="cloud_last_backup">Letzte Cloud-Sicherung</string>
+    <string name="cloud_last_backup_never">Nie</string>
+
+    <string name="cloud_auto_title">Automatische Sicherung</string>
+    <string name="cloud_auto_off">Aus</string>
+    <string name="cloud_auto_daily">Täglich</string>
+    <string name="cloud_auto_weekly">Wöchentlich</string>
+    <string name="cloud_auto_wifi_only">Nur über WLAN</string>
+    <string name="cloud_auto_wifi_only_desc">Vor dem Sichern auf ein Netzwerk ohne Volumenbegrenzung warten</string>
+    <string name="cloud_auto_target">Sichern auf %1$s</string>
+    <string name="cloud_auto_no_target">Verbinde einen Dienst, um automatische Sicherungen zu aktivieren</string>
+
+    <string name="cloud_disconnect_title">Verbindung zu %1$s trennen?</string>
+    <string name="cloud_disconnect_text">Die App sichert dort nicht mehr und vergisst dieses Konto. Die bereits gespeicherte Sicherungsdatei bleibt in deinem Speicher.</string>
+</resources>

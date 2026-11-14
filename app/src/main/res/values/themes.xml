@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.IBDJournal" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- AppCompat requis par AppCompatActivity (langue choisie dans l'app avant Android 13). -->
+    <style name="Theme.IBDJournal" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/background</item>
     </style>
 </resources>
