@@ -1,9 +1,7 @@
 package fr.ibdjournal.app.backup
 
-import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -41,8 +39,6 @@ data class CloudBackupUiState(
 /** One-shot UI actions that need an Activity. */
 sealed interface CloudBackupEvent {
     data class RequestGoogleConsent(val pendingIntent: PendingIntent) : CloudBackupEvent
-    data object StartDropboxAuthorization : CloudBackupEvent
-    data class OpenOneDriveAuthorization(val uri: Uri) : CloudBackupEvent
 }
 
 @HiltViewModel
@@ -73,31 +69,12 @@ class CloudBackupViewModel @Inject constructor(
             when (provider) {
                 CloudProvider.GOOGLE_DRIVE -> manager.beginGoogleConnect()
                     ?.let { eventChannel.send(CloudBackupEvent.RequestGoogleConsent(it)) }
-                CloudProvider.DROPBOX -> {
-                    manager.prepareDropboxConnect()
-                    eventChannel.send(CloudBackupEvent.StartDropboxAuthorization)
-                }
-                CloudProvider.ONEDRIVE -> manager.createOneDriveAuthorizationUri()
-                    ?.let { eventChannel.send(CloudBackupEvent.OpenOneDriveAuthorization(it)) }
             }
         }
     }
 
     fun onGoogleConsentResult(resultCode: Int, data: Intent?) {
         viewModelScope.launch { manager.completeGoogleConnect(resultCode, data) }
-    }
-
-    fun launchDropboxAuthorization(activity: Activity) {
-        manager.launchDropboxAuthorization(activity)
-    }
-
-    fun onAuthorizationLaunchFailed(provider: CloudProvider) {
-        manager.reportAuthorizationLaunchFailure(provider)
-    }
-
-    /** Dropbox hands its credential back through a static result read on resume. */
-    fun onResume() {
-        viewModelScope.launch { manager.completeDropboxConnectIfPending() }
     }
 
     fun disconnect(provider: CloudProvider) {

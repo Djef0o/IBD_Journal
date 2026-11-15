@@ -25,6 +25,9 @@ class ReminderRescheduleReceiver : BroadcastReceiver() {
     @Inject
     lateinit var notificationHelper: NotificationHelper
 
+    @Inject
+    lateinit var treatmentReminders: TreatmentReminderScheduler
+
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action ?: return
         if (action !in HANDLED_ACTIONS) return
@@ -32,9 +35,8 @@ class ReminderRescheduleReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             try {
-                notificationHelper.rescheduleFromPreferences(appPrefs)
-            } catch (_: Throwable) {
-                // Rien de plus à faire : la prochaine ouverture de l'app replanifiera.
+                runCatching { notificationHelper.rescheduleFromPreferences(appPrefs) }
+                runCatching { treatmentReminders.rescheduleAll() }
             } finally {
                 pendingResult.finish()
             }

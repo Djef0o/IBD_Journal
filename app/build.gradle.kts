@@ -135,34 +135,4 @@ dependencies {
     implementation(libs.play.services.auth)
     // Task.await() for the Play services Tasks returned by AuthorizationClient.
     implementation(libs.kotlinx.coroutines.play.services)
-    // Cloud backup — Dropbox: official SDK; the Android artifact provides the PKCE AuthActivity
-    // (db-<APP_KEY> redirect scheme), the core artifact the API v2 client.
-    implementation(libs.dropbox.core.sdk)
-    implementation(libs.dropbox.android.sdk)
-    // Cloud backup — OneDrive: Custom Tab for the Microsoft sign-in (authorization code + PKCE).
-    implementation(libs.androidx.browser)
-}
-
-// ---- Cloud backup: per-build OAuth identifiers ------------------------------------------
-// Read from the git-ignored local.properties:
-//   dropbox.appKey=<"App key" from the Dropbox App Console>
-//   onedrive.clientId=<"Application (client) ID" from the Azure app registration>
-// A missing/blank value still builds: that provider then shows "not configured" in settings.
-val cloudBackupProperties = Properties().apply {
-    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
-}
-val dropboxAppKey: String = cloudBackupProperties.getProperty("dropbox.appKey").orEmpty().trim()
-val oneDriveClientId: String = cloudBackupProperties.getProperty("onedrive.clientId").orEmpty().trim()
-
-android {
-    buildFeatures {
-        buildConfig = true
-    }
-    defaultConfig {
-        buildConfigField("String", "DROPBOX_APP_KEY", "\"$dropboxAppKey\"")
-        buildConfigField("String", "ONEDRIVE_CLIENT_ID", "\"$oneDriveClientId\"")
-        // Scheme db-<APP_KEY> of Dropbox's AuthActivity (placeholder keeps the manifest valid
-        // when the key is absent; the app never starts the Dropbox flow in that case).
-        manifestPlaceholders["dropboxAppKey"] = dropboxAppKey.ifEmpty { "unconfigured" }
-    }
 }

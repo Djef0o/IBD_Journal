@@ -7,7 +7,6 @@
     <string name="cloud_cancel">Abbrechen</string>
     <string name="cloud_change">Ändern</string>
 
-    <string name="cloud_status_not_configured">In dieser Version nicht eingerichtet</string>
     <string name="cloud_status_disconnected">Nicht verbunden</string>
     <string name="cloud_status_connecting">Verbindung wird hergestellt…</string>
     <string name="cloud_status_connected">Verbunden</string>
@@ -17,7 +16,6 @@
 
     <string name="cloud_error_network">Keine Verbindung zum Dienst</string>
     <string name="cloud_error_auth_required">Zugriff abgelaufen oder widerrufen – trenne die Verbindung und verbinde dich erneut</string>
-    <string name="cloud_error_not_configured">Dieser Dienst ist in dieser Version nicht richtig eingerichtet</string>
     <string name="cloud_error_google_not_configured">Die Google-Autorisierung ist für diese Version nicht eingerichtet (Android-OAuth-Client, Paketname oder SHA-1-Fingerabdruck, oder Drive-API nicht aktiviert)</string>
     <string name="cloud_error_storage_full">Cloud-Speicher ist voll</string>
     <string name="cloud_error_server">Dienst vorübergehend nicht verfügbar</string>

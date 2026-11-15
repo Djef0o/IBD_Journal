@@ -9,6 +9,7 @@ import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.notification.NotificationHelper
+import fr.ibdjournal.app.notification.TreatmentReminderScheduler
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,6 +24,9 @@ class IBDJournalApp : Application(), Configuration.Provider {
 
     @Inject
     lateinit var appPrefs: AppPrefs
+
+    @Inject
+    lateinit var treatmentReminders: TreatmentReminderScheduler
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -40,6 +44,9 @@ class IBDJournalApp : Application(), Configuration.Provider {
         // Cela supprime aussi l'ancien rappel WorkManager qui notifiait à l'ancien horaire.
         applicationScope.launch {
             notificationHelper.rescheduleFromPreferences(appPrefs)
+        }
+        applicationScope.launch {
+            treatmentReminders.rescheduleAll()
         }
 
         // ImageLoader par défaut pour Coil 3 : chargement local + réseau (Open Food Facts).

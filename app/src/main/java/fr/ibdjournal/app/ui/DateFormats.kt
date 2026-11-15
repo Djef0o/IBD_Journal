@@ -22,6 +22,7 @@ object DateFormats {
     private class Formatters(val locale: Locale) {
         val monthYear = skeleton("MMMMyyyy", FormatStyle.LONG)
         val dayMonth = skeleton("dMMMM", FormatStyle.LONG)
+        val dayMonthYear = skeleton("dMMMMyyyy", FormatStyle.LONG)
         val fullDate = skeleton("EEEEdMMMMyyyy", FormatStyle.FULL)
         val weekdayDayMonth = skeleton("EEEEdMMMM", FormatStyle.FULL)
         // Heure courte localisée : 24 h en français, « 8:00 PM » en anglais américain…
@@ -57,6 +58,9 @@ object DateFormats {
     fun fullDate(date: LocalDate): String = capitalize(date.format(formatters.fullDate))
 
     fun weekdayDayMonth(date: LocalDate): String = capitalize(date.format(formatters.weekdayDayMonth))
+
+    /** « 12 mars 1985 » / « March 12, 1985 ». */
+    fun dayMonthYear(date: LocalDate): String = date.format(formatters.dayMonthYear)
 
     fun time(epochMillis: Long): String =
         Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault()).format(formatters.time)

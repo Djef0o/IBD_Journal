@@ -5,9 +5,15 @@ import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
+import fr.ibdjournal.app.data.model.Checkup
+import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
+import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Product
+import fr.ibdjournal.app.data.model.Profile
+import fr.ibdjournal.app.data.model.ReminderSchedule
+import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
 import java.time.LocalDate
 
@@ -133,4 +139,103 @@ fun Product.toProductEntity() = ProductEntity(
     nutriscore = nutriscore,
     imageUrl = imageUrl,
     ingredients = ingredients,
+)
+
+/** Une seule ligne (id = [ProfileEntity.SINGLE_ID]) : l'app ne gère qu'un profil. */
+@Entity(tableName = "profile")
+data class ProfileEntity(
+    @PrimaryKey val id: Int = SINGLE_ID,
+    val firstName: String,
+    val lastName: String,
+    val birthDateEpochDay: Long?,
+) {
+    companion object {
+        const val SINGLE_ID = 1
+    }
+}
+
+/** Colonnes de planification partagées par traitements et contrôles. */
+data class ScheduleColumns(
+    val reminderEnabled: Boolean,
+    val startDateEpochDay: Long,
+    val hour: Int,
+    val minute: Int,
+    val repeatEvery: Int,
+    val repeatUnit: RepeatUnit,
+)
+
+@Entity(tableName = "medications")
+data class MedicationEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val dosage: String,
+    @Embedded val schedule: ScheduleColumns,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+@Entity(tableName = "checkups")
+data class CheckupEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val type: CheckupType,
+    val note: String,
+    @Embedded val schedule: ScheduleColumns,
+    val createdAt: Long = System.currentTimeMillis(),
+)
+
+fun ProfileEntity.toProfile() = Profile(
+    firstName = firstName,
+    lastName = lastName,
+    birthDate = birthDateEpochDay?.let(LocalDate::ofEpochDay),
+)
+
+fun Profile.toProfileEntity() = ProfileEntity(
+    firstName = firstName,
+    lastName = lastName,
+    birthDateEpochDay = birthDate?.toEpochDay(),
+)
+
+fun ScheduleColumns.toSchedule() = ReminderSchedule(
+    enabled = reminderEnabled,
+    startDate = LocalDate.ofEpochDay(startDateEpochDay),
+    hour = hour,
+    minute = minute,
+    repeatEvery = repeatEvery,
+    repeatUnit = repeatUnit,
+)
+
+fun ReminderSchedule.toColumns() = ScheduleColumns(
+    reminderEnabled = enabled,
+    startDateEpochDay = startDate.toEpochDay(),
+    hour = hour,
+    minute = minute,
+    repeatEvery = repeatEvery,
+    repeatUnit = repeatUnit,
+)
+
+fun MedicationEntity.toMedication() = Medication(
+    id = id,
+    name = name,
+    dosage = dosage,
+    schedule = schedule.toSchedule(),
+)
+
+fun Medication.toMedicationEntity() = MedicationEntity(
+    id = id,
+    name = name,
+    dosage = dosage,
+    schedule = schedule.toColumns(),
+)
+
+fun CheckupEntity.toCheckup() = Checkup(
+    id = id,
+    type = type,
+    note = note,
+    schedule = schedule.toSchedule(),
+)
+
+fun Checkup.toCheckupEntity() = CheckupEntity(
+    id = id,
+    type = type,
+    note = note,
+    schedule = schedule.toColumns(),
 )

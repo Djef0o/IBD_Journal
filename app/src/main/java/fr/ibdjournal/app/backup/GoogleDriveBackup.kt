@@ -41,7 +41,6 @@ class GoogleDriveBackup @Inject constructor(
 ) : CloudBackupTarget {
 
     override val provider = CloudProvider.GOOGLE_DRIVE
-    override val isConfigured = true
 
     private val authorizationClient = Identity.getAuthorizationClient(context)
     private val http = okHttpClient.forUploads()
@@ -63,14 +62,19 @@ class GoogleDriveBackup @Inject constructor(
         return ConnectStep.Connected
     }
 
-    /** Completes authorization with the data returned by the consent screen (RESULT_OK). */
-    suspend fun completeConnect(data: Intent?) {
+    /**
+     * Completes authorization with the data returned by the consent screen.
+     * @return false if the user cancelled.
+     */
+    suspend fun completeConnect(data: Intent?): Boolean {
         val result = try {
             authorizationClient.getAuthorizationResultFromIntent(data)
         } catch (e: ApiException) {
+            if (e.statusCode == CommonStatusCodes.CANCELED) return false
             throw e.toCloudException()
         }
         finishConnect(result)
+        return true
     }
 
     override suspend fun upload(content: ByteArray) {
@@ -108,7 +112,7 @@ class GoogleDriveBackup @Inject constructor(
             ?: throw CloudBackupException(CloudError.AUTH_REQUIRED, "No access token granted")
         // Also proves that the Drive API is enabled for the Cloud project.
         val email = fetchAccountEmail(token)
-        store.setConnected(provider, accountLabel = email, refreshToken = null)
+        store.setConnected(provider, accountLabel = email)
     }
 
     /** Silent authorization for the connected account; fails if user interaction is needed. */
@@ -198,8 +202,10 @@ class GoogleDriveBackup @Inject constructor(
 
     private fun ApiException.toCloudException(): CloudBackupException {
         val error = when (statusCode) {
-            // Missing/mismatching Android OAuth client (package name or SHA-1).
-            CommonStatusCodes.DEVELOPER_ERROR -> CloudError.NOT_CONFIGURED
+            // Missing/mismatching Android OAuth client (package name or SHA-1). The consent
+            // screen reports UNREGISTERED_ON_API_CONSOLE as INTERNAL_ERROR.
+            CommonStatusCodes.DEVELOPER_ERROR, CommonStatusCodes.INTERNAL_ERROR ->
+                CloudError.NOT_CONFIGURED
             CommonStatusCodes.NETWORK_ERROR, CommonStatusCodes.TIMEOUT -> CloudError.NETWORK
             CommonStatusCodes.SIGN_IN_REQUIRED, CommonStatusCodes.RESOLUTION_REQUIRED ->
                 CloudError.AUTH_REQUIRED

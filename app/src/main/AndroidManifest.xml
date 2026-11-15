@@ -72,49 +72,6 @@
                 android:name="autoStoreLocales"
                 android:value="true" />
         </service>
-
-        <!-- Sauvegarde cloud — Dropbox : reçoit la redirection OAuth (PKCE) du SDK officiel sur
-             le schéma db-<APP_KEY> (clé lue dans local.properties, voir app/build.gradle.kts). -->
-        <activity
-            android:name="com.dropbox.core.android.AuthActivity"
-            android:configChanges="orientation|keyboard"
-            android:exported="true"
-            android:launchMode="singleTask">
-            <intent-filter>
-                <data android:scheme="db-${dropboxAppKey}" />
-
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.BROWSABLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-            <!-- Requis par le SDK Dropbox (authentification via l'app Dropbox, targetSdk 33+). -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
-
-        <!-- Sauvegarde cloud — OneDrive : redirection OAuth <applicationId>://onedrive-auth
-             (URI à déclarer dans Azure, plateforme « Mobile and desktop applications »). -->
-        <activity
-            android:name=".backup.OneDriveAuthRedirectActivity"
-            android:excludeFromRecents="true"
-            android:exported="true"
-            android:noHistory="true"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-
-                <category android:name="android.intent.category.BROWSABLE" />
-                <category android:name="android.intent.category.DEFAULT" />
-
-                <data
-                    android:host="onedrive-auth"
-                    android:scheme="${applicationId}" />
-            </intent-filter>
-        </activity>
     </application>
 
 </manifest>

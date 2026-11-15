@@ -3,15 +3,12 @@
     <string name="cloud_backup_title">Cloud backup</string>
 
     <string name="cloud_provider_google_drive" translatable="false">Google Drive</string>
-    <string name="cloud_provider_dropbox" translatable="false">Dropbox</string>
-    <string name="cloud_provider_onedrive" translatable="false">OneDrive</string>
 
     <string name="cloud_connect">Connect</string>
     <string name="cloud_disconnect">Disconnect</string>
     <string name="cloud_cancel">Cancel</string>
     <string name="cloud_change">Change</string>
 
-    <string name="cloud_status_not_configured">Not configured in this build</string>
     <string name="cloud_status_disconnected">Not connected</string>
     <string name="cloud_status_connecting">Connecting…</string>
     <string name="cloud_status_connected">Connected</string>
@@ -21,7 +18,6 @@
 
     <string name="cloud_error_network">No connection to the service</string>
     <string name="cloud_error_auth_required">Access expired or revoked — disconnect and connect again</string>
-    <string name="cloud_error_not_configured">This service is not set up correctly in this build</string>
     <string name="cloud_error_google_not_configured">Google authorization is not set up for this build (Android OAuth client, package name or SHA-1 fingerprint, or Drive API not enabled)</string>
     <string name="cloud_error_storage_full">Cloud storage is full</string>
     <string name="cloud_error_server">Service temporarily unavailable</string>

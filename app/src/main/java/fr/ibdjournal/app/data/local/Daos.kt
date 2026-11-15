@@ -66,3 +66,66 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(product: ProductEntity)
 }
+
+@Dao
+interface ProfileDao {
+
+    @Query("SELECT * FROM profile WHERE id = ${ProfileEntity.SINGLE_ID}")
+    fun observe(): Flow<ProfileEntity?>
+
+    @Query("SELECT * FROM profile WHERE id = ${ProfileEntity.SINGLE_ID}")
+    suspend fun get(): ProfileEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(profile: ProfileEntity)
+}
+
+@Dao
+interface MedicationDao {
+
+    @Query("SELECT * FROM medications ORDER BY name COLLATE NOCASE, createdAt")
+    fun observeAll(): Flow<List<MedicationEntity>>
+
+    @Query("SELECT * FROM medications")
+    suspend fun getAll(): List<MedicationEntity>
+
+    @Query("SELECT * FROM medications WHERE id = :id")
+    suspend fun get(id: Long): MedicationEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(medication: MedicationEntity): Long
+
+    @Query("DELETE FROM medications WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Insert
+    suspend fun insertAll(medications: List<MedicationEntity>)
+
+    @Query("DELETE FROM medications")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface CheckupDao {
+
+    @Query("SELECT * FROM checkups ORDER BY startDateEpochDay, hour, minute")
+    fun observeAll(): Flow<List<CheckupEntity>>
+
+    @Query("SELECT * FROM checkups")
+    suspend fun getAll(): List<CheckupEntity>
+
+    @Query("SELECT * FROM checkups WHERE id = :id")
+    suspend fun get(id: Long): CheckupEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(checkup: CheckupEntity): Long
+
+    @Query("DELETE FROM checkups WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Insert
+    suspend fun insertAll(checkups: List<CheckupEntity>)
+
+    @Query("DELETE FROM checkups")
+    suspend fun deleteAll()
+}

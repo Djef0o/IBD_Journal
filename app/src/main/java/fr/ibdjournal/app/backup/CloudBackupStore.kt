@@ -13,16 +13,14 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.IOException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
 
 private val Context.cloudBackupDataStore by preferencesDataStore(name = "cloud_backup")
 
-/** What is persisted for one provider; secrets stay inside [CloudBackupStore]. */
+/** What is persisted for one provider. */
 data class StoredProvider(
     val connected: Boolean = false,
     val accountLabel: String? = null,
@@ -30,14 +28,10 @@ data class StoredProvider(
     val lastError: CloudError? = null,
 )
 
-/**
- * Dedicated DataStore for cloud backup: connection state, encrypted refresh tokens,
- * pending OAuth requests and automatic-backup settings.
- */
+/** Dedicated DataStore for cloud backup: connection state and automatic-backup settings. */
 @Singleton
 class CloudBackupStore @Inject constructor(
     @ApplicationContext context: Context,
-    private val cipher: TokenCipher,
 ) {
     private val dataStore = context.cloudBackupDataStore
 
@@ -49,15 +43,11 @@ class CloudBackupStore @Inject constructor(
     private fun accountKey(p: CloudProvider) = stringPreferencesKey("${p.key}_account")
     private fun lastBackupKey(p: CloudProvider) = longPreferencesKey("${p.key}_last_backup")
     private fun lastErrorKey(p: CloudProvider) = stringPreferencesKey("${p.key}_last_error")
-    private fun refreshTokenKey(p: CloudProvider) = stringPreferencesKey("${p.key}_refresh_token")
 
     private val googleFileIdKey = stringPreferencesKey("google_file_id")
     private val frequencyKey = stringPreferencesKey("auto_frequency")
     private val wifiOnlyKey = booleanPreferencesKey("auto_wifi_only")
     private val excludedTargetsKey = stringSetPreferencesKey("auto_excluded_targets")
-    private val dropboxAuthPendingKey = booleanPreferencesKey("dropbox_auth_pending")
-    private val oneDrivePendingStateKey = stringPreferencesKey("onedrive_pending_state")
-    private val oneDrivePendingVerifierKey = stringPreferencesKey("onedrive_pending_verifier")
 
     val providers: Flow<Map<CloudProvider, StoredProvider>> = data.map { prefs ->
         CloudProvider.entries.associateWith { p ->
@@ -85,39 +75,25 @@ class CloudBackupStore @Inject constructor(
 
     suspend fun provider(p: CloudProvider): StoredProvider = providers.first().getValue(p)
 
-    /** Marks [p] connected; [refreshToken] (if any) is stored encrypted. Clears the last error. */
-    suspend fun setConnected(p: CloudProvider, accountLabel: String?, refreshToken: String?) {
-        val encrypted = refreshToken?.let { encrypt(it) }
+    /** Marks [p] connected and clears the last error. */
+    suspend fun setConnected(p: CloudProvider, accountLabel: String?) {
         dataStore.edit { prefs ->
             prefs[connectedKey(p)] = true
             if (accountLabel != null) prefs[accountKey(p)] = accountLabel else prefs.remove(accountKey(p))
-            if (encrypted != null) prefs[refreshTokenKey(p)] = encrypted else prefs.remove(refreshTokenKey(p))
             prefs.remove(lastErrorKey(p))
         }
     }
 
-    /** Forgets everything about [p]: tokens, account, history, and its automatic-backup opt-out. */
+    /** Forgets everything about [p]: account, history, and its automatic-backup opt-out. */
     suspend fun clearProvider(p: CloudProvider) {
         dataStore.edit { prefs ->
             prefs.remove(connectedKey(p))
             prefs.remove(accountKey(p))
             prefs.remove(lastBackupKey(p))
             prefs.remove(lastErrorKey(p))
-            prefs.remove(refreshTokenKey(p))
             if (p == CloudProvider.GOOGLE_DRIVE) prefs.remove(googleFileIdKey)
             prefs[excludedTargetsKey] = prefs[excludedTargetsKey].orEmpty() - p.key
         }
-    }
-
-    /** Decrypted refresh token, or null if absent or no longer decryptable. */
-    suspend fun refreshToken(p: CloudProvider): String? {
-        val encrypted = data.first()[refreshTokenKey(p)] ?: return null
-        return withContext(Dispatchers.IO) { cipher.decrypt(encrypted) }
-    }
-
-    suspend fun updateRefreshToken(p: CloudProvider, refreshToken: String) {
-        val encrypted = encrypt(refreshToken)
-        dataStore.edit { prefs -> prefs[refreshTokenKey(p)] = encrypted }
     }
 
     suspend fun recordSuccess(p: CloudProvider, at: Long) {
@@ -151,42 +127,4 @@ class CloudBackupStore @Inject constructor(
             prefs[excludedTargetsKey] = if (included) excluded - p.key else excluded + p.key
         }
     }
-
-    suspend fun setDropboxAuthPending(pending: Boolean) {
-        dataStore.edit { prefs -> prefs[dropboxAuthPendingKey] = pending }
-    }
-
-    suspend fun isDropboxAuthPending(): Boolean = data.first()[dropboxAuthPendingKey] ?: false
-
-    /** Remembers the `state` and PKCE verifier of the OneDrive request in flight (encrypted). */
-    suspend fun setOneDrivePending(state: String, codeVerifier: String) {
-        val encryptedState = encrypt(state)
-        val encryptedVerifier = encrypt(codeVerifier)
-        dataStore.edit { prefs ->
-            prefs[oneDrivePendingStateKey] = encryptedState
-            prefs[oneDrivePendingVerifierKey] = encryptedVerifier
-        }
-    }
-
-    /** Returns (state, verifier) of the pending OneDrive request and forgets it: single use. */
-    suspend fun takeOneDrivePending(): Pair<String, String>? {
-        var encryptedState: String? = null
-        var encryptedVerifier: String? = null
-        dataStore.edit { prefs ->
-            encryptedState = prefs[oneDrivePendingStateKey]
-            encryptedVerifier = prefs[oneDrivePendingVerifierKey]
-            prefs.remove(oneDrivePendingStateKey)
-            prefs.remove(oneDrivePendingVerifierKey)
-        }
-        val storedState = encryptedState ?: return null
-        val storedVerifier = encryptedVerifier ?: return null
-        return withContext(Dispatchers.IO) {
-            val state = cipher.decrypt(storedState)
-            val verifier = cipher.decrypt(storedVerifier)
-            if (state != null && verifier != null) state to verifier else null
-        }
-    }
-
-    private suspend fun encrypt(value: String): String =
-        withContext(Dispatchers.IO) { cipher.encrypt(value) }
 }

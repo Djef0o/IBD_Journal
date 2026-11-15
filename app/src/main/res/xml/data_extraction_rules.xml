@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+. Les jetons cloud sont chiffrés avec une clé du Keystore, qui ne suit pas
-     la sauvegarde : restaurés sur un autre téléphone, ils seraient illisibles. On les exclut,
-     l'utilisateur reconnecte simplement ses comptes. -->
+<!-- Android 12+. L'état de connexion cloud dépend de l'autorisation Google accordée sur cet
+     appareil : restauré ailleurs, il serait trompeur. On l'exclut, l'utilisateur reconnecte
+     simplement son compte. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="file" path="datastore/cloud_backup.preferences_pb" />

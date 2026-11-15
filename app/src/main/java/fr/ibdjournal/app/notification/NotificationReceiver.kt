@@ -32,6 +32,9 @@ class NotificationReceiver : BroadcastReceiver() {
     @Inject
     lateinit var notificationHelper: NotificationHelper
 
+    @Inject
+    lateinit var treatmentReminders: TreatmentReminderScheduler
+
     override fun onReceive(context: Context, intent: Intent) {
         val pendingResult = goAsync()
 
@@ -40,6 +43,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_RECORD_STOOL -> recordStool(context, intent)
                     NotificationHelper.ACTION_ALARM_REMINDER -> onReminderAlarm(context, intent)
+                    TreatmentReminderScheduler.ACTION_TREATMENT_REMINDER -> treatmentReminders.onAlarm(intent)
                 }
             } catch (_: Throwable) {
                 // Ne jamais laisser une erreur (base, préférences…) casser la chaîne du rappel.

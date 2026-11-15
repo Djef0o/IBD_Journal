@@ -7,7 +7,6 @@
     <string name="cloud_cancel">Cancelar</string>
     <string name="cloud_change">Cambiar</string>
 
-    <string name="cloud_status_not_configured">No configurado en esta versión</string>
     <string name="cloud_status_disconnected">No conectado</string>
     <string name="cloud_status_connecting">Conectando…</string>
     <string name="cloud_status_connected">Conectado</string>
@@ -17,7 +16,6 @@
 
     <string name="cloud_error_network">Sin conexión con el servicio</string>
     <string name="cloud_error_auth_required">Acceso caducado o revocado: desconecta y vuelve a conectar</string>
-    <string name="cloud_error_not_configured">Este servicio no está bien configurado en esta versión</string>
     <string name="cloud_error_google_not_configured">La autorización de Google no está configurada para esta versión (cliente OAuth de Android, nombre de paquete o huella SHA-1, o API de Drive no activada)</string>
     <string name="cloud_error_storage_full">El almacenamiento en la nube está lleno</string>
     <string name="cloud_error_server">Servicio no disponible temporalmente</string>

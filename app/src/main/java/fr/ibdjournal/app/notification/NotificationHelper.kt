@@ -60,8 +60,14 @@ class NotificationHelper @Inject constructor(
         val pendingIntent = alarmPendingIntent(hour, minute)
         alarmManager.cancel(pendingIntent)
 
-        val triggerAtMillis = nextOccurrenceMillis(hour, minute)
+        setReminderAlarm(nextOccurrenceMillis(hour, minute), pendingIntent)
+    }
 
+    /**
+     * Pose une alarme de rappel : exacte et autorisée en Doze si possible, sinon inexacte.
+     * Partagée par le rappel quotidien et les rappels de traitements et de contrôles.
+     */
+    fun setReminderAlarm(triggerAtMillis: Long, pendingIntent: PendingIntent) {
         if (canScheduleExactAlarms()) {
             try {
                 alarmManager.setExactAndAllowWhileIdle(
@@ -81,6 +87,10 @@ class NotificationHelper @Inject constructor(
             triggerAtMillis,
             pendingIntent,
         )
+    }
+
+    fun cancelAlarm(pendingIntent: PendingIntent) {
+        alarmManager.cancel(pendingIntent)
     }
 
     fun cancelDailyReminder() {

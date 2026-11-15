@@ -12,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -39,6 +40,7 @@ import fr.ibdjournal.app.ui.day.DayScreen
 import fr.ibdjournal.app.ui.history.HistoryScreen
 import fr.ibdjournal.app.ui.home.HomeScreen
 import fr.ibdjournal.app.ui.onboarding.OnboardingScreen
+import fr.ibdjournal.app.ui.profile.ProfileScreen
 import fr.ibdjournal.app.ui.settings.SettingsScreen
 import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.ui.calendar.CalendarViewModel
@@ -94,6 +96,7 @@ private val tabs = listOf(
     Tab("home", R.string.nav_home, Icons.Outlined.Home),
     Tab("history", R.string.nav_history, Icons.Outlined.CalendarMonth),
     Tab("analysis", R.string.nav_analysis, Icons.Outlined.BarChart),
+    Tab("profile", R.string.nav_profile, Icons.Outlined.Person),
     Tab("settings", R.string.nav_settings, Icons.Outlined.Settings),
 )
 
@@ -151,6 +154,7 @@ private fun MainScaffold() {
                 )
             }
             composable("analysis") { AnalysisScreen() }
+            composable("profile") { ProfileScreen() }
             composable("settings") { SettingsScreen(onBack = null) }
             composable("day/{${CalendarViewModel.ARG_DATE}}") {
                 DayScreen(onBack = { navController.popBackStack() })

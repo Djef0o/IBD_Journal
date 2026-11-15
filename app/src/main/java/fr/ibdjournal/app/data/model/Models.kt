@@ -63,11 +63,17 @@ data class Product(
     val ingredients: String?,
 )
 
-/** Objet racine pour l'export/import JSON. */
+/**
+ * Objet racine pour l'export/import JSON. Profil, traitements et contrôles sont absents
+ * (null) des sauvegardes antérieures : l'import conserve alors les données actuelles.
+ */
 @Serializable
 data class BackupData(
     val meals: List<Meal>,
-    val stools: List<Stool>
+    val stools: List<Stool>,
+    val profile: Profile? = null,
+    val medications: List<Medication>? = null,
+    val checkups: List<Checkup>? = null,
 )
 
 /** Résultat d'une recherche de produit par code-barres. */

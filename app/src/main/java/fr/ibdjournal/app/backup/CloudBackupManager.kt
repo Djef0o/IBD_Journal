@@ -3,7 +3,6 @@ package fr.ibdjournal.app.backup
 import android.app.Activity
 import android.app.PendingIntent
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
 import fr.ibdjournal.app.data.DataBackupManager
 import java.io.ByteArrayOutputStream
@@ -22,7 +21,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -36,15 +34,13 @@ class CloudBackupManager @Inject constructor(
     private val dataBackupManager: DataBackupManager,
     private val scheduler: CloudBackupScheduler,
     private val googleDrive: GoogleDriveBackup,
-    private val dropbox: DropboxBackup,
-    private val oneDrive: OneDriveBackup,
 ) {
     /** Outlives screens: an upload or OAuth exchange must not die with a ViewModel. */
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val backupMutex = Mutex()
 
     private val targets: Map<CloudProvider, CloudBackupTarget> =
-        listOf(googleDrive, dropbox, oneDrive).associateBy { it.provider }
+        listOf(googleDrive).associateBy { it.provider }
 
     private val connecting = MutableStateFlow<Set<CloudProvider>>(emptySet())
     private val backingUp = MutableStateFlow(false)
@@ -64,7 +60,6 @@ class CloudBackupManager @Inject constructor(
             ProviderState(
                 provider = p,
                 connection = when {
-                    !target(p).isConfigured -> ProviderConnection.NotConfigured
                     p in inProgress -> ProviderConnection.Connecting
                     state.connected -> ProviderConnection.Connected(state.accountLabel)
                     else -> ProviderConnection.Disconnected
@@ -80,11 +75,7 @@ class CloudBackupManager @Inject constructor(
     fun initialProviderStates(): List<ProviderState> = CloudProvider.entries.map { p ->
         ProviderState(
             provider = p,
-            connection = if (target(p).isConfigured) {
-                ProviderConnection.Disconnected
-            } else {
-                ProviderConnection.NotConfigured
-            },
+            connection = ProviderConnection.Disconnected,
             lastBackupAt = null,
             lastError = null,
             autoBackupTarget = false,
@@ -105,58 +96,12 @@ class CloudBackupManager @Inject constructor(
     }
 
     suspend fun completeGoogleConnect(resultCode: Int, data: Intent?) {
-        if (resultCode != Activity.RESULT_OK) return // The user backed out.
+        // No data at all: the user backed out. Otherwise the intent carries the grant or the
+        // error status (e.g. no OAuth client for this package/SHA-1), even on RESULT_CANCELED.
+        if (resultCode != Activity.RESULT_OK && data == null) return
         connectStep(CloudProvider.GOOGLE_DRIVE) {
-            googleDrive.completeConnect(data)
-            reschedule()
+            if (googleDrive.completeConnect(data)) reschedule()
         }
-    }
-
-    // ---- Dropbox -----------------------------------------------------------------------
-
-    suspend fun prepareDropboxConnect() {
-        dropbox.markAuthorizationPending()
-    }
-
-    fun launchDropboxAuthorization(activity: Activity) {
-        try {
-            dropbox.launchAuthorization(activity)
-        } catch (e: IllegalStateException) {
-            // Thrown by the SDK when the db-<APP_KEY> AuthActivity entry doesn't match.
-            Log.w(TAG, "Dropbox authorization could not start: ${e.message}")
-            scope.launch {
-                store.setDropboxAuthPending(false)
-                store.recordError(CloudProvider.DROPBOX, CloudError.NOT_CONFIGURED)
-            }
-        }
-    }
-
-    /** To call whenever the settings screen resumes (AuthActivity has then finished). */
-    suspend fun completeDropboxConnectIfPending() {
-        if (!dropbox.isConfigured || !store.isDropboxAuthPending()) return
-        connectStep(CloudProvider.DROPBOX) {
-            if (dropbox.completeAuthorizationIfPending()) reschedule()
-        }
-    }
-
-    // ---- OneDrive ----------------------------------------------------------------------
-
-    suspend fun createOneDriveAuthorizationUri(): Uri? =
-        connectStep(CloudProvider.ONEDRIVE) { oneDrive.createAuthorizationUri() }
-
-    fun onOneDriveRedirect(redirect: Uri) {
-        scope.launch {
-            connectStep(CloudProvider.ONEDRIVE) {
-                if (oneDrive.completeAuthorization(redirect)) reschedule()
-            }
-        }
-    }
-
-    // ---- Common ------------------------------------------------------------------------
-
-    /** The browser / provider app could not be opened at all. */
-    fun reportAuthorizationLaunchFailure(provider: CloudProvider) {
-        scope.launch { store.recordError(provider, CloudError.UNKNOWN) }
     }
 
     suspend fun disconnect(provider: CloudProvider) {
@@ -260,7 +205,7 @@ class CloudBackupManager @Inject constructor(
 
     private suspend fun connectedProviders(): List<CloudProvider> =
         store.providers.first()
-            .filter { (provider, state) -> state.connected && target(provider).isConfigured }
+            .filter { (_, state) -> state.connected }
             .keys
             .toList()
 

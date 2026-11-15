@@ -6,8 +6,6 @@ const val CLOUD_BACKUP_FILE_NAME = "IBD Journal backup.json"
 /** Cloud storages the diary can be backed up to. [key] is the stable persistence key. */
 enum class CloudProvider(val key: String) {
     GOOGLE_DRIVE("google"),
-    DROPBOX("dropbox"),
-    ONEDRIVE("onedrive"),
 }
 
 /**
@@ -52,8 +50,6 @@ data class AutoBackupSettings(
 )
 
 sealed interface ProviderConnection {
-    /** The OAuth client id / app key is missing from this build. */
-    data object NotConfigured : ProviderConnection
     data object Disconnected : ProviderConnection
     data object Connecting : ProviderConnection
     data class Connected(val accountLabel: String?) : ProviderConnection

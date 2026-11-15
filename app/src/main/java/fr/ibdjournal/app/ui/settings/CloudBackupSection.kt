@@ -1,14 +1,9 @@
 package fr.ibdjournal.app.ui.settings
 
-import android.app.Activity
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.ContextWrapper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -21,9 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AddToDrive
-import androidx.compose.material.icons.outlined.CloudQueue
 import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.Inventory2
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Wifi
 import androidx.compose.material3.AlertDialog
@@ -36,7 +29,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,17 +36,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.backup.BackupFrequency
@@ -78,8 +65,6 @@ import java.time.format.FormatStyle
 fun CloudBackupSection(modifier: Modifier = Modifier) {
     val viewModel: CloudBackupViewModel = hiltViewModel()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    val context = LocalContext.current
-    val activity = remember(context) { context.findActivity() }
     val formatter = rememberDateTimeFormatter()
 
     var showFrequencyDialog by remember { mutableStateOf(false) }
@@ -91,38 +76,14 @@ fun CloudBackupSection(modifier: Modifier = Modifier) {
         viewModel.onGoogleConsentResult(result.resultCode, result.data)
     }
 
-    LaunchedEffect(viewModel, activity) {
+    LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 is CloudBackupEvent.RequestGoogleConsent -> googleConsentLauncher.launch(
                     IntentSenderRequest.Builder(event.pendingIntent).build()
                 )
-                CloudBackupEvent.StartDropboxAuthorization ->
-                    if (activity != null) {
-                        viewModel.launchDropboxAuthorization(activity)
-                    } else {
-                        viewModel.onAuthorizationLaunchFailed(CloudProvider.DROPBOX)
-                    }
-                is CloudBackupEvent.OpenOneDriveAuthorization -> try {
-                    CustomTabsIntent.Builder()
-                        .setShowTitle(true)
-                        .build()
-                        .launchUrl(activity ?: context, event.uri)
-                } catch (_: ActivityNotFoundException) {
-                    viewModel.onAuthorizationLaunchFailed(CloudProvider.ONEDRIVE)
-                }
             }
         }
-    }
-
-    // Dropbox returns through its own Activity; its credential is collected on resume.
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner, viewModel) {
-        val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_RESUME) viewModel.onResume()
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Column(modifier) {
@@ -288,22 +249,13 @@ private fun ProviderRow(
     onDisconnect: () -> Unit,
 ) {
     val connection = state.connection
-    val configured = connection !is ProviderConnection.NotConfigured
-    val disabledColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
 
     ListItem(
-        headlineContent = {
-            Text(
-                text = stringResource(state.provider.nameRes),
-                color = if (configured) Color.Unspecified else disabledColor,
-            )
-        },
+        headlineContent = { Text(stringResource(state.provider.nameRes)) },
         supportingContent = {
             Column {
                 Text(
-                    text = when (connection) {
-                        ProviderConnection.NotConfigured ->
-                            stringResource(R.string.cloud_status_not_configured)
+                    when (connection) {
                         ProviderConnection.Disconnected ->
                             stringResource(R.string.cloud_status_disconnected)
                         ProviderConnection.Connecting ->
@@ -311,8 +263,7 @@ private fun ProviderRow(
                         is ProviderConnection.Connected -> connection.accountLabel
                             ?.let { stringResource(R.string.cloud_status_connected_as, it) }
                             ?: stringResource(R.string.cloud_status_connected)
-                    },
-                    color = if (configured) Color.Unspecified else disabledColor,
+                    }
                 )
                 if (connection is ProviderConnection.Connected) {
                     Text(
@@ -323,34 +274,23 @@ private fun ProviderRow(
                             ?: stringResource(R.string.cloud_status_no_backup_yet)
                     )
                 }
-                val error = state.lastError
-                if (configured && error != null) {
+                state.lastError?.let { error ->
                     Text(
-                        text = stringResource(error.messageRes(state.provider)),
+                        text = stringResource(error.messageRes),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
             }
         },
-        leadingContent = {
-            if (configured) {
-                Icon(state.provider.icon, contentDescription = null)
-            } else {
-                Icon(state.provider.icon, contentDescription = null, tint = disabledColor)
-            }
-        },
-        trailingContent = if (!configured) {
-            null
-        } else {
-            {
-                when (connection) {
-                    is ProviderConnection.Connected -> TextButton(onClick = onDisconnect) {
-                        Text(stringResource(R.string.cloud_disconnect))
-                    }
-                    ProviderConnection.Connecting -> SmallProgress()
-                    else -> TextButton(onClick = onConnect) {
-                        Text(stringResource(R.string.cloud_connect))
-                    }
+        leadingContent = { Icon(state.provider.icon, contentDescription = null) },
+        trailingContent = {
+            when (connection) {
+                is ProviderConnection.Connected -> TextButton(onClick = onDisconnect) {
+                    Text(stringResource(R.string.cloud_disconnect))
+                }
+                ProviderConnection.Connecting -> SmallProgress()
+                ProviderConnection.Disconnected -> TextButton(onClick = onConnect) {
+                    Text(stringResource(R.string.cloud_connect))
                 }
             }
         },
@@ -416,15 +356,11 @@ private fun DateTimeFormatter.formatEpoch(epochMillis: Long): String =
 private val CloudProvider.nameRes: Int
     get() = when (this) {
         CloudProvider.GOOGLE_DRIVE -> R.string.cloud_provider_google_drive
-        CloudProvider.DROPBOX -> R.string.cloud_provider_dropbox
-        CloudProvider.ONEDRIVE -> R.string.cloud_provider_onedrive
     }
 
 private val CloudProvider.icon: ImageVector
     get() = when (this) {
         CloudProvider.GOOGLE_DRIVE -> Icons.Outlined.AddToDrive
-        CloudProvider.DROPBOX -> Icons.Outlined.Inventory2
-        CloudProvider.ONEDRIVE -> Icons.Outlined.CloudQueue
     }
 
 @get:StringRes
@@ -435,22 +371,13 @@ private val BackupFrequency.labelRes: Int
         BackupFrequency.WEEKLY -> R.string.cloud_auto_weekly
     }
 
-@StringRes
-private fun CloudError.messageRes(provider: CloudProvider): Int = when (this) {
-    CloudError.NETWORK -> R.string.cloud_error_network
-    CloudError.AUTH_REQUIRED -> R.string.cloud_error_auth_required
-    CloudError.NOT_CONFIGURED -> if (provider == CloudProvider.GOOGLE_DRIVE) {
-        R.string.cloud_error_google_not_configured
-    } else {
-        R.string.cloud_error_not_configured
+@get:StringRes
+private val CloudError.messageRes: Int
+    get() = when (this) {
+        CloudError.NETWORK -> R.string.cloud_error_network
+        CloudError.AUTH_REQUIRED -> R.string.cloud_error_auth_required
+        CloudError.NOT_CONFIGURED -> R.string.cloud_error_google_not_configured
+        CloudError.STORAGE_FULL -> R.string.cloud_error_storage_full
+        CloudError.SERVER -> R.string.cloud_error_server
+        CloudError.UNKNOWN -> R.string.cloud_error_unknown
     }
-    CloudError.STORAGE_FULL -> R.string.cloud_error_storage_full
-    CloudError.SERVER -> R.string.cloud_error_server
-    CloudError.UNKNOWN -> R.string.cloud_error_unknown
-}
-
-private tailrec fun Context.findActivity(): Activity? = when (this) {
-    is Activity -> this
-    is ContextWrapper -> baseContext.findActivity()
-    else -> null
-}
