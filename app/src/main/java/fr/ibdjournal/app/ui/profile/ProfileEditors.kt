@@ -485,24 +485,27 @@ fun repeatSummary(schedule: ReminderSchedule): String {
     }
 }
 
-/** Ligne d'état : périodicité et prochaine notification. */
+/**
+ * Ligne d'état : périodicité et prochaine échéance (l'icône de cloche indique si elle sera
+ * notifiée). Une échéance unique passée affiche simplement sa date.
+ */
 @Composable
 fun scheduleStatus(schedule: ReminderSchedule): String {
     val repeat = repeatSummary(schedule)
-    val reminder = when {
-        !schedule.enabled -> stringResource(R.string.reminder_off)
-        else -> schedule.nextOccurrence(LocalDateTime.now())?.let { next ->
+    val next = schedule.nextOccurrence(LocalDateTime.now())
+    val date = if (next == null) {
+        DateFormats.dayMonthYear(schedule.startDate)
+    } else {
+        stringResource(
+            R.string.schedule_next,
             stringResource(
-                R.string.schedule_next,
-                stringResource(
-                    R.string.date_at,
-                    DateFormats.weekdayDayMonth(next.toLocalDate()),
-                    DateFormats.time(next.hour, next.minute),
-                ),
-            )
-        } ?: stringResource(R.string.schedule_done)
+                R.string.date_at,
+                DateFormats.weekdayDayMonth(next.toLocalDate()),
+                DateFormats.time(next.hour, next.minute),
+            ),
+        )
     }
-    return "$repeat · $reminder"
+    return "$repeat · $date"
 }
 
 /** Le DatePicker travaille en millisecondes UTC à minuit. */

@@ -64,7 +64,6 @@
         <item quantity="other">Every %1$d months</item>
     </plurals>
     <string name="schedule_next">Next: %1$s</string>
-    <string name="schedule_done">No upcoming reminder</string>
     <string name="decrease">Decrease</string>
     <string name="increase">Increase</string>
 

@@ -68,7 +68,6 @@
         <item quantity="other">A cada %1$d meses</item>
     </plurals>
     <string name="schedule_next">Próximo: %1$s</string>
-    <string name="schedule_done">Nenhum lembrete pendente</string>
     <string name="decrease">Diminuir</string>
     <string name="increase">Aumentar</string>
 

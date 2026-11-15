@@ -68,7 +68,6 @@
         <item quantity="other">Ogni %1$d mesi</item>
     </plurals>
     <string name="schedule_next">Prossimo: %1$s</string>
-    <string name="schedule_done">Nessun promemoria in programma</string>
     <string name="decrease">Diminuisci</string>
     <string name="increase">Aumenta</string>
 

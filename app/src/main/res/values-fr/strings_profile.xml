@@ -64,7 +64,6 @@
         <item quantity="other">Tous les %1$d mois</item>
     </plurals>
     <string name="schedule_next">Prochain : %1$s</string>
-    <string name="schedule_done">Aucun rappel à venir</string>
     <string name="decrease">Diminuer</string>
     <string name="increase">Augmenter</string>
 

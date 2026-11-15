@@ -171,7 +171,6 @@ fun ProfileContent(
                     },
                     title = if (checkup.note.isBlank()) type else "$type · ${checkup.note}",
                     schedule = checkup.schedule,
-                    dateLine = DateFormats.dayMonthYear(checkup.schedule.startDate),
                     onClick = { editCheckup = Editing(checkup) },
                 )
             }
@@ -300,13 +299,9 @@ private fun ScheduledRow(
     title: String,
     schedule: ReminderSchedule,
     onClick: () -> Unit,
-    dateLine: String? = null,
 ) {
     ListItem(
         headlineContent = { Text(title) },
-        overlineContent = if (dateLine == null) null else {
-            { Text(dateLine) }
-        },
         supportingContent = { Text(scheduleStatus(schedule)) },
         leadingContent = { Icon(icon, contentDescription = null) },
         trailingContent = {
