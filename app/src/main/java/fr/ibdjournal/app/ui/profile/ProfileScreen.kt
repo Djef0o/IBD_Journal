@@ -62,8 +62,12 @@ import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.settings.settingsRowColors
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
-import java.time.LocalDate
-import java.time.Period
+import fr.ibdjournal.app.domain.today
+import fr.ibdjournal.app.ui.labelRes
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
+import kotlinx.datetime.yearsUntil
 
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
@@ -223,7 +227,7 @@ private fun IdentityCard(profile: Profile, onEdit: () -> Unit) {
                 )
                 Text(
                     text = profile.birthDate?.let { birthDate ->
-                        val age = Period.between(birthDate, LocalDate.now()).years
+                        val age = birthDate.yearsUntil(today())
                         stringResource(
                             R.string.profile_born_on,
                             DateFormats.dayMonthYear(birthDate),
@@ -326,10 +330,10 @@ private fun hasNotificationPermission(context: android.content.Context): Boolean
 @Preview(showBackground = true)
 @Composable
 private fun ProfilePreview() {
-    val today = LocalDate.now()
+    val today = today()
     IBDJournalTheme {
         ProfileContent(
-            profile = Profile("Camille", "Martin", LocalDate.of(1990, 4, 12)),
+            profile = Profile("Camille", "Martin", LocalDate(1990, 4, 12)),
             medications = listOf(
                 Medication(1, "Mesalazine", "2 g", ReminderSchedule(startDate = today)),
                 Medication(
@@ -338,7 +342,7 @@ private fun ProfilePreview() {
                 ),
             ),
             checkups = listOf(
-                Checkup(1, CheckupType.STOOL_TEST, "Calprotectine", ReminderSchedule(startDate = today.plusDays(10), repeatUnit = RepeatUnit.ONCE)),
+                Checkup(1, CheckupType.STOOL_TEST, "Calprotectine", ReminderSchedule(startDate = today.plus(10, DateTimeUnit.DAY), repeatUnit = RepeatUnit.ONCE)),
             ),
             onSaveProfile = {},
             onSaveMedication = {},

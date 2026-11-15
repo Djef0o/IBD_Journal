@@ -1,35 +1,25 @@
 package fr.ibdjournal.app.data.model
 
-import androidx.annotation.StringRes
-import fr.ibdjournal.app.R
-import kotlinx.serialization.KSerializer
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
+import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
-import java.time.LocalDate
 
-object LocalDateSerializer : KSerializer<LocalDate> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.toString())
-    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString())
-}
+/** Horodatage courant en millisecondes, disponible sur toutes les plateformes. */
+@OptIn(ExperimentalTime::class)
+fun nowEpochMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
-/** Les trois moments de repas suivis chaque jour. */
+/** Les trois moments de repas suivis chaque jour. Libellés : côté plateforme. */
 @Serializable
-enum class MealType(@StringRes val labelRes: Int) {
-    BREAKFAST(R.string.meal_breakfast),
-    LUNCH(R.string.meal_lunch),
-    DINNER(R.string.meal_dinner),
-}
+enum class MealType { BREAKFAST, LUNCH, DINNER }
 
-/** Un repas enregistré pour un jour donné. */
+/**
+ * Un repas enregistré pour un jour donné. Les dates sont sérialisées en ISO (« 2026-11-15 »),
+ * comme avant le passage à kotlinx-datetime : les sauvegardes existantes restent lisibles.
+ */
 @Serializable
 data class Meal(
     val id: Long = 0,
-    @Serializable(with = LocalDateSerializer::class)
     val date: LocalDate,
     val type: MealType,
     val description: String,
@@ -41,7 +31,6 @@ data class Meal(
 @Serializable
 data class Stool(
     val id: Long = 0,
-    @Serializable(with = LocalDateSerializer::class)
     val date: LocalDate,
     val bristolType: Int = 4, // 1 à 7
     val bloodLevel: Int = 0, // 0 à 5
@@ -49,7 +38,7 @@ data class Stool(
     val painLevel: Int = 0, // 0 à 5
     val fatigueLevel: Int = 0, // 0 à 5
     val comment: String = "",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowEpochMillis(),
 )
 
 /** Produit alimentaire (issu d'Open Food Facts ou du cache local). */

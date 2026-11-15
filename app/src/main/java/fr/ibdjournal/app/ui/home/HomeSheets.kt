@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 
 /**

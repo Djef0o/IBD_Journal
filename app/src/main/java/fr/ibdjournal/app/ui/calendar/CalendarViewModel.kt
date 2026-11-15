@@ -12,7 +12,11 @@ import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.data.model.Stool
-import java.time.LocalDate
+import fr.ibdjournal.app.domain.today
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +31,7 @@ import kotlinx.coroutines.launch
 
 /** Données affichées : change seulement avec la base, la date ou les réglages. */
 data class CalendarUiState(
-    val selectedDate: LocalDate = LocalDate.now(),
+    val selectedDate: LocalDate = today(),
     val mealsByDay: Map<LocalDate, List<Meal>> = emptyMap(),
     val stoolsByDay: Map<LocalDate, List<Stool>> = emptyMap(),
     val reminder: NotificationSettings = NotificationSettings(),
@@ -61,8 +65,8 @@ class CalendarViewModel @Inject constructor(
 
     /** Journée ouverte : argument de navigation `day/{date}` (jour epoch), sinon aujourd'hui. */
     private val selectedDate = MutableStateFlow(
-        savedStateHandle.get<String>(ARG_DATE)?.toLongOrNull()?.let(LocalDate::ofEpochDay)
-            ?: LocalDate.now()
+        savedStateHandle.get<String>(ARG_DATE)?.toLongOrNull()?.let { LocalDate.fromEpochDays(it) }
+            ?: today()
     )
 
     private val _mealEditor = MutableStateFlow<MealEditorState?>(null)
@@ -81,8 +85,8 @@ class CalendarViewModel @Inject constructor(
      */
     val uiState: StateFlow<CalendarUiState> = selectedDate
         .flatMapLatest { date ->
-            val from = date.minusDays(7)
-            val to = date.plusDays(7)
+            val from = date.minus(7, DateTimeUnit.DAY)
+            val to = date.plus(7, DateTimeUnit.DAY)
             combine(
                 repository.observeMeals(from, to),
                 repository.observeStools(from, to),
@@ -101,11 +105,11 @@ class CalendarViewModel @Inject constructor(
     // --- Navigation ---
 
     fun shiftDay(direction: Int) {
-        selectedDate.update { it.plusDays(direction.toLong()) }
+        selectedDate.update { it.plus(direction, DateTimeUnit.DAY) }
     }
 
     fun goToToday() {
-        selectedDate.value = LocalDate.now()
+        selectedDate.value = today()
     }
 
     // --- Repas ---

@@ -10,7 +10,7 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Stool
-import java.time.LocalDate
+import fr.ibdjournal.app.domain.today
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +57,7 @@ class NotificationReceiver : BroadcastReceiver() {
         val bristolType = intent.getIntExtra(EXTRA_BRISTOL_TYPE, 4)
         diaryRepository.saveStool(
             Stool(
-                date = LocalDate.now(),
+                date = today(),
                 bristolType = bristolType,
             )
         )

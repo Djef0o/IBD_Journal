@@ -16,7 +16,6 @@ import fr.ibdjournal.app.data.model.ProductLookup
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.data.remote.OpenFoodFactsApi
 import java.io.File
-import java.time.LocalDate
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -24,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalDate
 
 @Singleton
 class DiaryRepository @Inject constructor(
@@ -38,12 +38,15 @@ class DiaryRepository @Inject constructor(
     // --- Lecture ---
 
     fun observeMeals(from: LocalDate, to: LocalDate): Flow<List<Meal>> =
-        mealDao.observeBetween(from.toEpochDay(), to.toEpochDay())
+        mealDao.observeBetween(from.toEpochDays(), to.toEpochDays())
             .map { list -> list.map { it.toMeal() } }
 
     fun observeStools(from: LocalDate, to: LocalDate): Flow<List<Stool>> =
-        stoolDao.observeBetween(from.toEpochDay(), to.toEpochDay())
+        stoolDao.observeBetween(from.toEpochDays(), to.toEpochDays())
             .map { list -> list.map { it.toStool() } }
+
+    fun observeAllStools(): Flow<List<Stool>> =
+        stoolDao.observeAll().map { list -> list.map { it.toStool() } }
 
     // --- Repas ---
 

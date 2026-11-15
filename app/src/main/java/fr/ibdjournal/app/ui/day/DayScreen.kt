@@ -56,7 +56,9 @@ import fr.ibdjournal.app.ui.calendar.stoolSummary
 import fr.ibdjournal.app.ui.calendar.stoolTitle
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.home.MealTypeSheet
-import java.time.LocalDate
+import fr.ibdjournal.app.domain.today
+import fr.ibdjournal.app.ui.labelRes
+import kotlinx.datetime.LocalDate
 
 /**
  * Détail d'une journée : repas et selles, avec ajout, modification et suppression.
@@ -92,7 +94,7 @@ fun DayScreen(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
-            if (selected != LocalDate.now()) {
+            if (selected != today()) {
                 TextButton(
                     onClick = viewModel::goToToday,
                     modifier = Modifier.align(Alignment.End),

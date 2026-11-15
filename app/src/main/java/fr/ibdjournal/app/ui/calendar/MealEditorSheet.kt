@@ -64,7 +64,8 @@ import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import java.io.File
-import java.time.LocalDate
+import fr.ibdjournal.app.domain.today
+import fr.ibdjournal.app.ui.labelRes
 
 /**
  * Feuille d'édition d'un repas : description, photo (photo picker), code-barres
@@ -344,10 +345,10 @@ private fun MealEditorSheetPreview() {
         Surface {
             MealEditorContent(
                 state = MealEditorState(
-                    date = LocalDate.now(),
+                    date = today(),
                     editingMeal = Meal(
                         id = 1,
-                        date = LocalDate.now(),
+                        date = today(),
                         type = MealType.LUNCH,
                         description = "Salade composée et poulet grillé",
                     ),

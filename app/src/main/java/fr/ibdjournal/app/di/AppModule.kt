@@ -8,6 +8,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import fr.ibdjournal.app.data.local.AppDatabase
+import fr.ibdjournal.app.data.local.Migrations
 import fr.ibdjournal.app.data.local.MealDao
 import fr.ibdjournal.app.data.local.ProductDao
 import fr.ibdjournal.app.data.local.StoolDao
@@ -57,8 +58,8 @@ object AppModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase =
-        Room.databaseBuilder(context, AppDatabase::class.java, "ibd_diary.db")
-            .addMigrations(AppDatabase.MIGRATION_2_3)
+        Room.databaseBuilder(context, AppDatabase::class.java, AppDatabase.NAME)
+            .addMigrations(Migrations.MIGRATION_2_3)
             .fallbackToDestructiveMigration()
             .build()
 

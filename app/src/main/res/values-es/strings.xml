@@ -101,7 +101,7 @@
     <!-- Navegación principal -->
     <string name="nav_home">Hoy</string>
     <string name="nav_history">Historial</string>
-    <string name="nav_analysis">Análisis</string>
+    <string name="nav_analysis">Tendencias</string>
     <string name="nav_settings">Ajustes</string>
 
     <!-- Panel -->
@@ -145,19 +145,39 @@
     <string name="history_day_detail">Detalle del día</string>
     <string name="history_no_data">No hay datos este mes</string>
 
-    <!-- Análisis -->
-    <string name="analysis_title">Análisis</string>
-    <string name="analysis_period">Últimos 30 días</string>
+    <!-- Tendencias -->
+    <string name="analysis_title">Tendencias</string>
+    <string name="analysis_period_30">Últimos 30 días</string>
+    <string name="analysis_period_90">Últimos 90 días</string>
+    <string name="analysis_period_all">Todo el historial</string>
+    <string name="analysis_period_30_short">30 días</string>
+    <string name="analysis_period_90_short">90 días</string>
+    <string name="analysis_period_all_short">Todo</string>
     <string name="analysis_stools">Deposiciones</string>
     <string name="analysis_avg">Bristol medio</string>
     <string name="analysis_meals">Comidas anotadas</string>
     <string name="analysis_days">Días registrados</string>
-    <string name="analysis_distribution">Distribución Bristol</string>
-    <string name="analysis_symptoms">Síntomas medios</string>
+    <string name="analysis_daily">Deposiciones por día</string>
+    <string name="analysis_daily_period">Todo el historial · desliza para ver días anteriores</string>
+    <string name="analysis_daily_hint">Toca una barra para ver el día</string>
+    <string name="analysis_detail_types">Tipos %1$s</string>
+    <string name="analysis_legend_hard">Duras (1–2)</string>
+    <string name="analysis_legend_normal">Normales (3–4)</string>
+    <string name="analysis_legend_loose">Blandas (5–7)</string>
+    <string name="analysis_legend_blood">Sangre</string>
+    <string name="analysis_symptoms">Síntomas</string>
+    <string name="analysis_symptoms_compare">Días afectados · cambio respecto a los %1$d días anteriores</string>
+    <string name="analysis_symptoms_days">Días afectados</string>
     <string name="analysis_blood">Sangre</string>
     <string name="analysis_mucus">Moco</string>
-    <string name="analysis_pain">Dolor</string>
-    <string name="analysis_fatigue">Cansancio</string>
+    <string name="analysis_pain_strong">Dolor fuerte (≥ 3/5)</string>
+    <string name="analysis_fatigue_strong">Cansancio fuerte (≥ 3/5)</string>
+    <plurals name="analysis_symptom_days">
+        <item quantity="one">%1$d día</item>
+        <item quantity="many">%1$d días</item>
+        <item quantity="other">%1$d días</item>
+    </plurals>
+    <string name="analysis_liquid_per_day">Deposiciones líquidas por día (tipos 6–7)</string>
     <string name="analysis_no_data">Aún no hay suficientes datos. Sigue anotando tus días.</string>
     <string name="analysis_type">Tipo %1$d</string>
     <string name="close">Cerrar</string>

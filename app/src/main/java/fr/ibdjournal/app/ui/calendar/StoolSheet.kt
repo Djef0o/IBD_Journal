@@ -41,8 +41,7 @@ import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
-import java.time.Instant
-import java.time.ZoneId
+import fr.ibdjournal.app.domain.localDateTimeAt
 
 private val BloodColor = Color(0xFFE05B5B)
 private val MucusColor = Color(0xFFE0A83C)
@@ -96,7 +95,7 @@ fun StoolSheetContent(
 
     val timestamp = editingStool?.createdAt ?: System.currentTimeMillis()
     val moment = DateFormats.weekdayDayMonth(
-        Instant.ofEpochMilli(timestamp).atZone(ZoneId.systemDefault()).toLocalDate()
+        localDateTimeAt(timestamp).date
     ) + " · " + DateFormats.time(timestamp)
 
     Column(

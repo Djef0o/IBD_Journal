@@ -58,8 +58,12 @@ import fr.ibdjournal.app.ui.calendar.DiaryEditors
 import fr.ibdjournal.app.ui.calendar.stoolSummary
 import fr.ibdjournal.app.ui.calendar.stoolTitle
 import fr.ibdjournal.app.ui.formatDecimal
-import java.time.LocalDate
-import java.time.LocalDateTime
+import fr.ibdjournal.app.domain.localDateTimeAt
+import fr.ibdjournal.app.domain.today
+import fr.ibdjournal.app.ui.labelRes
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 /** Tableau de bord : résumé du jour, actions rapides, fil du jour et rappel. */
 @Composable
@@ -116,13 +120,13 @@ fun HomeContent(
     onEditMeal: (Meal) -> Unit = {},
     onEditStool: (Stool) -> Unit = {},
 ) {
-    val today = LocalDate.now()
+    val today = today()
     val meals = state.mealsByDay[today].orEmpty()
     val stools = state.stoolsByDay[today].orEmpty()
 
-    val weekStart = today.minusDays(6)
-    val weekStools = (0..6).flatMap { state.stoolsByDay[weekStart.plusDays(it.toLong())].orEmpty() }
-    val weekMeals = (0..6).flatMap { state.mealsByDay[weekStart.plusDays(it.toLong())].orEmpty() }
+    val weekStart = today.minus(6, DateTimeUnit.DAY)
+    val weekStools = (0..6).flatMap { state.stoolsByDay[weekStart.plus(it, DateTimeUnit.DAY)].orEmpty() }
+    val weekMeals = (0..6).flatMap { state.mealsByDay[weekStart.plus(it, DateTimeUnit.DAY)].orEmpty() }
     val weekAverage = weekStools.map { it.bristolType }.average().takeIf { !it.isNaN() }
 
     Column(
@@ -188,7 +192,7 @@ fun HomeContent(
 
 @Composable
 private fun Header(onOpenSettings: () -> Unit) {
-    val date = DateFormats.weekdayDayMonth(LocalDate.now())
+    val date = DateFormats.weekdayDayMonth(today())
 
     Row(
         modifier = Modifier
@@ -390,10 +394,7 @@ private sealed interface FeedEntry {
     data class StoolEntry(val stool: Stool) : FeedEntry {
         override val sortKey: Int
             get() {
-                val time = LocalDateTime.ofInstant(
-                    java.time.Instant.ofEpochMilli(stool.createdAt),
-                    java.time.ZoneId.systemDefault(),
-                )
+                val time = localDateTimeAt(stool.createdAt)
                 return time.hour * 60 + time.minute
             }
     }

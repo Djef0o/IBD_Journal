@@ -41,6 +41,9 @@ interface StoolDao {
     @Query("SELECT * FROM stools WHERE dateEpochDay BETWEEN :fromEpochDay AND :toEpochDay ORDER BY dateEpochDay, createdAt")
     fun observeBetween(fromEpochDay: Long, toEpochDay: Long): Flow<List<StoolEntity>>
 
+    @Query("SELECT * FROM stools ORDER BY dateEpochDay, createdAt")
+    fun observeAll(): Flow<List<StoolEntity>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(stool: StoolEntity): Long
 

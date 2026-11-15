@@ -55,8 +55,13 @@ import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.theme.bristolColor
-import java.time.LocalDate
-import java.time.YearMonth
+import fr.ibdjournal.app.domain.today
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.onDay
+import kotlinx.datetime.yearMonth
 
 @Composable
 fun HistoryScreen(
@@ -118,7 +123,7 @@ fun HistoryContent(
             StatsCard(
                 stools = monthStools,
                 average = average,
-                showLastWeek = state.month == YearMonth.now(),
+                showLastWeek = state.month == today().yearMonth,
                 stoolsByDay = state.stoolsByDay,
             )
 
@@ -138,11 +143,11 @@ private fun MonthCard(
     onOpenDay: (LocalDate) -> Unit,
 ) {
     val month = state.month
-    val firstDay = month.atDay(1)
-    val leading = (firstDay.dayOfWeek.value + 6) % 7
-    val totalCells = leading + month.lengthOfMonth()
+    val firstDay = month.firstDay
+    val leading = firstDay.dayOfWeek.isoDayNumber - 1
+    val totalCells = leading + month.numberOfDays
     val rows = (totalCells + 6) / 7
-    val today = LocalDate.now()
+    val today = today()
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -188,8 +193,8 @@ private fun MonthCard(
                     for (column in 0 until 7) {
                         val cellIndex = row * 7 + column
                         val dayNumber = cellIndex - leading + 1
-                        if (dayNumber in 1..month.lengthOfMonth()) {
-                            val date = month.atDay(dayNumber)
+                        if (dayNumber in 1..month.numberOfDays) {
+                            val date = month.onDay(dayNumber)
                             DayCell(
                                 date = date,
                                 stools = state.stoolsByDay[date].orEmpty(),
@@ -243,7 +248,7 @@ private fun DayCell(
     ) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = date.dayOfMonth.toString(),
+                text = date.day.toString(),
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = if (isToday) FontWeight.Bold else FontWeight.Normal,
             )
@@ -355,8 +360,8 @@ private fun StatsCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
-                val today = LocalDate.now()
-                val days = (6 downTo 0).map { offset -> today.minusDays(offset.toLong()) }
+                val today = today()
+                val days = (6 downTo 0).map { offset -> today.minus(offset, DateTimeUnit.DAY) }
                 val counts = days.map { date -> stoolsByDay[date].orEmpty().size }
                 val max = counts.max().coerceAtLeast(1)
 
@@ -404,7 +409,7 @@ private fun StatsCard(
                             }
                             Spacer(Modifier.height(5.dp))
                             Text(
-                                text = "${DateFormats.weekdayNarrow(date.dayOfWeek)} ${date.dayOfMonth}",
+                                text = "${DateFormats.weekdayNarrow(date.dayOfWeek)} ${date.day}",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 maxLines = 1,

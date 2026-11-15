@@ -72,9 +72,10 @@ import fr.ibdjournal.app.data.ThemeMode
 import fr.ibdjournal.app.data.ThemePalette
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
+import fr.ibdjournal.app.domain.localDateTimeAt
+import fr.ibdjournal.app.domain.today
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 
 @Composable
 fun SettingsScreen(
@@ -447,12 +448,11 @@ private fun requestBatteryExemption(context: Context) {
 
 @Composable
 private fun formatReminderMoment(epochMillis: Long): String {
-    val zoned = Instant.ofEpochMilli(epochMillis).atZone(ZoneId.systemDefault())
-    val date = zoned.toLocalDate()
+    val date = localDateTimeAt(epochMillis).date
     val time = DateFormats.time(epochMillis)
     return when (date) {
-        LocalDate.now() -> stringResource(R.string.today_at, time)
-        LocalDate.now().minusDays(1) -> stringResource(R.string.yesterday_at, time)
+        today() -> stringResource(R.string.today_at, time)
+        today().minus(1, DateTimeUnit.DAY) -> stringResource(R.string.yesterday_at, time)
         else -> stringResource(R.string.date_at, DateFormats.dayMonth(date), time)
     }
 }

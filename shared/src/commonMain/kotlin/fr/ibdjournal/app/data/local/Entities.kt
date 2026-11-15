@@ -15,7 +15,8 @@ import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
-import java.time.LocalDate
+import fr.ibdjournal.app.data.model.nowEpochMillis
+import kotlinx.datetime.LocalDate
 
 @Entity(tableName = "meals", indices = [Index("dateEpochDay")])
 data class MealEntity(
@@ -26,7 +27,7 @@ data class MealEntity(
     val photoPath: String? = null,
     val productBarcode: String? = null,
     val productName: String? = null,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowEpochMillis(),
 )
 
 @Entity(tableName = "stools", indices = [Index("dateEpochDay")])
@@ -39,7 +40,7 @@ data class StoolEntity(
     val painLevel: Int,
     val fatigueLevel: Int,
     val comment: String = "",
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowEpochMillis(),
 )
 
 /** Cache des produits Open Food Facts, par code-barres. */
@@ -51,7 +52,7 @@ data class ProductEntity(
     val nutriscore: String?,
     val imageUrl: String?,
     val ingredients: String?,
-    val fetchedAt: Long = System.currentTimeMillis(),
+    val fetchedAt: Long = nowEpochMillis(),
 )
 
 /**
@@ -73,7 +74,7 @@ fun MealWithProduct.toMeal(): Meal {
 
 fun MealEntity.toMeal() = Meal(
     id = id,
-    date = LocalDate.ofEpochDay(dateEpochDay),
+    date = LocalDate.fromEpochDays(dateEpochDay),
     type = mealType,
     description = description,
     photoUri = photoPath,
@@ -91,7 +92,7 @@ fun MealEntity.toMeal() = Meal(
 
 fun Meal.toMealEntity() = MealEntity(
     id = id,
-    dateEpochDay = date.toEpochDay(),
+    dateEpochDay = date.toEpochDays(),
     mealType = type,
     description = description,
     photoPath = photoUri,
@@ -101,7 +102,7 @@ fun Meal.toMealEntity() = MealEntity(
 
 fun StoolEntity.toStool() = Stool(
     id = id,
-    date = LocalDate.ofEpochDay(dateEpochDay),
+    date = LocalDate.fromEpochDays(dateEpochDay),
     bristolType = bristolType,
     bloodLevel = bloodLevel,
     mucusLevel = mucusLevel,
@@ -113,7 +114,7 @@ fun StoolEntity.toStool() = Stool(
 
 fun Stool.toStoolEntity() = StoolEntity(
     id = id,
-    dateEpochDay = date.toEpochDay(),
+    dateEpochDay = date.toEpochDays(),
     bristolType = bristolType,
     bloodLevel = bloodLevel,
     mucusLevel = mucusLevel,
@@ -170,7 +171,7 @@ data class MedicationEntity(
     val name: String,
     val dosage: String,
     @Embedded val schedule: ScheduleColumns,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowEpochMillis(),
 )
 
 @Entity(tableName = "checkups")
@@ -179,24 +180,24 @@ data class CheckupEntity(
     val type: CheckupType,
     val note: String,
     @Embedded val schedule: ScheduleColumns,
-    val createdAt: Long = System.currentTimeMillis(),
+    val createdAt: Long = nowEpochMillis(),
 )
 
 fun ProfileEntity.toProfile() = Profile(
     firstName = firstName,
     lastName = lastName,
-    birthDate = birthDateEpochDay?.let(LocalDate::ofEpochDay),
+    birthDate = birthDateEpochDay?.let { LocalDate.fromEpochDays(it) },
 )
 
 fun Profile.toProfileEntity() = ProfileEntity(
     firstName = firstName,
     lastName = lastName,
-    birthDateEpochDay = birthDate?.toEpochDay(),
+    birthDateEpochDay = birthDate?.toEpochDays(),
 )
 
 fun ScheduleColumns.toSchedule() = ReminderSchedule(
     enabled = reminderEnabled,
-    startDate = LocalDate.ofEpochDay(startDateEpochDay),
+    startDate = LocalDate.fromEpochDays(startDateEpochDay),
     hour = hour,
     minute = minute,
     repeatEvery = repeatEvery,
@@ -205,7 +206,7 @@ fun ScheduleColumns.toSchedule() = ReminderSchedule(
 
 fun ReminderSchedule.toColumns() = ScheduleColumns(
     reminderEnabled = enabled,
-    startDateEpochDay = startDate.toEpochDay(),
+    startDateEpochDay = startDate.toEpochDays(),
     hour = hour,
     minute = minute,
     repeatEvery = repeatEvery,

@@ -1,33 +1,38 @@
 package fr.ibdjournal.app.data.model
 
-import androidx.annotation.StringRes
-import fr.ibdjournal.app.R
-
-enum class MedicationCategory(@StringRes val labelRes: Int) {
-    AMINOSALICYLATES(R.string.med_category_aminosalicylates),
-    CORTICOSTEROIDS(R.string.med_category_corticosteroids),
-    IMMUNOSUPPRESSANTS(R.string.med_category_immunosuppressants),
-    BIOLOGICS(R.string.med_category_biologics),
-    SMALL_MOLECULES(R.string.med_category_small_molecules),
-    ANTIBIOTICS(R.string.med_category_antibiotics),
-    SUPPORTIVE(R.string.med_category_supportive),
+enum class MedicationCategory {
+    AMINOSALICYLATES,
+    CORTICOSTEROIDS,
+    IMMUNOSUPPRESSANTS,
+    BIOLOGICS,
+    SMALL_MOLECULES,
+    ANTIBIOTICS,
+    SUPPORTIVE,
 }
 
-enum class Indication(@StringRes val labelRes: Int) {
-    CROHN(R.string.indication_crohn),
-    UC(R.string.indication_uc),
-}
+enum class Indication { CROHN, UC }
+
+/** Traitements d'appoint dont le nom se traduit (contrairement aux DCI). */
+enum class SupportiveMedication { IRON, VITAMIN_D, VITAMIN_B12, FOLIC_ACID, CALCIUM, LOPERAMIDE }
 
 /**
- * Médicament de la liste standard. Les DCI sont identiques d'une langue à l'autre ;
- * seuls les traitements d'appoint (fer, vitamines…) passent par une ressource traduite.
+ * Médicament de la liste standard : une DCI ([inn], identique d'une langue à l'autre) ou un
+ * traitement d'appoint ([supportive]) dont le libellé est traduit par la plateforme.
  */
-class StandardMedication(
+class StandardMedication private constructor(
     val category: MedicationCategory,
     val indications: Set<Indication>,
-    val inn: String? = null,
-    @StringRes val labelRes: Int = 0,
-)
+    val inn: String?,
+    val supportive: SupportiveMedication?,
+) {
+    companion object {
+        fun inn(category: MedicationCategory, name: String, indications: Set<Indication>) =
+            StandardMedication(category, indications, inn = name, supportive = null)
+
+        fun supportive(medication: SupportiveMedication) =
+            StandardMedication(MedicationCategory.SUPPORTIVE, emptySet(), inn = null, supportive = medication)
+    }
+}
 
 /** Traitements usuels de la maladie de Crohn et de la rectocolite hémorragique. */
 object StandardMedications {
@@ -36,63 +41,53 @@ object StandardMedications {
     private val CROHN = setOf(Indication.CROHN)
     private val UC = setOf(Indication.UC)
 
-    private fun inn(category: MedicationCategory, name: String, indications: Set<Indication>) =
-        StandardMedication(category, indications, inn = name)
-
-    private fun res(category: MedicationCategory, @StringRes labelRes: Int) =
-        StandardMedication(category, emptySet(), labelRes = labelRes)
-
     val all: List<StandardMedication> = buildList {
+        fun inn(category: MedicationCategory, name: String, indications: Set<Indication>) =
+            add(StandardMedication.inn(category, name, indications))
+
         with(MedicationCategory.AMINOSALICYLATES) {
-            add(inn(this, "Mesalazine", BOTH))
-            add(inn(this, "Sulfasalazine", BOTH))
-            add(inn(this, "Olsalazine", UC))
-            add(inn(this, "Balsalazide", UC))
+            inn(this, "Mesalazine", BOTH)
+            inn(this, "Sulfasalazine", BOTH)
+            inn(this, "Olsalazine", UC)
+            inn(this, "Balsalazide", UC)
         }
         with(MedicationCategory.CORTICOSTEROIDS) {
-            add(inn(this, "Prednisone", BOTH))
-            add(inn(this, "Prednisolone", BOTH))
-            add(inn(this, "Methylprednisolone", BOTH))
-            add(inn(this, "Budesonide", BOTH))
-            add(inn(this, "Beclometasone", UC))
-            add(inn(this, "Hydrocortisone", BOTH))
+            inn(this, "Prednisone", BOTH)
+            inn(this, "Prednisolone", BOTH)
+            inn(this, "Methylprednisolone", BOTH)
+            inn(this, "Budesonide", BOTH)
+            inn(this, "Beclometasone", UC)
+            inn(this, "Hydrocortisone", BOTH)
         }
         with(MedicationCategory.IMMUNOSUPPRESSANTS) {
-            add(inn(this, "Azathioprine", BOTH))
-            add(inn(this, "Mercaptopurine", BOTH))
-            add(inn(this, "Methotrexate", CROHN))
-            add(inn(this, "Ciclosporin", UC))
-            add(inn(this, "Tacrolimus", UC))
+            inn(this, "Azathioprine", BOTH)
+            inn(this, "Mercaptopurine", BOTH)
+            inn(this, "Methotrexate", CROHN)
+            inn(this, "Ciclosporin", UC)
+            inn(this, "Tacrolimus", UC)
         }
         with(MedicationCategory.BIOLOGICS) {
-            add(inn(this, "Infliximab", BOTH))
-            add(inn(this, "Adalimumab", BOTH))
-            add(inn(this, "Golimumab", UC))
-            add(inn(this, "Certolizumab pegol", CROHN))
-            add(inn(this, "Vedolizumab", BOTH))
-            add(inn(this, "Ustekinumab", BOTH))
-            add(inn(this, "Risankizumab", BOTH))
-            add(inn(this, "Mirikizumab", BOTH))
-            add(inn(this, "Guselkumab", BOTH))
+            inn(this, "Infliximab", BOTH)
+            inn(this, "Adalimumab", BOTH)
+            inn(this, "Golimumab", UC)
+            inn(this, "Certolizumab pegol", CROHN)
+            inn(this, "Vedolizumab", BOTH)
+            inn(this, "Ustekinumab", BOTH)
+            inn(this, "Risankizumab", BOTH)
+            inn(this, "Mirikizumab", BOTH)
+            inn(this, "Guselkumab", BOTH)
         }
         with(MedicationCategory.SMALL_MOLECULES) {
-            add(inn(this, "Tofacitinib", UC))
-            add(inn(this, "Upadacitinib", BOTH))
-            add(inn(this, "Filgotinib", UC))
-            add(inn(this, "Ozanimod", UC))
-            add(inn(this, "Etrasimod", UC))
+            inn(this, "Tofacitinib", UC)
+            inn(this, "Upadacitinib", BOTH)
+            inn(this, "Filgotinib", UC)
+            inn(this, "Ozanimod", UC)
+            inn(this, "Etrasimod", UC)
         }
         with(MedicationCategory.ANTIBIOTICS) {
-            add(inn(this, "Metronidazole", CROHN))
-            add(inn(this, "Ciprofloxacin", CROHN))
+            inn(this, "Metronidazole", CROHN)
+            inn(this, "Ciprofloxacin", CROHN)
         }
-        with(MedicationCategory.SUPPORTIVE) {
-            add(res(this, R.string.med_iron))
-            add(res(this, R.string.med_vitamin_d))
-            add(res(this, R.string.med_vitamin_b12))
-            add(res(this, R.string.med_folic_acid))
-            add(res(this, R.string.med_calcium))
-            add(res(this, R.string.med_loperamide))
-        }
+        SupportiveMedication.entries.forEach { add(StandardMedication.supportive(it)) }
     }
 }

@@ -101,7 +101,7 @@
     <!-- Navigazione principale -->
     <string name="nav_home">Oggi</string>
     <string name="nav_history">Cronologia</string>
-    <string name="nav_analysis">Analisi</string>
+    <string name="nav_analysis">Tendenze</string>
     <string name="nav_settings">Impostazioni</string>
 
     <!-- Pannello -->
@@ -145,19 +145,39 @@
     <string name="history_day_detail">Dettaglio del giorno</string>
     <string name="history_no_data">Nessun dato questo mese</string>
 
-    <!-- Analisi -->
-    <string name="analysis_title">Analisi</string>
-    <string name="analysis_period">Ultimi 30 giorni</string>
+    <!-- Tendenze -->
+    <string name="analysis_title">Tendenze</string>
+    <string name="analysis_period_30">Ultimi 30 giorni</string>
+    <string name="analysis_period_90">Ultimi 90 giorni</string>
+    <string name="analysis_period_all">Tutto lo storico</string>
+    <string name="analysis_period_30_short">30 giorni</string>
+    <string name="analysis_period_90_short">90 giorni</string>
+    <string name="analysis_period_all_short">Tutto</string>
     <string name="analysis_stools">Evacuazioni</string>
     <string name="analysis_avg">Bristol medio</string>
     <string name="analysis_meals">Pasti annotati</string>
     <string name="analysis_days">Giorni monitorati</string>
-    <string name="analysis_distribution">Distribuzione Bristol</string>
-    <string name="analysis_symptoms">Sintomi medi</string>
+    <string name="analysis_daily">Evacuazioni al giorno</string>
+    <string name="analysis_daily_period">Tutto lo storico · scorri per vedere i giorni precedenti</string>
+    <string name="analysis_daily_hint">Tocca una barra per vedere il giorno</string>
+    <string name="analysis_detail_types">Tipi %1$s</string>
+    <string name="analysis_legend_hard">Dure (1–2)</string>
+    <string name="analysis_legend_normal">Normali (3–4)</string>
+    <string name="analysis_legend_loose">Molli (5–7)</string>
+    <string name="analysis_legend_blood">Sangue</string>
+    <string name="analysis_symptoms">Sintomi</string>
+    <string name="analysis_symptoms_compare">Giorni con sintomi · variazione rispetto ai %1$d giorni precedenti</string>
+    <string name="analysis_symptoms_days">Giorni con sintomi</string>
     <string name="analysis_blood">Sangue</string>
     <string name="analysis_mucus">Muco</string>
-    <string name="analysis_pain">Dolore</string>
-    <string name="analysis_fatigue">Stanchezza</string>
+    <string name="analysis_pain_strong">Dolore forte (≥ 3/5)</string>
+    <string name="analysis_fatigue_strong">Stanchezza forte (≥ 3/5)</string>
+    <plurals name="analysis_symptom_days">
+        <item quantity="one">%1$d giorno</item>
+        <item quantity="many">%1$d giorni</item>
+        <item quantity="other">%1$d giorni</item>
+    </plurals>
+    <string name="analysis_liquid_per_day">Evacuazioni liquide al giorno (tipi 6–7)</string>
     <string name="analysis_no_data">Dati ancora insufficienti. Continua ad annotare le tue giornate.</string>
     <string name="analysis_type">Tipo %1$d</string>
     <string name="close">Chiudi</string>

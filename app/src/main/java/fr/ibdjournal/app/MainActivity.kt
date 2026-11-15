@@ -150,7 +150,7 @@ private fun MainScaffold() {
             }
             composable("history") {
                 HistoryScreen(
-                    onOpenDay = { date -> navController.navigate("day/${date.toEpochDay()}") },
+                    onOpenDay = { date -> navController.navigate("day/${date.toEpochDays()}") },
                 )
             }
             composable("analysis") { AnalysisScreen() }

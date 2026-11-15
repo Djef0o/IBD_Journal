@@ -5,8 +5,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Stool
-import java.time.LocalDate
-import java.time.YearMonth
+import fr.ibdjournal.app.domain.today
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,9 +14,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.YearMonth
+import kotlinx.datetime.plus
+import kotlinx.datetime.yearMonth
 
 data class HistoryUiState(
-    val month: YearMonth = YearMonth.now(),
+    val month: YearMonth = today().yearMonth,
     val stoolsByDay: Map<LocalDate, List<Stool>> = emptyMap(),
 )
 
@@ -31,8 +35,8 @@ class HistoryViewModel @Inject constructor(
 
     val uiState: StateFlow<HistoryUiState> = monthOffset
         .flatMapLatest { offset ->
-            val month = YearMonth.now().plusMonths(offset.toLong())
-            repository.observeStools(month.atDay(1), month.atEndOfMonth()).map { stools ->
+            val month = today().yearMonth.plus(offset, DateTimeUnit.MONTH)
+            repository.observeStools(month.firstDay, month.lastDay).map { stools ->
                 HistoryUiState(month = month, stoolsByDay = stools.groupBy { it.date })
             }
         }

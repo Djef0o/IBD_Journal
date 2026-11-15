@@ -25,3 +25,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "IBDJournal"
 include(":app")
+include(":shared")

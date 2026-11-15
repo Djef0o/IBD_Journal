@@ -65,12 +65,18 @@ import fr.ibdjournal.app.data.model.StandardMedication
 import fr.ibdjournal.app.data.model.StandardMedications
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.settings.settingsRowColors
-import java.time.Instant
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import fr.ibdjournal.app.domain.now
+import fr.ibdjournal.app.domain.today
+import fr.ibdjournal.app.ui.displayName
+import fr.ibdjournal.app.ui.labelRes
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 private const val MAX_REPEAT_EVERY = 99
+
+/** Le DatePicker travaille en millisecondes UTC à minuit : jour epoch × durée d'un jour. */
+private const val MILLIS_PER_DAY = 86_400_000L
 
 // --- Identité ---
 
@@ -130,8 +136,8 @@ fun ProfileEditDialog(
 
     if (pickDate) {
         DatePickerDialogFor(
-            initial = birthDate ?: LocalDate.now().minusYears(30),
-            maxDate = LocalDate.now(),
+            initial = birthDate ?: today().minus(30, DateTimeUnit.YEAR),
+            maxDate = today(),
             onDismiss = { pickDate = false },
             onPick = { birthDate = it },
         )
@@ -280,9 +286,6 @@ private fun MedicationPickerDialog(
     )
 }
 
-@Composable
-private fun StandardMedication.displayName(): String = inn ?: stringResource(labelRes)
-
 // --- Contrôle (prise de sang, selles) ---
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -333,7 +336,7 @@ fun CheckupEditorSheet(
 
 // --- Éléments communs ---
 
-private fun defaultSchedule(unit: RepeatUnit) = ReminderSchedule(startDate = LocalDate.now(), repeatUnit = unit)
+private fun defaultSchedule(unit: RepeatUnit) = ReminderSchedule(startDate = today(), repeatUnit = unit)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -492,7 +495,7 @@ fun repeatSummary(schedule: ReminderSchedule): String {
 @Composable
 fun scheduleStatus(schedule: ReminderSchedule): String {
     val repeat = repeatSummary(schedule)
-    val next = schedule.nextOccurrence(LocalDateTime.now())
+    val next = schedule.nextOccurrence(now())
     val date = if (next == null) {
         DateFormats.dayMonthYear(schedule.startDate)
     } else {
@@ -500,7 +503,7 @@ fun scheduleStatus(schedule: ReminderSchedule): String {
             R.string.schedule_next,
             stringResource(
                 R.string.date_at,
-                DateFormats.weekdayDayMonth(next.toLocalDate()),
+                DateFormats.weekdayDayMonth(next.date),
                 DateFormats.time(next.hour, next.minute),
             ),
         )
@@ -517,9 +520,9 @@ private fun DatePickerDialogFor(
     onDismiss: () -> Unit,
     onPick: (LocalDate) -> Unit,
 ) {
-    val maxMillis = maxDate?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli()
+    val maxMillis = maxDate?.let { it.toEpochDays() * MILLIS_PER_DAY }
     val state = rememberDatePickerState(
-        initialSelectedDateMillis = initial.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli(),
+        initialSelectedDateMillis = initial.toEpochDays() * MILLIS_PER_DAY,
         selectableDates = object : androidx.compose.material3.SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long) = maxMillis == null || utcTimeMillis <= maxMillis
             override fun isSelectableYear(year: Int) = maxDate == null || year <= maxDate.year
@@ -531,7 +534,7 @@ private fun DatePickerDialogFor(
             TextButton(
                 onClick = {
                     state.selectedDateMillis?.let {
-                        onPick(Instant.ofEpochMilli(it).atZone(ZoneOffset.UTC).toLocalDate())
+                        onPick(LocalDate.fromEpochDays(Math.floorDiv(it, MILLIS_PER_DAY)))
                     }
                     onDismiss()
                 },

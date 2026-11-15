@@ -17,9 +17,9 @@ import fr.ibdjournal.app.data.local.toMedication
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
-import java.time.Instant
-import java.time.LocalDateTime
-import java.time.ZoneId
+import fr.ibdjournal.app.domain.localDateTimeAt
+import fr.ibdjournal.app.domain.toEpochMillis
+import fr.ibdjournal.app.ui.labelRes
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -92,14 +92,12 @@ class TreatmentReminderScheduler @Inject constructor(
         schedule: ReminderSchedule,
         afterMillis: Long = System.currentTimeMillis(),
     ) {
-        val zone = ZoneId.systemDefault()
-        val after = LocalDateTime.ofInstant(Instant.ofEpochMilli(afterMillis), zone)
-        val next = schedule.takeIf { it.enabled }?.nextOccurrence(after)
+        val next = schedule.takeIf { it.enabled }?.nextOccurrence(localDateTimeAt(afterMillis))
         if (next == null) {
             notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
             return
         }
-        val triggerAt = next.atZone(zone).toInstant().toEpochMilli()
+        val triggerAt = next.toEpochMillis()
         notificationHelper.setReminderAlarm(triggerAt, alarmIntent(kind, id, triggerAt))
     }
 

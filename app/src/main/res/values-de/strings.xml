@@ -101,7 +101,7 @@
     <!-- Hauptnavigation -->
     <string name="nav_home">Heute</string>
     <string name="nav_history">Verlauf</string>
-    <string name="nav_analysis">Auswertung</string>
+    <string name="nav_analysis">Trends</string>
     <string name="nav_settings">Einstellungen</string>
 
     <!-- Übersicht -->
@@ -145,19 +145,38 @@
     <string name="history_day_detail">Tagesdetails</string>
     <string name="history_no_data">Keine Daten in diesem Monat</string>
 
-    <!-- Auswertung -->
-    <string name="analysis_title">Auswertung</string>
-    <string name="analysis_period">Letzte 30 Tage</string>
+    <!-- Trends -->
+    <string name="analysis_title">Trends</string>
+    <string name="analysis_period_30">Letzte 30 Tage</string>
+    <string name="analysis_period_90">Letzte 90 Tage</string>
+    <string name="analysis_period_all">Gesamter Verlauf</string>
+    <string name="analysis_period_30_short">30 Tage</string>
+    <string name="analysis_period_90_short">90 Tage</string>
+    <string name="analysis_period_all_short">Alles</string>
     <string name="analysis_stools">Stuhlgänge</string>
     <string name="analysis_avg">Ø Bristol</string>
     <string name="analysis_meals">Mahlzeiten</string>
     <string name="analysis_days">Erfasste Tage</string>
-    <string name="analysis_distribution">Bristol-Verteilung</string>
-    <string name="analysis_symptoms">Ø Symptome</string>
+    <string name="analysis_daily">Stuhlgänge pro Tag</string>
+    <string name="analysis_daily_period">Gesamter Verlauf · wische für frühere Tage</string>
+    <string name="analysis_daily_hint">Tippe auf einen Balken, um den Tag zu sehen</string>
+    <string name="analysis_detail_types">Typen %1$s</string>
+    <string name="analysis_legend_hard">Hart (1–2)</string>
+    <string name="analysis_legend_normal">Normal (3–4)</string>
+    <string name="analysis_legend_loose">Weich (5–7)</string>
+    <string name="analysis_legend_blood">Blut</string>
+    <string name="analysis_symptoms">Symptome</string>
+    <string name="analysis_symptoms_compare">Betroffene Tage · Veränderung zu den %1$d Tagen davor</string>
+    <string name="analysis_symptoms_days">Betroffene Tage</string>
     <string name="analysis_blood">Blut</string>
     <string name="analysis_mucus">Schleim</string>
-    <string name="analysis_pain">Schmerzen</string>
-    <string name="analysis_fatigue">Erschöpfung</string>
+    <string name="analysis_pain_strong">Starke Schmerzen (≥ 3/5)</string>
+    <string name="analysis_fatigue_strong">Starke Erschöpfung (≥ 3/5)</string>
+    <plurals name="analysis_symptom_days">
+        <item quantity="one">%1$d Tag</item>
+        <item quantity="other">%1$d Tage</item>
+    </plurals>
+    <string name="analysis_liquid_per_day">Flüssige Stühle pro Tag (Typ 6–7)</string>
     <string name="analysis_no_data">Noch nicht genug Daten. Trage deine Tage weiter ein.</string>
     <string name="analysis_type">Typ %1$d</string>
     <string name="close">Schließen</string>

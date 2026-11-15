@@ -102,10 +102,10 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
 
+    // Cœur multiplateforme : modèles, base Room (entités, DAO), calculs ; expose Room et kotlinx-datetime.
+    implementation(project(":shared"))
+
     // Persistence
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
 
     // Network: OpenFoodFacts API
