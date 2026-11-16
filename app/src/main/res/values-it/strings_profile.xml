@@ -13,7 +13,6 @@
     <string name="profile_born_on">Nascita: %1$s · %2$s</string>
     <string name="profile_sex">Sesso</string>
     <string name="profile_sex_missing">Sesso non indicato</string>
-    <string name="profile_sex_hint">Serve per i valori normali di emoglobina e ferritina.</string>
     <string name="sex_female">Donna</string>
     <string name="sex_male">Uomo</string>
     <plurals name="profile_age">

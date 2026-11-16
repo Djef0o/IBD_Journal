@@ -11,29 +11,23 @@
     <string name="exams_title">Exams</string>
     <string name="exam_add">Schedule an exam</string>
     <string name="exam_edit">Edit exam</string>
-    <string name="exams_empty">No exam scheduled. Add your colonoscopy or sigmoidoscopy to be guided through the preparation.</string>
+    <string name="exams_empty">No exam scheduled. Add your colonoscopy or sigmoidoscopy to note its preparation and get reminders.</string>
     <string name="exam_next_step">Next step: %1$s, %2$s</string>
     <string name="exam_anesthesia_missing">Anesthesiologist appointment to book</string>
-    <string name="exam_anesthesia_too_late">Anesthesia consultation less than 48 h before the exam</string>
-    <string name="exam_anesthesia_hint">At least %1$d h before the exam.</string>
 
     <string name="exam_date">Exam date</string>
     <string name="exam_note">Note</string>
     <string name="exam_note_hint">e.g. place, gastroenterologist</string>
     <string name="exam_preparation">Preparation</string>
-    <string name="exam_preparation_desc">Follow your doctor\'s instructions: every value can be adjusted.</string>
+    <string name="exam_preparation_desc">Note your doctor\'s or endoscopy center\'s instructions.</string>
     <plurals name="exam_diet_days">
         <item quantity="one">Low-residue diet: %1$d day before</item>
         <item quantity="other">Low-residue diet: %1$d days before</item>
     </plurals>
     <string name="exam_diet_none">Low-residue diet: none</string>
     <string name="exam_diet_start">Starting %1$s</string>
-    <string name="exam_prep_split">Split dose</string>
-    <string name="exam_prep_split_desc">2nd dose on the morning of the exam</string>
     <string name="exam_not_set">Not scheduled yet</string>
-    <string name="exam_set">Set</string>
     <string name="exam_clear">Clear</string>
-    <string name="exam_reset_preparation">Reset preparation to default</string>
     <string name="exam_reminders">Remind me of each step</string>
     <string name="exam_reminders_desc">%1$d h before appointments, at the time of each prep dose, and at %2$s on the first diet day.</string>
 </resources>

@@ -11,17 +11,15 @@
     <string name="exams_title">Pruebas</string>
     <string name="exam_add">Programar una prueba</string>
     <string name="exam_edit">Editar la prueba</string>
-    <string name="exams_empty">Ninguna prueba programada. Añade tu colonoscopia o rectosigmoidoscopia para que te guiemos en la preparación.</string>
+    <string name="exams_empty">Ninguna prueba programada. Añade tu colonoscopia o rectosigmoidoscopia para anotar la preparación y recibir recordatorios.</string>
     <string name="exam_next_step">Próximo paso: %1$s, %2$s</string>
     <string name="exam_anesthesia_missing">Cita con el anestesista por pedir</string>
-    <string name="exam_anesthesia_too_late">Consulta de anestesia menos de 48 h antes de la prueba</string>
-    <string name="exam_anesthesia_hint">Al menos %1$d h antes de la prueba.</string>
 
     <string name="exam_date">Fecha de la prueba</string>
     <string name="exam_note">Nota</string>
     <string name="exam_note_hint">p. ej. lugar, médico</string>
     <string name="exam_preparation">Preparación</string>
-    <string name="exam_preparation_desc">Sigue las indicaciones de tu médico: puedes ajustar cada valor.</string>
+    <string name="exam_preparation_desc">Anota las indicaciones de tu médico o del centro de endoscopia.</string>
     <plurals name="exam_diet_days">
         <item quantity="one">Dieta sin residuos: %1$d día antes</item>
         <item quantity="many">Dieta sin residuos: %1$d días antes</item>
@@ -29,12 +27,8 @@
     </plurals>
     <string name="exam_diet_none">Dieta sin residuos: ninguna</string>
     <string name="exam_diet_start">A partir del %1$s</string>
-    <string name="exam_prep_split">Toma fraccionada</string>
-    <string name="exam_prep_split_desc">2.ª toma la mañana de la prueba</string>
     <string name="exam_not_set">Aún sin fijar</string>
-    <string name="exam_set">Fijar</string>
     <string name="exam_clear">Borrar</string>
-    <string name="exam_reset_preparation">Restablecer la preparación por defecto</string>
     <string name="exam_reminders">Recordarme cada paso</string>
     <string name="exam_reminders_desc">%1$d h antes de las citas, a la hora de cada toma de la preparación y a las %2$s el primer día de la dieta.</string>
 </resources>

@@ -18,10 +18,16 @@
     <string name="lab_result_value_invalid">Inserisci un numero positivo</string>
     <string name="lab_result_date">Data dell\'analisi</string>
     <string name="lab_result_note">Nota (facoltativa)</string>
+    <string name="lab_result_reference_title">Valori del laboratorio (facoltativi)</string>
+    <string name="lab_result_reference_desc">Come riportati nel referto del laboratorio, nella stessa unità.</string>
+    <string name="lab_result_reference_low">Min</string>
+    <string name="lab_result_reference_high">Max</string>
+    <string name="lab_result_number_invalid">Inserisci un numero</string>
+    <string name="lab_result_reference_reversed">Il min supera il max</string>
     <string name="lab_chart_description">Andamento di %1$s nel tempo</string>
-    <string name="lab_status_low">Basso</string>
-    <string name="lab_status_high">Alto</string>
-    <string name="lab_reference">Valori normali: %1$s</string>
+    <string name="lab_status_below">Sotto i valori</string>
+    <string name="lab_status_above">Sopra i valori</string>
+    <string name="lab_reference">Valori del laboratorio: %1$s</string>
 
     <!-- Observance d'un traitement : prises confirmées / prévues sur 30 jours -->
     <plurals name="treatment_adherence">

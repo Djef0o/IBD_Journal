@@ -173,7 +173,7 @@ private fun ProfileEditDialog(
     }
 }
 
-/** Femme / Homme : sert aux valeurs normales de l'hémoglobine et de la ferritine. */
+/** Femme / Homme : donnée d'identité, reprise dans le rapport. */
 @Composable
 fun SexSelector(sex: Sex?, onChange: (Sex) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -187,10 +187,5 @@ fun SexSelector(sex: Sex?, onChange: (Sex) -> Unit) {
                 ) { Text(stringResource(option.labelRes)) }
             }
         }
-        Text(
-            text = stringResource(R.string.profile_sex_hint),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

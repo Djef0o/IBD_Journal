@@ -35,14 +35,14 @@ data class TreatmentReport(val medication: Medication, val adherence: Adherence)
 /** Contrôle à venir, à sa prochaine échéance. */
 data class UpcomingCheckup(val checkup: Checkup, val at: LocalDateTime)
 
-/** Résultat d'une cellule du tableau des bilans, avec sa position par rapport aux normes. */
-data class LabCell(val result: LabResult, val status: LabStatus)
+/** Résultat d'une cellule du tableau des bilans ; [status] null dans les valeurs du laboratoire ou sans elles. */
+data class LabCell(val result: LabResult, val status: LabStatus?)
 
 /**
  * Ligne du tableau des bilans : une cellule par date de [LabPanels.dates] (null sans dosage ce
- * jour-là) ; [reference] est celle du résultat le plus récent de la ligne.
+ * jour-là) ; [reference] : valeurs du laboratoire du résultat le plus récent de la ligne, null sans elles.
  */
-data class LabPanelRow(val test: LabTest, val cells: List<LabCell?>, val reference: ReferenceRange)
+data class LabPanelRow(val test: LabTest, val cells: List<LabCell?>, val reference: ReferenceRange?)
 
 /**
  * Derniers bilans, du plus récent au plus ancien : seules figurent les analyses dosées au moins
@@ -50,10 +50,7 @@ data class LabPanelRow(val test: LabTest, val cells: List<LabCell?>, val referen
  */
 data class LabPanels(val dates: List<LocalDate>, val rows: List<LabPanelRow>, val notes: List<LabResult>)
 
-/**
- * Tout ce que contient le rapport, déjà calculé : le rendu PDF ne fait que mettre en page.
- * Le sexe du [profile] fixe les valeurs usuelles des analyses.
- */
+/** Tout ce que contient le rapport, déjà calculé : le rendu PDF ne fait que mettre en page. */
 data class ReportData(
     val profile: Profile,
     val period: AnalysisPeriod,
@@ -103,7 +100,7 @@ fun reportData(
                 adherence = adherence(medication, doseLogs, periodStart ?: medication.schedule.startDate, now),
             )
         },
-        labPanels = labPanels(labResults.filter { it.date <= today }, profile),
+        labPanels = labPanels(labResults.filter { it.date <= today }),
         upcomingCheckups = checkups
             .mapNotNull { checkup -> checkup.schedule.nextOccurrence(now)?.let { UpcomingCheckup(checkup, it) } }
             .sortedBy { it.at },
@@ -111,7 +108,7 @@ fun reportData(
 }
 
 /** Tableau des [REPORT_LAB_PANELS] dernières dates d'analyses, lignes dans l'ordre de [LabTest]. */
-private fun labPanels(results: List<LabResult>, profile: Profile): LabPanels {
+private fun labPanels(results: List<LabResult>): LabPanels {
     val dates = results.map { it.date }.distinct().sortedDescending().take(REPORT_LAB_PANELS)
     // Deux saisies du même dosage le même jour : la dernière enregistrée l'emporte.
     val byTestAndDate = results
@@ -123,8 +120,8 @@ private fun labPanels(results: List<LabResult>, profile: Profile): LabPanels {
         val latest = perDate.firstNotNullOfOrNull { it } ?: return@mapNotNull null
         LabPanelRow(
             test = test,
-            cells = perDate.map { result -> result?.let { LabCell(it, it.status(profile.sex)) } },
-            reference = latest.reference(profile.sex),
+            cells = perDate.map { result -> result?.let { LabCell(it, it.status()) } },
+            reference = latest.reference(),
         )
     }
     val notes = dates.flatMap { date ->

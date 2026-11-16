@@ -64,7 +64,6 @@ import fr.ibdjournal.app.data.model.ExamType
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.LabQualifier
-import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
@@ -74,14 +73,11 @@ import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.domain.adherence
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.anesthesiaMissing
-import fr.ibdjournal.app.domain.anesthesiaTooLate
 import fr.ibdjournal.app.domain.steps
-import fr.ibdjournal.app.domain.withDefaultPreparation
 import fr.ibdjournal.app.domain.now
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.DateFormats
-import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.status
 import kotlin.math.roundToInt
 import kotlinx.datetime.DateTimeUnit
@@ -99,7 +95,6 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
     val labResults by viewModel.labResults.collectAsStateWithLifecycle()
     val exams by viewModel.exams.collectAsStateWithLifecycle()
     val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
-    val sex by viewModel.sex.collectAsStateWithLifecycle()
 
     CareContent(
         medications = medications,
@@ -114,7 +109,6 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
         onSaveExam = viewModel::saveExam,
         onDeleteExam = viewModel::deleteExam,
         onOpenLabs = onOpenLabs,
-        sex = sex,
     )
 }
 
@@ -133,7 +127,6 @@ fun CareContent(
     onSaveCheckup: (Checkup) -> Unit,
     onDeleteCheckup: (Checkup) -> Unit,
     onOpenLabs: () -> Unit = {},
-    sex: Sex? = null,
     exams: List<Exam> = emptyList(),
     onSaveExam: (Exam) -> Unit = {},
     onDeleteExam: (Exam) -> Unit = {},
@@ -243,7 +236,7 @@ fun CareContent(
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
             )
-            LabSummaryCard(labResults = labResults, sex = sex, onOpen = onOpenLabs)
+            LabSummaryCard(labResults = labResults, onOpen = onOpenLabs)
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -275,14 +268,14 @@ fun CareContent(
 }
 
 /**
- * Résumé des résultats d'analyses : dernier bilan et analyses hors normes ; le détail est dans
- * le sous-écran [LabsScreen].
+ * Résumé des résultats d'analyses : dernier bilan et analyses hors des valeurs du laboratoire ;
+ * le détail est dans le sous-écran [LabsScreen].
  */
 @Composable
-private fun LabSummaryCard(labResults: List<LabResult>, sex: Sex?, onOpen: () -> Unit) {
+private fun LabSummaryCard(labResults: List<LabResult>, onOpen: () -> Unit) {
     val histories = remember(labResults) { labHistories(labResults) }
     val latest = labResults.maxOfOrNull { it.date }
-    val watch = histories.values.count { it.first().status(sex) != LabStatus.NORMAL }
+    val outside = histories.values.count { it.first().status() != null }
     Card(
         onClick = onOpen,
         modifier = Modifier
@@ -306,9 +299,9 @@ private fun LabSummaryCard(labResults: List<LabResult>, sex: Sex?, onOpen: () ->
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-                if (watch > 0) {
+                if (outside > 0) {
                     Text(
-                        text = pluralStringResource(R.plurals.lab_summary_watch, watch, watch),
+                        text = pluralStringResource(R.plurals.lab_summary_outside, outside, outside),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.error,
                     )
@@ -418,8 +411,8 @@ private fun ScheduledRow(
 }
 
 /**
- * Examen : date, prochaine étape de la préparation et, avant l'examen, l'alerte sur la
- * consultation d'anesthésie. Un examen passé est grisé.
+ * Examen : date, prochaine étape de la préparation et, avant l'examen, le rendez-vous
+ * d'anesthésie à prendre. Un examen passé est grisé.
  */
 @Composable
 private fun ExamRow(exam: Exam, upcoming: Boolean, onClick: () -> Unit) {
@@ -437,7 +430,6 @@ private fun ExamRow(exam: Exam, upcoming: Boolean, onClick: () -> Unit) {
     val warning = when {
         !upcoming -> null
         exam.anesthesiaMissing() -> stringResource(R.string.exam_anesthesia_missing)
-        exam.anesthesiaTooLate() -> stringResource(R.string.exam_anesthesia_too_late)
         else -> null
     }
     val lines = listOfNotNull(exam.note.ifBlank { null }, nextLine)
@@ -501,18 +493,17 @@ private fun CarePreview() {
                 Checkup(1, CheckupType.STOOL_TEST, "Calprotectine", ReminderSchedule(startDate = today.plus(10, DateTimeUnit.DAY), repeatUnit = RepeatUnit.ONCE)),
             ),
             exams = listOf(
-                Exam(1, ExamType.COLONOSCOPY, today.plus(18, DateTimeUnit.DAY).atTime(9, 30)).withDefaultPreparation(),
+                Exam(1, ExamType.COLONOSCOPY, today.plus(18, DateTimeUnit.DAY).atTime(9, 30)),
             ),
             labResults = listOf(
                 LabResult(1, LabTest.CRP, 18.0, today.minus(40, DateTimeUnit.DAY)),
-                LabResult(2, LabTest.CRP, 6.5, today.minus(5, DateTimeUnit.DAY)),
+                LabResult(2, LabTest.CRP, 6.5, today.minus(5, DateTimeUnit.DAY), referenceHigh = 5.0),
                 LabResult(3, LabTest.CALPROTECTIN, 250.0, today.minus(12, DateTimeUnit.DAY)),
                 LabResult(4, LabTest.CALPROTECTIN, 30.0, today.minus(5, DateTimeUnit.DAY), qualifier = LabQualifier.BELOW),
                 LabResult(5, LabTest.HEMOGLOBIN, 11.2, today.minus(40, DateTimeUnit.DAY)),
                 LabResult(6, LabTest.HEMOGLOBIN, 12.4, today.minus(5, DateTimeUnit.DAY)),
                 LabResult(7, LabTest.FERRITIN, 9.0, today.minus(5, DateTimeUnit.DAY)),
             ),
-            sex = Sex.FEMALE,
             doseLogs = emptyList(),
             onSaveMedication = {},
             onDeleteMedication = {},

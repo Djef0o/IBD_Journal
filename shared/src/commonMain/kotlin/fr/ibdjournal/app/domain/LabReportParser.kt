@@ -7,7 +7,7 @@ import kotlin.math.round
 import kotlinx.datetime.LocalDate
 
 /**
- * Ligne de texte lue sur un compte rendu (OCR ou PDF), avec sa position sur la page.
+ * Ligne de texte lue sur un compte rendu PDF, avec sa position sur la page.
  * Les comptes rendus sont des tableaux : libellé, résultat, unité, valeurs de référence et
  * antériorités sont des lignes distinctes alignées horizontalement.
  */

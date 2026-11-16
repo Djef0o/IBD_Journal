@@ -69,7 +69,7 @@ enum class LabTest(val unit: String, val category: LabCategory) {
 /**
  * Résultat d'analyse. [qualifier] : résultat donné comme seuil (« < 1,0 » : sous le seuil de
  * mesure). [referenceLow]/[referenceHigh] : valeurs de référence du laboratoire, lues sur le
- * compte rendu ; null → valeurs usuelles de l'app (voir `reference`).
+ * compte rendu ou saisies ; null si le compte rendu n'en donne pas (l'app n'en fournit pas).
  */
 @Serializable
 data class LabResult(

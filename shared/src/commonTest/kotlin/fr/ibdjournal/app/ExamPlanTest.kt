@@ -4,11 +4,9 @@ import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.data.model.ExamType
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.anesthesiaMissing
-import fr.ibdjournal.app.domain.anesthesiaTooLate
 import fr.ibdjournal.app.domain.events
 import fr.ibdjournal.app.domain.reminderAt
 import fr.ibdjournal.app.domain.steps
-import fr.ibdjournal.app.domain.withDefaultPreparation
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -20,26 +18,22 @@ class ExamPlanTest {
 
     private val colonoscopy = Exam(type = ExamType.COLONOSCOPY, at = LocalDateTime(2026, 12, 4, 9, 30))
 
-    @Test
-    fun colonoscopyGetsASplitPreparationAndThreeDaysOfDiet() {
-        val exam = colonoscopy.withDefaultPreparation()
-        assertEquals(3, exam.dietDays)
-        assertEquals(LocalDateTime(2026, 12, 3, 19, 0), exam.prepFirstAt)
-        // Seconde prise le matin même, 5 h avant ; à travers minuit si l'examen est tôt.
-        assertEquals(LocalDateTime(2026, 12, 4, 4, 30), exam.prepSecondAt)
-        assertEquals(
-            LocalDateTime(2026, 12, 4, 2, 0),
-            colonoscopy.copy(at = LocalDateTime(2026, 12, 4, 7, 0)).withDefaultPreparation().prepSecondAt,
-        )
+    /** Préparation saisie par l'utilisateur, d'après les consignes de son médecin. */
+    private val prepared = colonoscopy.copy(
+        dietDays = 3,
+        prepFirstAt = LocalDateTime(2026, 12, 3, 19, 0),
+        prepSecondAt = LocalDateTime(2026, 12, 4, 4, 30),
+    )
 
-        val rectosigmoidoscopy = colonoscopy.copy(type = ExamType.RECTOSIGMOIDOSCOPY).withDefaultPreparation()
-        assertEquals(1, rectosigmoidoscopy.dietDays)
-        assertNull(rectosigmoidoscopy.prepSecondAt)
+    @Test
+    fun aNewExamHasOnlyItsOwnStep() {
+        // Aucune préparation proposée par l'app : seul l'examen est daté.
+        assertEquals(listOf(ExamStep.EXAM), colonoscopy.steps().map { it.step })
     }
 
     @Test
     fun stepsAreChronologicalWithAppointmentRemindersTwoHoursBefore() {
-        val exam = colonoscopy.withDefaultPreparation().copy(anesthesiaAt = LocalDateTime(2026, 11, 20, 10, 15))
+        val exam = prepared.copy(anesthesiaAt = LocalDateTime(2026, 11, 20, 10, 15))
         val steps = exam.steps()
         assertEquals(
             listOf(ExamStep.ANESTHESIA, ExamStep.DIET, ExamStep.PREP_FIRST, ExamStep.PREP_SECOND, ExamStep.EXAM),
@@ -52,18 +46,16 @@ class ExamPlanTest {
     }
 
     @Test
-    fun anesthesiaConsultationMustBeTwoDaysBefore() {
+    fun anesthesiaConsultationToBookForColonoscopy() {
         assertTrue(colonoscopy.anesthesiaMissing())
         assertFalse(colonoscopy.copy(type = ExamType.RECTOSIGMOIDOSCOPY).anesthesiaMissing())
-        assertFalse(colonoscopy.copy(anesthesiaAt = LocalDateTime(2026, 12, 2, 9, 30)).anesthesiaTooLate())
-        assertTrue(colonoscopy.copy(anesthesiaAt = LocalDateTime(2026, 12, 2, 10, 0)).anesthesiaTooLate())
+        assertFalse(colonoscopy.copy(anesthesiaAt = LocalDateTime(2026, 12, 2, 9, 30)).anesthesiaMissing())
     }
 
     @Test
     fun calendarEventsFollowTheRemindersSwitch() {
-        val exam = colonoscopy.withDefaultPreparation()
-        assertNull(exam.events()[ExamStep.ANESTHESIA])
-        assertEquals(LocalDateTime(2026, 12, 4, 9, 30), exam.events()[ExamStep.EXAM]?.start)
-        assertTrue(exam.copy(remindersEnabled = false).events().values.all { it == null })
+        assertNull(prepared.events()[ExamStep.ANESTHESIA])
+        assertEquals(LocalDateTime(2026, 12, 4, 9, 30), prepared.events()[ExamStep.EXAM]?.start)
+        assertTrue(prepared.copy(remindersEnabled = false).events().values.all { it == null })
     }
 }

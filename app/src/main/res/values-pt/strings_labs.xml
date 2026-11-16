@@ -18,10 +18,16 @@
     <string name="lab_result_value_invalid">Digite um número positivo</string>
     <string name="lab_result_date">Data do exame</string>
     <string name="lab_result_note">Observação (opcional)</string>
+    <string name="lab_result_reference_title">Valores do laboratório (opcional)</string>
+    <string name="lab_result_reference_desc">Como impressos no laudo do laboratório, na mesma unidade.</string>
+    <string name="lab_result_reference_low">Mín.</string>
+    <string name="lab_result_reference_high">Máx.</string>
+    <string name="lab_result_number_invalid">Digite um número</string>
+    <string name="lab_result_reference_reversed">O mín. é maior que o máx.</string>
     <string name="lab_chart_description">Evolução de %1$s ao longo do tempo</string>
-    <string name="lab_status_low">Baixo</string>
-    <string name="lab_status_high">Alto</string>
-    <string name="lab_reference">Valores normais: %1$s</string>
+    <string name="lab_status_below">Abaixo</string>
+    <string name="lab_status_above">Acima</string>
+    <string name="lab_reference">Valores do laboratório: %1$s</string>
 
     <!-- Observance d'un traitement : prises confirmées / prévues sur 30 jours -->
     <plurals name="treatment_adherence">

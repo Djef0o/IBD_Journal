@@ -11,29 +11,23 @@
     <string name="exams_title">Untersuchungen</string>
     <string name="exam_add">Untersuchung planen</string>
     <string name="exam_edit">Untersuchung bearbeiten</string>
-    <string name="exams_empty">Keine Untersuchung geplant. Trag deine Darmspiegelung oder Rektosigmoidoskopie ein, um durch die Vorbereitung geführt zu werden.</string>
+    <string name="exams_empty">Keine Untersuchung geplant. Trag deine Darmspiegelung oder Rektosigmoidoskopie ein, um die Vorbereitung zu notieren und Erinnerungen zu erhalten.</string>
     <string name="exam_next_step">Nächster Schritt: %1$s, %2$s</string>
     <string name="exam_anesthesia_missing">Termin beim Anästhesisten vereinbaren</string>
-    <string name="exam_anesthesia_too_late">Narkosevorgespräch weniger als 48 h vor der Untersuchung</string>
-    <string name="exam_anesthesia_hint">Mindestens %1$d h vor der Untersuchung.</string>
 
     <string name="exam_date">Datum der Untersuchung</string>
     <string name="exam_note">Notiz</string>
     <string name="exam_note_hint">z. B. Ort, Ärztin/Arzt</string>
     <string name="exam_preparation">Vorbereitung</string>
-    <string name="exam_preparation_desc">Halte dich an die Anweisungen deiner Ärztin oder deines Arztes: Jeder Wert lässt sich anpassen.</string>
+    <string name="exam_preparation_desc">Notiere die Anweisungen deiner Ärztin, deines Arztes oder des Endoskopiezentrums.</string>
     <plurals name="exam_diet_days">
         <item quantity="one">Ballaststoffarme Kost: %1$d Tag vorher</item>
         <item quantity="other">Ballaststoffarme Kost: %1$d Tage vorher</item>
     </plurals>
     <string name="exam_diet_none">Ballaststoffarme Kost: keine</string>
     <string name="exam_diet_start">Ab %1$s</string>
-    <string name="exam_prep_split">Geteilte Einnahme</string>
-    <string name="exam_prep_split_desc">2. Einnahme am Morgen der Untersuchung</string>
     <string name="exam_not_set">Noch nicht festgelegt</string>
-    <string name="exam_set">Festlegen</string>
     <string name="exam_clear">Löschen</string>
-    <string name="exam_reset_preparation">Vorbereitung zurücksetzen</string>
     <string name="exam_reminders">An jeden Schritt erinnern</string>
     <string name="exam_reminders_desc">%1$d h vor Terminen, zum Zeitpunkt jeder Einnahme und um %2$s am ersten Tag der Kost.</string>
 </resources>

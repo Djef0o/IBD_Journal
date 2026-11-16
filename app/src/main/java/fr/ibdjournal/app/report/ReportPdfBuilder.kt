@@ -60,7 +60,7 @@ private const val LEGEND_HEIGHT = 12f
 /** Écart minimal entre deux numéros de jour sous le graphique. */
 private const val MIN_LABEL_SPACING = 14f
 
-/** Tableau des bilans : analyse et unité, puis une colonne par date, puis les valeurs normales. */
+/** Tableau des bilans : analyse et unité, puis une colonne par date, puis les valeurs du laboratoire. */
 private const val LAB_TEST_WIDTH = 150f
 private const val LAB_DATE_WIDTH = 62f
 /** Lignes resserrées : ~45 analyses doivent tenir sur une à deux pages. */
@@ -254,7 +254,7 @@ class ReportPdfBuilder(private val context: Context) {
             val profile = data.profile
             val name = listOf(profile.firstName, profile.lastName).filter { it.isNotBlank() }.joinToString(" ")
             if (name.isNotEmpty()) line(string(R.string.report_patient, name), patientPaint, 2f)
-            // Âge et sexe sur une ligne : le sexe fixe les valeurs normales de certaines analyses.
+            // Âge et sexe sur une ligne.
             val identity = listOfNotNull(
                 profile.birthDate?.let { birthDate ->
                     string(
@@ -492,8 +492,8 @@ class ReportPdfBuilder(private val context: Context) {
 
         /**
          * Derniers bilans côte à côte, le plus récent à gauche, analyses groupées par catégorie sous
-         * un intertitre. Hors normes : gras, flèche ↑/↓ (lisible en noir et blanc) et fond grisé.
-         * Les notes suivent le tableau.
+         * un intertitre. Hors des valeurs du laboratoire : gras, flèche ↑/↓ (lisible en noir et
+         * blanc) et fond grisé. Les notes suivent le tableau.
          */
         fun labResults() {
             val panels = data.labPanels
@@ -539,21 +539,21 @@ class ReportPdfBuilder(private val context: Context) {
                 val column = dateColumns[index]
                 val text = cell?.let {
                     val marker = when (it.status) {
-                        LabStatus.LOW -> "↓ "
-                        LabStatus.NORMAL -> ""
-                        LabStatus.HIGH -> "↑ "
+                        LabStatus.BELOW -> "↓ "
+                        LabStatus.ABOVE -> "↑ "
+                        null -> ""
                     }
                     marker + it.result.displayValue(withUnit = false)
                 } ?: "–"
-                val paint = if (cell == null || cell.status == LabStatus.NORMAL) bodyPaint else strongPaint
+                val paint = if (cell?.status == null) bodyPaint else strongPaint
                 layout(text, paint, column.width, column.align)
             }
-            val reference = layout(row.reference.display(), bodyPaint, referenceColumn.width)
+            val reference = layout(row.reference?.display() ?: "–", bodyPaint, referenceColumn.width)
             val height = (cells + label + reference).maxOf { it.height } + 2 * LAB_ROW_PADDING
             return TableRow(height) { top ->
                 fillPaint.color = TRACK
                 row.cells.forEachIndexed { index, cell ->
-                    if (cell != null && cell.status != LabStatus.NORMAL) {
+                    if (cell?.status != null) {
                         val left = MARGIN + dateColumns[index].x - COLUMN_GAP / 2
                         val right = left + LAB_DATE_WIDTH + COLUMN_GAP
                         canvas.drawRoundRect(left, top + 1f, right, top + height - 1f, 3f, 3f, fillPaint)

@@ -47,7 +47,6 @@ import fr.ibdjournal.app.labimport.LabReportReader
 @Composable
 fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
     val labResults by viewModel.labResults.collectAsStateWithLifecycle()
-    val sex by viewModel.sex.collectAsStateWithLifecycle()
     val labImport by viewModel.labImport.collectAsStateWithLifecycle()
     var editLab by remember { mutableStateOf<LabEditing?>(null) }
     var labDetail by remember { mutableStateOf<LabTest?>(null) }
@@ -96,14 +95,13 @@ fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
             } else {
                 LabResultsViews(
                     histories = labHistories,
-                    sex = sex,
                     onOpenTest = { labDetail = it },
                     onEditResult = { editLab = LabEditing(it, it.test) },
                 )
             }
-            // Lecture de comptes rendus PDF ou photos, sur l'appareil, puis vérification.
+            // Lecture de comptes rendus PDF, sur l'appareil, puis vérification.
             OutlinedButton(
-                onClick = { reportPicker.launch(arrayOf(LabReportReader.PDF_MIME, "image/*")) },
+                onClick = { reportPicker.launch(arrayOf(LabReportReader.PDF_MIME)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp),
@@ -123,7 +121,6 @@ fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
             LabResultDetailSheet(
                 test = test,
                 history = history,
-                sex = sex,
                 onDismiss = { labDetail = null },
                 onAdd = { editLab = LabEditing(null, test) },
                 onEdit = { editLab = LabEditing(it, it.test) },

@@ -25,8 +25,8 @@
     <string name="report_labs">Lab results</string>
     <string name="report_col_date">Date</string>
     <string name="report_col_test">Test</string>
-    <string name="report_col_reference">Normal values</string>
-    <string name="report_labs_legend">↑ high · ↓ low (in bold): outside normal values — the lab\'s when entered, otherwise usual adult values.</string>
+    <string name="report_col_reference">Lab reference values</string>
+    <string name="report_labs_legend">↑ above · ↓ below (in bold): outside the lab\'s reference values as entered; – when none were given.</string>
     <string name="report_lab_notes">Notes</string>
     <string name="report_lab_note">%1$s – %2$s: %3$s</string>
     <string name="report_col_note">Note</string>

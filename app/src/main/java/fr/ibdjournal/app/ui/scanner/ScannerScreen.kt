@@ -56,18 +56,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.tooling.preview.Preview as ComposePreview
-import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
-import com.google.mlkit.vision.barcode.BarcodeScanning
-import com.google.mlkit.vision.barcode.common.Barcode
-import com.google.mlkit.vision.common.InputImage
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.ui.calendar.ScannedProductCard
 import java.util.concurrent.Executors
 
 /**
- * Scanner plein écran : CameraX + ML Kit, puis recherche du produit
+ * Scanner plein écran : CameraX + ZXing, puis recherche du produit
  * sur Open Food Facts.
  *
  * Affiché dans un [Dialog] : la feuille d'édition du repas est elle-même une fenêtre
@@ -267,7 +263,7 @@ private fun ResultCard(modifier: Modifier = Modifier, content: @Composable () ->
     }
 }
 
-/** Aperçu caméra CameraX branché sur l'analyse ML Kit des codes-barres. */
+/** Aperçu caméra CameraX branché sur l'analyse ZXing des codes-barres. */
 @Composable
 private fun CameraPreview(
     onBarcodeDetected: (String) -> Unit,
@@ -319,18 +315,8 @@ private fun CameraPreview(
     // unbindAll() à la sortie, elle resterait allumée (et l'analyse active) après
     // la fermeture du scanner, jusqu'à l'arrêt de l'activité.
     DisposableEffect(lifecycleOwner) {
-        val scanner = BarcodeScanning.getClient(
-            BarcodeScannerOptions.Builder()
-                .setBarcodeFormats(
-                    Barcode.FORMAT_EAN_13,
-                    Barcode.FORMAT_EAN_8,
-                    Barcode.FORMAT_UPC_A,
-                    Barcode.FORMAT_UPC_E,
-                    Barcode.FORMAT_CODE_128,
-                )
-                .build()
-        )
-        // Analyse hors du thread principal ; ML Kit rappelle ses listeners sur le main.
+        // Analyse hors du thread principal ; le résultat est renvoyé sur le main.
+        val mainExecutor = ContextCompat.getMainExecutor(context)
         val analysisExecutor = Executors.newSingleThreadExecutor()
         val providerFuture = ProcessCameraProvider.getInstance(context)
         var provider: ProcessCameraProvider? = null
@@ -346,19 +332,12 @@ private fun CameraPreview(
                 val analysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
-                analysis.setAnalyzer(analysisExecutor) { imageProxy ->
-                    val mediaImage = imageProxy.image
-                    if (mediaImage == null) {
-                        imageProxy.close()
-                        return@setAnalyzer
-                    }
-                    val input = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
-                    scanner.process(input)
-                        .addOnSuccessListener { barcodes ->
-                            barcodes.firstOrNull()?.rawValue?.let { currentOnBarcodeDetected(it) }
-                        }
-                        .addOnCompleteListener { imageProxy.close() }
-                }
+                analysis.setAnalyzer(
+                    analysisExecutor,
+                    BarcodeAnalyzer { code ->
+                        mainExecutor.execute { if (!disposed) currentOnBarcodeDetected(code) }
+                    },
+                )
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(
                     lifecycleOwner,
@@ -374,7 +353,6 @@ private fun CameraPreview(
             disposed = true
             provider?.unbindAll()
             analysisExecutor.shutdown()
-            scanner.close()
         }
     }
 

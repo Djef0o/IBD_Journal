@@ -37,12 +37,9 @@ import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.data.model.ExamType
 import fr.ibdjournal.app.domain.APPOINTMENT_REMINDER_LEAD
 import fr.ibdjournal.app.domain.DIET_REMINDER_TIME
-import fr.ibdjournal.app.domain.MIN_ANESTHESIA_LEAD
-import fr.ibdjournal.app.domain.anesthesiaTooLate
 import fr.ibdjournal.app.domain.dietStart
 import fr.ibdjournal.app.domain.needsAnesthesia
 import fr.ibdjournal.app.domain.today
-import fr.ibdjournal.app.domain.withDefaultPreparation
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.DateTimeUnit
@@ -50,19 +47,14 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.atTime
-import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
-/** Régime sans résidu : au plus une semaine avant l'examen. */
+/** Borne du sélecteur de jours de régime. */
 private const val MAX_DIET_DAYS = 7
 
 /** Nouvel examen : dans deux semaines, le matin. */
 private const val NEW_EXAM_DAYS_AHEAD = 14
 private val NEW_EXAM_TIME = LocalTime(9, 0)
-
-/** Consultation d'anesthésie proposée : une semaine avant, en matinée. */
-private const val ANESTHESIA_DAYS_BEFORE = 7
-private val ANESTHESIA_DEFAULT_TIME = LocalTime(10, 0)
 
 /** « Jeudi 4 décembre à 09:30 ». */
 @Composable
@@ -71,16 +63,6 @@ internal fun dateTimeLabel(at: LocalDateTime): String = stringResource(
     DateFormats.weekdayDayMonth(at.date),
     DateFormats.time(at.hour, at.minute),
 )
-
-/** La préparation enregistrée est celle proposée par défaut (donc recalculable). */
-private fun Exam.hasDefaultPreparation(): Boolean {
-    val default = withDefaultPreparation()
-    return dietDays == default.dietDays && prepFirstAt == default.prepFirstAt && prepSecondAt == default.prepSecondAt
-}
-
-/** Seconde prise par défaut, même pour une rectosigmoïdoscopie : celle d'une coloscopie. */
-private fun Exam.defaultSecondDose(): LocalDateTime? =
-    copy(type = ExamType.COLONOSCOPY).withDefaultPreparation().prepSecondAt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -95,16 +77,11 @@ fun ExamEditorSheet(
             initial ?: Exam(
                 type = ExamType.COLONOSCOPY,
                 at = today().plus(NEW_EXAM_DAYS_AHEAD, DateTimeUnit.DAY).atTime(NEW_EXAM_TIME),
-            ).withDefaultPreparation(),
+            ),
         )
     }
-    // Préparation retouchée à la main : on ne la recalcule plus quand l'examen bouge.
-    var prepEdited by remember { mutableStateOf(initial?.hasDefaultPreparation() == false) }
     var note by remember { mutableStateOf(initial?.note.orEmpty()) }
 
-    // Date, heure ou type : la préparation par défaut suit, l'anesthésie reste.
-    val changeExam = { updated: Exam -> exam = if (prepEdited) updated else updated.withDefaultPreparation() }
-    val editPrep = { updated: Exam -> exam = updated; prepEdited = true }
     val draft = exam.copy(
         id = initial?.id ?: 0,
         note = note.trim(),
@@ -125,7 +102,7 @@ fun ExamEditorSheet(
             ExamType.entries.forEachIndexed { index, type ->
                 SegmentedButton(
                     selected = exam.type == type,
-                    onClick = { changeExam(exam.copy(type = type)) },
+                    onClick = { exam = exam.copy(type = type) },
                     shape = SegmentedButtonDefaults.itemShape(index, ExamType.entries.size),
                 ) { Text(stringResource(type.labelRes)) }
             }
@@ -133,7 +110,7 @@ fun ExamEditorSheet(
         DateTimeField(
             label = stringResource(R.string.exam_date),
             value = exam.at,
-            onChange = { changeExam(exam.copy(at = it)) },
+            onChange = { exam = exam.copy(at = it) },
         )
         OutlinedTextField(
             value = note,
@@ -150,12 +127,7 @@ fun ExamEditorSheet(
         }
 
         HorizontalDivider()
-        PreparationEditor(exam = exam, onChange = editPrep)
-        if (prepEdited) {
-            TextButton(onClick = { exam = exam.withDefaultPreparation(); prepEdited = false }) {
-                Text(stringResource(R.string.exam_reset_preparation))
-            }
-        }
+        PreparationEditor(exam = exam, onChange = { exam = it })
 
         HorizontalDivider()
         FieldRow(
@@ -171,7 +143,7 @@ fun ExamEditorSheet(
     }
 }
 
-/** Régime sans résidu et prises de la préparation à boire. */
+/** Régime sans résidu et prises de la préparation, telles que prescrites par le médecin. */
 @Composable
 private fun PreparationEditor(exam: Exam, onChange: (Exam) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -207,48 +179,30 @@ private fun PreparationEditor(exam: Exam, onChange: (Exam) -> Unit) {
         OptionalDateTimeField(
             label = stringResource(R.string.exam_step_prep_first),
             value = exam.prepFirstAt,
-            initial = exam.withDefaultPreparation().prepFirstAt ?: exam.at,
+            initial = exam.at,
             onChange = { onChange(exam.copy(prepFirstAt = it)) },
         )
-        FieldRow(
-            label = stringResource(R.string.exam_prep_split),
-            value = stringResource(R.string.exam_prep_split_desc),
-        ) {
-            Switch(
-                checked = exam.prepSecondAt != null,
-                onCheckedChange = { on -> onChange(exam.copy(prepSecondAt = if (on) exam.defaultSecondDose() else null)) },
-            )
-        }
-        exam.prepSecondAt?.let { second ->
-            DateTimeField(
+        // Seconde prise facultative, une fois la première notée.
+        if (exam.prepFirstAt != null || exam.prepSecondAt != null) {
+            OptionalDateTimeField(
                 label = stringResource(R.string.exam_step_prep_second),
-                value = second,
+                value = exam.prepSecondAt,
+                initial = exam.prepFirstAt ?: exam.at,
                 onChange = { onChange(exam.copy(prepSecondAt = it)) },
             )
         }
     }
 }
 
-/** Consultation d'anesthésie (coloscopie) : à fixer au moins 48 h avant l'examen. */
+/** Consultation d'anesthésie (coloscopie). */
 @Composable
 private fun AnesthesiaEditor(exam: Exam, onChange: (LocalDateTime?) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        OptionalDateTimeField(
-            label = stringResource(R.string.exam_step_anesthesia),
-            value = exam.anesthesiaAt,
-            initial = exam.at.date.minus(ANESTHESIA_DAYS_BEFORE, DateTimeUnit.DAY).atTime(ANESTHESIA_DEFAULT_TIME),
-            onChange = onChange,
-        )
-        if (exam.anesthesiaTooLate()) {
-            Text(
-                text = stringResource(R.string.exam_anesthesia_too_late),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        } else {
-            Hint(stringResource(R.string.exam_anesthesia_hint, MIN_ANESTHESIA_LEAD.inWholeHours.toInt()))
-        }
-    }
+    OptionalDateTimeField(
+        label = stringResource(R.string.exam_step_anesthesia),
+        value = exam.anesthesiaAt,
+        initial = exam.at,
+        onChange = onChange,
+    )
 }
 
 /** Date et heure obligatoires. */
@@ -263,7 +217,7 @@ private fun DateTimeField(label: String, value: LocalDateTime, onChange: (LocalD
     }
 }
 
-/** Date et heure facultatives : « Pas encore fixée » tant qu'elles ne sont pas choisies. */
+/** Date et heure facultatives : « Pas encore fixée » tant qu'elles ne sont pas ajoutées. */
 @Composable
 private fun OptionalDateTimeField(
     label: String,
@@ -278,7 +232,7 @@ private fun OptionalDateTimeField(
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             TextButton(onClick = { pick = true }) {
-                Text(stringResource(if (value == null) R.string.exam_set else R.string.modify))
+                Text(stringResource(if (value == null) R.string.add else R.string.modify))
             }
             if (value != null) {
                 IconButton(onClick = { onChange(null) }) {

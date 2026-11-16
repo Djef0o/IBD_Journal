@@ -2,6 +2,8 @@ package fr.ibdjournal.app
 
 import android.app.Application
 import androidx.work.Configuration
+import androidx.work.WorkManager
+import java.io.File
 import coil3.ImageLoader
 import coil3.SingletonImageLoader
 import coil3.network.okhttp.OkHttpNetworkFetcherFactory
@@ -30,9 +32,8 @@ class IBDJournalApp : Application(), Configuration.Provider {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // WorkManager : sauvegarde cloud automatique (CloudBackupWorker, fabrique par défaut,
-    // dépendances via un EntryPoint Hilt) et annulation de l'ancien rappel. Initialisation
-    // à la demande (voir le manifeste) plutôt qu'au démarrage de chaque processus.
+    // WorkManager : seulement pour annuler les travaux des anciennes versions (ancien rappel,
+    // sauvegarde Google Drive retirée). Initialisation à la demande (voir le manifeste).
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().build()
 
@@ -48,6 +49,7 @@ class IBDJournalApp : Application(), Configuration.Provider {
         applicationScope.launch {
             treatmentReminders.rescheduleAll()
         }
+        applicationScope.launch { removeLegacyCloudBackup() }
 
         // ImageLoader par défaut pour Coil 3 : chargement local + réseau (Open Food Facts).
         SingletonImageLoader.setSafe { context ->
@@ -56,5 +58,20 @@ class IBDJournalApp : Application(), Configuration.Provider {
                 .crossfade(true)
                 .build()
         }
+    }
+
+    /**
+     * Les versions précédentes pouvaient sauvegarder sur Google Drive. Toutes les données restent
+     * désormais sur l'appareil : on annule la sauvegarde automatique encore planifiée et on efface
+     * l'état de connexion conservé localement (compte, dernière sauvegarde).
+     */
+    private fun removeLegacyCloudBackup() {
+        runCatching { WorkManager.getInstance(this).cancelUniqueWork(LEGACY_CLOUD_BACKUP_WORK) }
+        File(filesDir, "datastore/$LEGACY_CLOUD_BACKUP_STORE").delete()
+    }
+
+    private companion object {
+        const val LEGACY_CLOUD_BACKUP_WORK = "cloud_backup_auto"
+        const val LEGACY_CLOUD_BACKUP_STORE = "cloud_backup.preferences_pb"
     }
 }

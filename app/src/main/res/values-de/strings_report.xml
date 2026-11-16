@@ -25,8 +25,8 @@
     <string name="report_labs">Laborwerte</string>
     <string name="report_col_date">Datum</string>
     <string name="report_col_test">Untersuchung</string>
-    <string name="report_col_reference">Normalwerte</string>
-    <string name="report_labs_legend">↑ erhöht · ↓ erniedrigt (fett): außerhalb der Normalwerte – die des Labors, falls eingetragen, sonst die üblichen Werte für Erwachsene.</string>
+    <string name="report_col_reference">Referenzwerte des Labors</string>
+    <string name="report_labs_legend">↑ darüber · ↓ darunter (fett): außerhalb der eingetragenen Referenzwerte des Labors; – wenn keine angegeben sind.</string>
     <string name="report_lab_notes">Notizen</string>
     <string name="report_lab_note">%1$s – %2$s: %3$s</string>
     <string name="report_col_note">Notiz</string>

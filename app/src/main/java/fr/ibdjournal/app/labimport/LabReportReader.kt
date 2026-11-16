@@ -1,35 +1,41 @@
 package fr.ibdjournal.app.labimport
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.pdf.PdfRenderer
 import android.net.Uri
 import android.provider.OpenableColumns
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.text.TextRecognition
-import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
+import com.tom_roush.pdfbox.pdmodel.PDDocument
+import com.tom_roush.pdfbox.text.PDFTextStripper
+import com.tom_roush.pdfbox.text.TextPosition
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.ibdjournal.app.domain.TextLine
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 
 /**
- * Lit le texte d'un compte rendu (PDF ou image) avec sa position, entièrement sur l'appareil :
- * le PDF est rendu page par page puis passé à la reconnaissance de texte ML Kit, comme une
- * photo. Une seule chaîne pour les deux formats, et rien n'est envoyé.
+ * Lit le texte d'un compte rendu PDF avec sa position, sur l'appareil et sans reconnaissance de
+ * caractères : les comptes rendus des laboratoires contiennent leur texte, lu ici tel quel
+ * (PDFBox). Un PDF sans texte (document scanné) n'est pas lisible : [NoTextLayerException].
  */
 @Singleton
 class LabReportReader @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    private val recognizer by lazy { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+    private val pdfBoxReady by lazy { PDFBoxResourceLoader.init(context) }
 
     suspend fun read(uri: Uri): List<TextLine> = withContext(Dispatchers.IO) {
-        if (context.contentResolver.getType(uri) == PDF_MIME) readPdf(uri) else readImage(uri)
+        pdfBoxReady
+        val input = context.contentResolver.openInputStream(uri) ?: throw NoTextLayerException()
+        val lines = input.use { stream ->
+            PDDocument.load(stream).use { document ->
+                val pages = minOf(document.numberOfPages, MAX_PAGES)
+                (1..pages).flatMap { page -> PositionedTextStripper(page).linesOf(document) }
+            }
+        }
+        if (lines.isEmpty()) throw NoTextLayerException()
+        lines
     }
 
     /** Nom du fichier fourni par le sélecteur de documents ; null s'il est inconnu. */
@@ -41,55 +47,97 @@ class LabReportReader @Inject constructor(
         }.getOrNull()?.takeIf { it.isNotBlank() }
     }
 
-    private suspend fun readImage(uri: Uri): List<TextLine> =
-        // fromFilePath tient compte de l'orientation EXIF des photos.
-        recognize(InputImage.fromFilePath(context, uri), page = 0)
-
-    private suspend fun readPdf(uri: Uri): List<TextLine> {
-        val descriptor = context.contentResolver.openFileDescriptor(uri, "r") ?: return emptyList()
-        // close() explicites : PdfRenderer n'est pas AutoCloseable sur toutes les versions visées.
-        val renderer = PdfRenderer(descriptor)
-        try {
-            return (0 until minOf(renderer.pageCount, MAX_PAGES)).flatMap { index ->
-                val page = renderer.openPage(index)
-                // ~216 ppp : assez net pour l'OCR des petits caractères des tableaux.
-                val bitmap = Bitmap.createBitmap(page.width * SCALE, page.height * SCALE, Bitmap.Config.ARGB_8888)
-                try {
-                    bitmap.eraseColor(Color.WHITE) // fond transparent par défaut : illisible pour l'OCR
-                    page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
-                    page.close()
-                    recognize(InputImage.fromBitmap(bitmap, 0), page = index)
-                } finally {
-                    bitmap.recycle()
-                }
-            }
-        } finally {
-            renderer.close()
-            descriptor.close()
-        }
-    }
-
-    private suspend fun recognize(image: InputImage, page: Int): List<TextLine> {
-        val text = recognizer.process(image).await()
-        return text.textBlocks.flatMap { block ->
-            block.lines.mapNotNull { line ->
-                val box = line.boundingBox ?: return@mapNotNull null
-                TextLine(
-                    text = line.text,
-                    left = box.left.toFloat(),
-                    top = box.top.toFloat(),
-                    right = box.right.toFloat(),
-                    bottom = box.bottom.toFloat(),
-                    page = page,
-                )
-            }
-        }
-    }
-
     companion object {
         const val PDF_MIME = "application/pdf"
-        private const val SCALE = 3
+
         /** Les résultats sont en tête ; au-delà, ce sont mentions légales et commentaires. */
         private const val MAX_PAGES = 8
+    }
+}
+
+/** PDF sans texte exploitable : document scanné ou protégé. */
+class NoTextLayerException : Exception()
+
+/**
+ * Regroupe les caractères d'une page en morceaux de ligne, comme les colonnes d'un tableau :
+ * même ligne de base, et un écart horizontal de plus de [COLUMN_GAP] largeurs de caractère
+ * ouvre un nouveau morceau (libellé, résultat, unité, références, antériorité).
+ */
+private class PositionedTextStripper(private val page: Int) : PDFTextStripper() {
+    private val glyphs = mutableListOf<TextPosition>()
+
+    init {
+        sortByPosition = true
+        startPage = page
+        endPage = page
+    }
+
+    fun linesOf(document: PDDocument): List<TextLine> {
+        getText(document)
+        // Rangées : caractères dont la ligne de base est à moins de BASELINE_TOLERANCE de la
+        // première de la rangée (des seuils fixes couperaient une ligne à cheval sur deux).
+        val rows = mutableListOf<MutableList<TextPosition>>()
+        for (glyph in glyphs.filter { it.unicode.isNotBlank() }.sortedBy { it.yDirAdj }) {
+            val row = rows.lastOrNull()?.takeIf { glyph.yDirAdj - it.first().yDirAdj <= BASELINE_TOLERANCE }
+            if (row != null) row += glyph else rows += mutableListOf(glyph)
+        }
+        return rows.flatMap { row -> chunks(row.sortedBy { it.xDirAdj }) }
+    }
+
+    override fun processTextPosition(text: TextPosition) {
+        glyphs += text
+    }
+
+    private fun chunks(row: List<TextPosition>): List<TextLine> {
+        val result = mutableListOf<TextLine>()
+        var current = mutableListOf<TextPosition>()
+        fun flush() {
+            if (current.isNotEmpty()) result += current.toTextLine()
+            current = mutableListOf()
+        }
+        for (glyph in row) {
+            val previous = current.lastOrNull()
+            if (previous != null) {
+                val gap = glyph.xDirAdj - (previous.xDirAdj + previous.widthDirAdj)
+                if (gap > COLUMN_GAP * charWidth(previous)) flush()
+            }
+            current += glyph
+        }
+        flush()
+        return result
+    }
+
+    /** Texte du morceau, avec une espace là où l'écart entre deux caractères marque un mot. */
+    private fun List<TextPosition>.toTextLine(): TextLine {
+        val text = buildString {
+            this@toTextLine.forEachIndexed { index, glyph ->
+                if (index > 0) {
+                    val previous = this@toTextLine[index - 1]
+                    val gap = glyph.xDirAdj - (previous.xDirAdj + previous.widthDirAdj)
+                    if (gap > WORD_GAP * charWidth(previous)) append(' ')
+                }
+                append(glyph.unicode)
+            }
+        }
+        val top = minOf { it.yDirAdj - it.heightDir }
+        return TextLine(
+            text = text,
+            left = first().xDirAdj,
+            top = top,
+            right = last().xDirAdj + last().widthDirAdj,
+            bottom = maxOf { it.yDirAdj },
+            page = page - 1,
+        )
+    }
+
+    /** Largeur de référence d'un caractère : la moitié de la taille de police, à défaut sa largeur. */
+    private fun charWidth(glyph: TextPosition): Float =
+        (glyph.fontSizeInPt * 0.5f).takeIf { it > 0f } ?: glyph.widthDirAdj.coerceAtLeast(1f)
+
+    private companion object {
+        /** Lignes de base distantes de moins de 2 points : même ligne. */
+        const val BASELINE_TOLERANCE = 2f
+        const val WORD_GAP = 0.3f
+        const val COLUMN_GAP = 2.0f
     }
 }

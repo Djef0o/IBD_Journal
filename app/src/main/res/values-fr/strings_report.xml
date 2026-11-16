@@ -25,8 +25,8 @@
     <string name="report_labs">Résultats d\'analyses</string>
     <string name="report_col_date">Date</string>
     <string name="report_col_test">Analyse</string>
-    <string name="report_col_reference">Valeurs normales</string>
-    <string name="report_labs_legend">↑ élevé · ↓ bas (en gras) : hors des valeurs normales, celles du laboratoire si elles ont été saisies, sinon les valeurs usuelles de l\'adulte.</string>
+    <string name="report_col_reference">Valeurs du laboratoire</string>
+    <string name="report_labs_legend">↑ au-dessus · ↓ en dessous (en gras) : hors des valeurs du laboratoire saisies ; – quand il n\'en a pas indiqué.</string>
     <string name="report_lab_notes">Remarques</string>
     <string name="report_lab_note">%1$s – %2$s : %3$s</string>
     <string name="report_col_note">Note</string>

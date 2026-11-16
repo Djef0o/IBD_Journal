@@ -116,14 +116,14 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.kotlinx.coroutines.android)
 
-    // Camera + barcode scanning (ML Kit)
+    // Camera + barcode scanning (ZXing)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
-    implementation(libs.mlkit.barcode.scanning)
-    // Import des comptes rendus d'analyses : reconnaissance de texte sur l'appareil, sans envoi.
-    implementation(libs.mlkit.text.recognition)
+    implementation(libs.zxing.core)
+    // Import des comptes rendus d'analyses : texte du PDF lu sur l'appareil, sans OCR ni envoi.
+    implementation(libs.pdfbox.android)
 
     // Image loading
     implementation(libs.coil.compose)
@@ -131,10 +131,4 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
-
-    // Cloud backup — Google Drive: Google Identity Services AuthorizationClient (OAuth via the
-    // Android client registered for package + SHA-1; no client id in code).
-    implementation(libs.play.services.auth)
-    // Task.await() for the Play services Tasks returned by AuthorizationClient.
-    implementation(libs.kotlinx.coroutines.play.services)
 }

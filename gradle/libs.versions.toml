@@ -10,9 +10,9 @@ activity = "1.13.0"
 coreKtx = "1.19.0"
 datastore = "1.2.1"
 camerax = "1.6.2"
-mlkitBarcode = "17.3.0"
-# Lecture des comptes rendus d'analyses (OCR sur l'appareil, modèle latin embarqué)
-mlkitTextRecognition = "16.0.1"
+zxing = "3.5.3"
+# Lecture des comptes rendus d'analyses : texte du PDF, sans OCR ni envoi (Apache-2.0)
+pdfboxAndroid = "2.0.27.0"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
 kotlinxSerialization = "1.9.0"
@@ -22,8 +22,6 @@ hiltNavCompose = "1.4.0"
 navigation = "2.8.8"
 work = "2.10.0"
 appcompat = "1.7.1"
-# Cloud backup: Google Identity Services AuthorizationClient (Drive authorization)
-playServicesAuth = "22.0.0"
 # Module shared (Kotlin Multiplatform) : dates communes Android/iOS, SQLite embarqué pour iOS
 kotlinxDatetime = "0.7.1"
 sqlite = "2.6.2"
@@ -58,8 +56,8 @@ androidx-camera-core = { group = "androidx.camera", name = "camera-core", versio
 androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", version.ref = "camerax" }
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
-mlkit-barcode-scanning = { group = "com.google.mlkit", name = "barcode-scanning", version.ref = "mlkitBarcode" }
-mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
+pdfbox-android = { group = "com.tom-roush", name = "pdfbox-android", version.ref = "pdfboxAndroid" }
 
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
@@ -74,9 +72,6 @@ kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 coil-compose = { group = "io.coil-kt.coil3", name = "coil-compose", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
-# Cloud backup (see versions above)
-play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
-kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "coroutines" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

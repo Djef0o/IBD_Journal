@@ -26,32 +26,34 @@ Deine Gesundheitsdaten bleiben auf deinem Smartphone.
 ### Verlauf und Trends
 - Monatskalender, eingefärbt nach Stuhlkonsistenz.
 - Stuhlgänge pro Tag, 30 Tage / 90 Tage / gesamter Verlauf, Tage mit jeweiligen Beschwerden im Vergleich zum vorherigen Zeitraum.
-- **Arztbericht (PDF)**: Zusammenfassung des Zeitraums, Beschwerden, Behandlungen mit Einnahmetreue, letzte Blutbilder mit Normalwerten.
+- **Arztbericht (PDF)**: Zusammenfassung des Zeitraums, Beschwerden, Behandlungen mit Einnahmetreue, letzte Blutbilder mit den Referenzbereichen des Labors.
 
 ### Behandlung
 - **Behandlungen**: gängige Medikamente bei CED, Erinnerungen, „eingenommen / vergessen“ direkt aus der Benachrichtigung, Einnahmetreue, Warnungen zum Nachbestellen.
 - **Blut- und Stuhluntersuchungen**, mit Erinnerungen geplant.
-- **Koloskopie und Rektosigmoidoskopie**: Untersuchungstermin, ballaststoffarme Kost, Dosen der Darmvorbereitung (geteilte Dosis), Narkosevorgespräch mit Warnhinweis, falls es fehlt oder weniger als 48 Stunden vor der Untersuchung liegt. Eine Erinnerung für jeden Schritt.
-- **Laborergebnisse**: 43 gängige Tests (CRP, fäkales Calprotectin, Blutbild, Eisenstatus, Niere, Leber, Blutfette …), Normbereiche aus deinem Labor oder Standardwerte für Erwachsene (nach Geschlecht), Werte außerhalb des Bereichs hervorgehoben, Diagramme und eine Tabelle der Blutbilder.
-- **Laborberichte importieren** (PDF oder Fotos, mehrere auf einmal): Die Texterkennung läuft auf dem Smartphone, Werte werden in die Einheiten der App umgerechnet, und nichts wird gespeichert, bevor du es geprüft hast.
+- **Koloskopie und Rektosigmoidoskopie**: Untersuchungstermin, ballaststoffarme Kost und Dosen der Darmvorbereitung wie von deiner Ärztin oder deinem Arzt verordnet, Narkosevorgespräch. Eine Erinnerung für jeden Schritt.
+- **Laborergebnisse**: 43 gängige Tests (CRP, fäkales Calprotectin, Blutbild, Eisenstatus, Niere, Leber, Blutfette …), mit dem Referenzbereich, den dein Labor angibt, Diagramme und eine Tabelle der Blutbilder. Die App liefert keine eigenen Normwerte.
+- **Laborberichte importieren** (Lab-PDFs, mehrere auf einmal): Der Text des PDFs wird auf dem Smartphone gelesen, Werte werden in die Einheiten der App umgerechnet, und nichts wird gespeichert, bevor du es geprüft hast. Gescannte Dokumente werden nicht unterstützt.
 
 <p>
   <img src="../screenshots/labs.png" width="200" alt="Laborergebnisse nach Test">
   <img src="../screenshots/lab-panels.png" width="200" alt="Tabelle der Blutbilder">
-  <img src="../screenshots/lab-chart.png" width="200" alt="CRP-Diagramm mit Normbereich">
+  <img src="../screenshots/lab-chart.png" width="200" alt="CRP-Diagramm mit dem Bereich des Labors">
 </p>
 
 ### Weitere Funktionen
 - Erinnerungen als App-Benachrichtigungen oder als Termine im Telefonkalender.
-- Sicherung und Wiederherstellung (Export als Datei, optionale Sicherung auf Google Drive).
+- Mit Passwort verschlüsselte Sicherung und Wiederherstellung in einer Datei, die du selbst aufbewahrst.
 - Geführter Ersteinstieg, helles und dunkles Design, mehrere Farbpaletten.
 - Verfügbar auf Englisch, Französisch, Deutsch, Spanisch, Italienisch und Portugiesisch.
 
 ## Datenschutz
 
 - Journal, Behandlungen und Laborergebnisse werden in einer lokalen Datenbank auf dem Smartphone gespeichert. Es gibt kein Konto und keinen App-Server.
-- Laborberichte werden auf dem Gerät gelesen (Texterkennung von Google ML Kit); die Dokumente werden nie hochgeladen. ML Kit kann anonyme Nutzungsstatistiken an Google senden.
-- Netzwerkzugriff wird nur für Barcode-Abfragen (Open Food Facts) und, wenn du es aktivierst, für die Sicherung auf Google Drive genutzt.
+- Keine Google-Dienste und keine Tracker: Laborberichte werden aus dem eigenen Text des PDFs gelesen (PdfBox-Android) und Barcodes mit ZXing gescannt, beides vollständig auf dem Smartphone.
+- Netzwerkzugriff wird nur für Barcode-Abfragen (Open Food Facts) genutzt. Keine Cloud-Sicherung: Die automatische Google-Sicherung von Android ist für die App deaktiviert.
+- Exporte sind mit einem Passwort verschlüsselt, das du selbst wählst (AES-256-GCM, Schlüsselableitung mit PBKDF2).
+- Die Kalendersynchronisation ist standardmäßig aus. Wenn du sie einschaltest, werden Namen von Behandlungen und Untersuchungen in den Telefonkalender geschrieben, der möglicherweise mit einem Online-Konto synchronisiert wird; die App warnt dich davor, bevor du sie aktivierst.
 
 ## Erstellen
 
@@ -68,9 +70,9 @@ Die Release-Signierung liest `keystore.properties` (nicht im Repository enthalte
 
 | Modul | Inhalt |
 |---|---|
-| `shared/` | Kotlin Multiplatform: Datenmodelle, Room-Datenbank, Auswertung, Parser für Laborberichte, Regeln für Erinnerungen und Untersuchungen. Kompiliert für Android und iOS. |
-| `app/` | Android-App: Jetpack Compose (Material 3) UI, Hilt, Benachrichtigungen, Kalendersynchronisation, PDF-Bericht, ML Kit OCR. |
+| `shared/` | Kotlin Multiplatform: Datenmodelle, Room-Datenbank, Auswertung, Parser für Laborberichte, Zeitpläne für Erinnerungen und Untersuchungen. Kompiliert für Android und iOS. |
+| `app/` | Android-App: Jetpack Compose (Material 3) UI, Hilt, Benachrichtigungen, Kalendersynchronisation, PDF-Bericht, PDF-Textextraktion (PdfBox-Android), Barcode-Scan (ZXing). |
 
 ## Haftungsausschluss
 
-IBD Journal ist ein persönliches Dokumentationswerkzeug. Es ersetzt keine ärztliche Beratung: Befolge immer die Anweisungen deiner Ärztin oder deines Arztes, besonders bei der Vorbereitung auf Untersuchungen und bei Behandlungen.
+IBD Journal ist ein persönliches Tagebuch. Es erfasst und zeigt an, was du eingibst; es deutet deine Ergebnisse nicht und schlägt keine medizinischen Entscheidungen vor, und es ist kein Medizinprodukt. Es ersetzt keine ärztliche Beratung: Befolge immer die Anweisungen deiner Ärztin oder deines Arztes, besonders bei der Vorbereitung auf Untersuchungen und bei Behandlungen.

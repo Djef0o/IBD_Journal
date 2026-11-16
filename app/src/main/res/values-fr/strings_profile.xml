@@ -13,7 +13,6 @@
     <string name="profile_born_on">Né(e) le %1$s · %2$s</string>
     <string name="profile_sex">Sexe</string>
     <string name="profile_sex_missing">Sexe non renseigné</string>
-    <string name="profile_sex_hint">Sert aux valeurs normales de l\'hémoglobine et de la ferritine.</string>
     <string name="sex_female">Femme</string>
     <string name="sex_male">Homme</string>
     <plurals name="profile_age">

@@ -17,3 +17,4 @@ keystore/
 # Comptes rendus d'analyses réels (données de santé) déposés à la racine pour les tests
 /*.pdf
 /Labos/
+.kotlin/

@@ -343,7 +343,7 @@ private fun DraftRow(draft: ImportDraft, duplicate: Duplicate?, onChange: (Impor
     }
 }
 
-/** Lecture en cours : OCR de chaque page sur l'appareil, quelques secondes par document. */
+/** Lecture en cours : texte de chaque PDF, lu sur l'appareil. */
 @Composable
 internal fun LabImportProgressDialog(done: Int, total: Int) {
     AlertDialog(

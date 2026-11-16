@@ -5,7 +5,7 @@
     <string name="lab_view_by_date">Nach Datum</string>
 
     <!-- Groupes de la vue par analyse -->
-    <string name="lab_group_watch">Im Blick behalten</string>
+    <string name="lab_group_outside">Außerhalb der Referenzwerte des Labors</string>
 
     <!-- En-tête de la colonne des analyses du tableau -->
     <string name="lab_table_test">Untersuchung</string>
@@ -26,9 +26,9 @@
         <item quantity="many">%1$d erfasste Werte</item>
         <item quantity="other">%1$d erfasste Werte</item>
     </plurals>
-    <plurals name="lab_summary_watch">
-        <item quantity="one">%1$d im Blick behalten</item>
-        <item quantity="many">%1$d im Blick behalten</item>
-        <item quantity="other">%1$d im Blick behalten</item>
+    <plurals name="lab_summary_outside">
+        <item quantity="one">%1$d außerhalb der Referenzwerte des Labors</item>
+        <item quantity="many">%1$d außerhalb der Referenzwerte des Labors</item>
+        <item quantity="other">%1$d außerhalb der Referenzwerte des Labors</item>
     </plurals>
 </resources>

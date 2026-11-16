@@ -26,32 +26,34 @@ Tus datos de salud permanecen en tu teléfono.
 ### Historial y tendencias
 - Calendario mensual coloreado según la consistencia de las deposiciones.
 - Deposiciones por día, 30 días / 90 días / todo el historial, y días con cada síntoma comparados con el periodo anterior.
-- **Informe para el médico (PDF)**: resumen del periodo, síntomas, tratamientos con adherencia, últimos análisis de sangre con valores normales.
+- **Informe para el médico (PDF)**: resumen del periodo, síntomas, tratamientos con adherencia, últimos análisis de sangre con los rangos de referencia del laboratorio.
 
 ### Cuidados
 - **Tratamientos**: medicamentos habituales para la EII, recordatorios, «tomado / olvidado» desde la notificación, adherencia, alertas de reposición.
 - **Análisis de sangre y de heces** programados con recordatorios.
-- **Colonoscopia y rectosigmoidoscopia**: fecha del examen, dieta sin residuos, dosis de preparación intestinal (pauta fraccionada), consulta de anestesia con aviso si falta o si es menos de 48 h antes del examen. Un recordatorio para cada paso.
-- **Resultados de laboratorio**: 43 pruebas comunes (PCR, calprotectina fecal, hemograma, perfil de hierro, riñón, hígado, lípidos…), rangos normales de tu laboratorio o valores adultos por defecto (según el sexo), valores fuera de rango destacados, gráficos y una tabla de análisis de sangre.
-- **Importar informes de laboratorio** (PDF o fotos, varios a la vez): el reconocimiento de texto se realiza en el teléfono, los valores se convierten a las unidades de la app y no se guarda nada hasta que lo revises.
+- **Colonoscopia y rectosigmoidoscopia**: fecha del examen, dieta sin residuos y dosis de preparación intestinal según indique tu médico, consulta de anestesia. Un recordatorio para cada paso.
+- **Resultados de laboratorio**: 43 pruebas comunes (PCR, calprotectina fecal, hemograma, perfil de hierro, riñón, hígado, lípidos…), con el rango de referencia que indica tu laboratorio, gráficos y una tabla de análisis de sangre. La app no ofrece valores normales propios.
+- **Importar informes de laboratorio** (PDF del laboratorio, varios a la vez): el texto del PDF se lee en el teléfono, los valores se convierten a las unidades de la app y no se guarda nada hasta que lo revises. No se admiten documentos escaneados.
 
 <p>
   <img src="../screenshots/labs.png" width="200" alt="Resultados de laboratorio por prueba">
   <img src="../screenshots/lab-panels.png" width="200" alt="Tabla de análisis de sangre">
-  <img src="../screenshots/lab-chart.png" width="200" alt="Gráfico de PCR con rango normal">
+  <img src="../screenshots/lab-chart.png" width="200" alt="Gráfico de PCR con el rango del laboratorio">
 </p>
 
 ### Además
 - Recordatorios como notificaciones de la app o como eventos en el calendario del teléfono.
-- Copia de seguridad y restauración (exportación a archivo, copia opcional en Google Drive).
+- Copia de seguridad y restauración cifrada con contraseña, en un archivo que guardas tú.
 - Primer inicio guiado, temas claro y oscuro, varias paletas de colores.
 - Disponible en inglés, francés, alemán, español, italiano y portugués.
 
 ## Privacidad
 
 - El diario, los tratamientos y los resultados de laboratorio se guardan en una base de datos local en el teléfono. No hay cuenta ni servidor de la app.
-- Los informes de laboratorio se leen en el dispositivo (reconocimiento de texto de Google ML Kit); los documentos nunca se suben. ML Kit puede enviar estadísticas de uso anónimas a Google.
-- El acceso a la red solo se usa para consultar códigos de barras (Open Food Facts) y, si lo activas, para la copia de seguridad en Google Drive.
+- No hay servicios de Google ni rastreadores: los informes de laboratorio se leen del propio texto del PDF (PdfBox-Android) y los códigos de barras se escanean con ZXing, todo en el teléfono.
+- El acceso a la red solo se usa para consultar códigos de barras (Open Food Facts). Sin copia en la nube: la copia de seguridad automática de Google de Android está desactivada para la app.
+- Las exportaciones se cifran con una contraseña que tú eliges (AES-256-GCM, derivación de clave con PBKDF2).
+- La sincronización del calendario está desactivada por defecto. Al activarla se escriben nombres de tratamientos y exámenes en el calendario del teléfono, que puede sincronizarse con una cuenta en línea; la app lo advierte antes de activarla.
 
 ## Compilación
 
@@ -68,9 +70,9 @@ La firma de la versión de publicación lee `keystore.properties` (no incluido e
 
 | Módulo | Contenido |
 |---|---|
-| `shared/` | Kotlin Multiplatform: modelos de datos, base de datos Room, análisis, analizador de informes de laboratorio, reglas de recordatorios y exámenes. Compila para Android e iOS. |
-| `app/` | App de Android: interfaz con Jetpack Compose (Material 3), Hilt, notificaciones, sincronización del calendario, informe PDF, OCR con ML Kit. |
+| `shared/` | Kotlin Multiplatform: modelos de datos, base de datos Room, análisis, analizador de informes de laboratorio, calendarios de recordatorios y exámenes. Compila para Android e iOS. |
+| `app/` | App de Android: interfaz con Jetpack Compose (Material 3), Hilt, notificaciones, sincronización del calendario, informe PDF, extracción de texto de PDF (PdfBox-Android), escaneo de códigos de barras (ZXing). |
 
 ## Aviso legal
 
-IBD Journal es una herramienta personal de seguimiento. No sustituye al consejo médico: sigue siempre las indicaciones de tu médico, especialmente para la preparación de exámenes y los tratamientos.
+IBD Journal es un diario personal. Registra y muestra lo que introduces; no interpreta tus resultados ni sugiere ninguna decisión médica, y no es un producto sanitario. No sustituye al consejo médico: sigue siempre las indicaciones de tu médico, especialmente para la preparación de exámenes y los tratamientos.

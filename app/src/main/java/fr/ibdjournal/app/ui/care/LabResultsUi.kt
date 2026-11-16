@@ -79,7 +79,6 @@ import fr.ibdjournal.app.data.model.LabCategory
 import fr.ibdjournal.app.data.model.LabQualifier
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.LabTest
-import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.ReferenceRange
 import fr.ibdjournal.app.domain.reference
@@ -91,7 +90,6 @@ import fr.ibdjournal.app.ui.displayValue
 import fr.ibdjournal.app.ui.formatLabValue
 import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.settings.settingsRowColors
-import fr.ibdjournal.app.ui.theme.bristolColor
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlinx.datetime.DateTimeUnit
@@ -116,26 +114,25 @@ internal fun labHistories(results: List<LabResult>): Map<LabTest, List<LabResult
 internal fun parseLabValue(text: String): Double? =
     text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 }
 
-/** Couleur d'un résultat : accent du thème dans la norme, erreur sinon. */
+/** Couleur d'un résultat : accent du thème, erreur hors des valeurs du laboratoire. */
 @Composable
 @ReadOnlyComposable
-private fun labStatusColor(status: LabStatus): Color =
-    if (status == LabStatus.NORMAL) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+private fun labStatusColor(status: LabStatus?): Color =
+    if (status == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
 
-@StringRes
-private fun LabStatus.labelRes(): Int? = when (this) {
-    LabStatus.LOW -> R.string.lab_status_low
-    LabStatus.HIGH -> R.string.lab_status_high
-    LabStatus.NORMAL -> null
-}
+@get:StringRes
+private val LabStatus.labelRes: Int
+    get() = when (this) {
+        LabStatus.BELOW -> R.string.lab_status_below
+        LabStatus.ABOVE -> R.string.lab_status_above
+    }
 
-/** Pastille « Bas » / « Haut » ; rien dans la norme. */
+/** Pastille « En dessous » / « Au-dessus » des valeurs du laboratoire. */
 @Composable
 private fun LabStatusLabel(status: LabStatus) {
-    val label = status.labelRes() ?: return
     val color = labStatusColor(status)
     Text(
-        text = stringResource(label),
+        text = stringResource(status.labelRes),
         style = MaterialTheme.typography.labelSmall,
         fontWeight = FontWeight.SemiBold,
         color = color,
@@ -172,7 +169,6 @@ private enum class LabView(@StringRes val labelRes: Int) {
 @Composable
 internal fun LabResultsViews(
     histories: Map<LabTest, List<LabResult>>,
-    sex: Sex?,
     onOpenTest: (LabTest) -> Unit,
     onEditResult: (LabResult) -> Unit,
 ) {
@@ -193,8 +189,8 @@ internal fun LabResultsViews(
         }
     }
     when (view) {
-        LabView.BY_TEST -> LabTestList(histories, sex, onOpenTest)
-        LabView.BY_DATE -> LabPanelTable(histories, sex, onEditResult)
+        LabView.BY_TEST -> LabTestList(histories, onOpenTest)
+        LabView.BY_DATE -> LabPanelTable(histories, onEditResult)
     }
 }
 
@@ -202,20 +198,17 @@ internal fun LabResultsViews(
 private const val SPARKLINE_POINTS = 8
 
 /**
- * Analyses hors normes d'abord, puis celles dans la norme rangées par catégorie, dans l'ordre
- * de l'énumération ; un groupe vide est omis.
+ * Analyses hors des valeurs du laboratoire d'abord, puis les autres rangées par catégorie,
+ * dans l'ordre de l'énumération ; un groupe vide est omis.
  */
 @Composable
 private fun LabTestList(
     histories: Map<LabTest, List<LabResult>>,
-    sex: Sex?,
     onOpenTest: (LabTest) -> Unit,
 ) {
-    val (watch, normal) = histories.entries.partition { (_, history) ->
-        history.first().status(sex) != LabStatus.NORMAL
-    }
-    val groups = listOf(R.string.lab_group_watch to watch) +
-        LabCategory.entries.map { category -> category.labelRes to normal.filter { it.key.category == category } }
+    val (outside, others) = histories.entries.partition { (_, history) -> history.first().status() != null }
+    val groups = listOf(R.string.lab_group_outside to outside) +
+        LabCategory.entries.map { category -> category.labelRes to others.filter { it.key.category == category } }
     groups.forEach { (title, group) ->
         if (group.isEmpty()) return@forEach
         Text(
@@ -225,7 +218,7 @@ private fun LabTestList(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 4.dp),
         )
         group.forEach { (test, history) ->
-            LabTestRow(test = test, history = history, sex = sex, onClick = { onOpenTest(test) })
+            LabTestRow(test = test, history = history, onClick = { onOpenTest(test) })
         }
     }
 }
@@ -239,11 +232,10 @@ private fun LabTestList(
 private fun LabTestRow(
     test: LabTest,
     history: List<LabResult>,
-    sex: Sex?,
     onClick: () -> Unit,
 ) {
     val latest = history.first()
-    val status = latest.status(sex)
+    val status = latest.status()
     val recent = remember(history) { history.take(SPARKLINE_POINTS).reversed() }
     ListItem(
         headlineContent = {
@@ -254,7 +246,7 @@ private fun LabTestRow(
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                if (status != LabStatus.NORMAL) {
+                if (status != null) {
                     Spacer(Modifier.width(8.dp))
                     LabStatusLabel(status)
                 }
@@ -315,7 +307,6 @@ private val TABLE_CATEGORY_HEIGHT = 32.dp
 @Composable
 private fun LabPanelTable(
     histories: Map<LabTest, List<LabResult>>,
-    sex: Sex?,
     onEditResult: (LabResult) -> Unit,
 ) {
     // Catégories dans l'ordre de l'énumération, analyses aussi (clés déjà triées).
@@ -393,7 +384,7 @@ private fun LabPanelTable(
                     groups.values.forEach { tests ->
                         Spacer(Modifier.height(TABLE_CATEGORY_HEIGHT))
                         tests.forEach { test ->
-                            LabTableCell(result = cells[test]?.get(date), sex = sex, onClick = onEditResult)
+                            LabTableCell(result = cells[test]?.get(date), onClick = onEditResult)
                         }
                     }
                 }
@@ -402,9 +393,9 @@ private fun LabPanelTable(
     }
 }
 
-/** Valeur sans unité ; hors normes sur fond teinté ; « – » sans résultat. */
+/** Valeur sans unité ; hors des valeurs du laboratoire sur fond teinté ; « – » sans résultat. */
 @Composable
-private fun LabTableCell(result: LabResult?, sex: Sex?, onClick: (LabResult) -> Unit) {
+private fun LabTableCell(result: LabResult?, onClick: (LabResult) -> Unit) {
     Box(
         Modifier
             .height(TABLE_ROW_HEIGHT)
@@ -415,15 +406,15 @@ private fun LabTableCell(result: LabResult?, sex: Sex?, onClick: (LabResult) -> 
         if (result == null) {
             Text("–", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.outline)
         } else {
-            val status = result.status(sex)
-            val abnormal = status != LabStatus.NORMAL
+            val status = result.status()
+            val outside = status != null
             val color = labStatusColor(status)
-            val statusText = status.labelRes()?.let { stringResource(it) }
+            val statusText = status?.let { stringResource(it.labelRes) }
             Box(
                 Modifier
                     .fillMaxSize()
                     .clip(RoundedCornerShape(8.dp))
-                    .then(if (abnormal) Modifier.background(color.copy(alpha = 0.12f)) else Modifier)
+                    .then(if (outside) Modifier.background(color.copy(alpha = 0.12f)) else Modifier)
                     .clickable { onClick(result) }
                     .semantics { if (statusText != null) stateDescription = statusText },
                 contentAlignment = Alignment.Center,
@@ -431,8 +422,8 @@ private fun LabTableCell(result: LabResult?, sex: Sex?, onClick: (LabResult) -> 
                 Text(
                     result.displayValue(withUnit = false),
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = if (abnormal) FontWeight.SemiBold else null,
-                    color = if (abnormal) color else MaterialTheme.colorScheme.onSurface,
+                    fontWeight = if (outside) FontWeight.SemiBold else null,
+                    color = if (outside) color else MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
             }
@@ -525,9 +516,18 @@ internal fun LabResultEditorSheet(
     var valueText by remember { mutableStateOf(initial?.let { formatLabValue(it.value, grouping = false) }.orEmpty()) }
     var date by remember { mutableStateOf(initial?.date ?: today()) }
     var note by remember { mutableStateOf(initial?.note.orEmpty()) }
+    // Valeurs du laboratoire imprimées sur le compte rendu, facultatives.
+    var lowText by remember { mutableStateOf(initial?.referenceLow?.let { formatLabValue(it, grouping = false) }.orEmpty()) }
+    var highText by remember { mutableStateOf(initial?.referenceHigh?.let { formatLabValue(it, grouping = false) }.orEmpty()) }
     var pickDate by remember { mutableStateOf(false) }
     val value = parseLabValue(valueText)
     val invalid = valueText.isNotBlank() && value == null
+    val low = parseLabBound(lowText)
+    val high = parseLabBound(highText)
+    val lowInvalid = lowText.isNotBlank() && low == null
+    val highInvalid = highText.isNotBlank() && high == null
+    val reversed = low != null && high != null && low > high
+    val canSave = value != null && !lowInvalid && !highInvalid && !reversed
 
     LabSheet(onDismiss = onDismiss) {
         Text(
@@ -535,7 +535,14 @@ internal fun LabResultEditorSheet(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
-        LabTestPicker(test = test, onSelect = { test = it })
+        // Les valeurs du laboratoire valent pour l'analyse d'origine seulement.
+        LabTestPicker(test = test, onSelect = {
+            if (it != test) {
+                test = it
+                lowText = ""
+                highText = ""
+            }
+        })
         // Résultat exact, ou seulement borné par le seuil de mesure du laboratoire.
         SingleChoiceSegmentedButtonRow(Modifier.width(180.dp)) {
             LabQualifier.entries.forEachIndexed { index, option ->
@@ -580,6 +587,34 @@ internal fun LabResultEditorSheet(
             Spacer(Modifier.width(8.dp))
             TextButton(onClick = { pickDate = true }) { Text(stringResource(R.string.modify)) }
         }
+        Text(stringResource(R.string.lab_result_reference_title), style = MaterialTheme.typography.bodyLarge)
+        Text(
+            stringResource(R.string.lab_result_reference_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LabBoundField(
+                text = lowText,
+                onChange = { lowText = it },
+                label = R.string.lab_result_reference_low,
+                unit = test.unit,
+                error = when {
+                    lowInvalid -> R.string.lab_result_number_invalid
+                    reversed -> R.string.lab_result_reference_reversed
+                    else -> null
+                },
+                modifier = Modifier.weight(1f),
+            )
+            LabBoundField(
+                text = highText,
+                onChange = { highText = it },
+                label = R.string.lab_result_reference_high,
+                unit = test.unit,
+                error = if (highInvalid) R.string.lab_result_number_invalid else null,
+                modifier = Modifier.weight(1f),
+            )
+        }
         OutlinedTextField(
             value = note,
             onValueChange = { note = it },
@@ -596,10 +631,8 @@ internal fun LabResultEditorSheet(
             Spacer(Modifier.weight(1f))
             Button(
                 onClick = {
-                    if (value != null) {
+                    if (value != null && canSave) {
                         val base = initial ?: LabResult(test = test, value = value, date = date)
-                        // Les bornes du laboratoire valent pour l'analyse d'origine seulement.
-                        val sameTest = base.test == test
                         onSave(
                             base.copy(
                                 test = test,
@@ -607,14 +640,14 @@ internal fun LabResultEditorSheet(
                                 date = date,
                                 note = note.trim(),
                                 qualifier = qualifier,
-                                referenceLow = base.referenceLow.takeIf { sameTest },
-                                referenceHigh = base.referenceHigh.takeIf { sameTest },
+                                referenceLow = low,
+                                referenceHigh = high,
                             )
                         )
                     }
                     onDismiss()
                 },
-                enabled = value != null,
+                enabled = canSave,
             ) { Text(stringResource(R.string.save)) }
         }
     }
@@ -627,6 +660,33 @@ internal fun LabResultEditorSheet(
             onPick = { date = it },
         )
     }
+}
+
+/** Borne du laboratoire : zéro admis (« 0 – 5 ») ; null si pas un nombre positif ou nul. */
+private fun parseLabBound(text: String): Double? =
+    text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0 }
+
+/** Champ d'une borne du laboratoire, dans l'unité de l'analyse. */
+@Composable
+private fun LabBoundField(
+    text: String,
+    onChange: (String) -> Unit,
+    @StringRes label: Int,
+    unit: String,
+    @StringRes error: Int?,
+    modifier: Modifier,
+) {
+    OutlinedTextField(
+        value = text,
+        onValueChange = onChange,
+        label = { Text(stringResource(label)) },
+        suffix = { Text(unit) },
+        isError = error != null,
+        supportingText = error?.let { { Text(stringResource(it)) } },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = modifier,
+    )
 }
 
 // --- Détail d'une analyse ---
@@ -643,13 +703,12 @@ private enum class LabPeriod(val months: Int?, @StringRes val labelRes: Int) {
 internal fun LabResultDetailSheet(
     test: LabTest,
     history: List<LabResult>,
-    sex: Sex?,
     onDismiss: () -> Unit,
     onAdd: () -> Unit,
     onEdit: (LabResult) -> Unit,
 ) {
-    // Les valeurs de référence du dernier compte rendu servent de bande « normale ».
-    val reference = history.first().reference(sex)
+    // Les valeurs du laboratoire du dernier compte rendu tracent la bande ; aucune sans elles.
+    val reference = history.first().reference()
     val byPeriod = remember(history) {
         val today = today()
         val chronological = history.reversed()
@@ -679,18 +738,17 @@ internal fun LabResultDetailSheet(
                 )
             }
         }
-        LabChart(test = test, points = byPeriod.getValue(shown), reference = reference, sex = sex)
-        val range = reference.display()
-        if (range.isNotEmpty()) {
+        LabChart(test = test, points = byPeriod.getValue(shown), reference = reference)
+        if (reference != null) {
             Text(
-                stringResource(R.string.lab_reference, "$range ${test.unit}"),
+                stringResource(R.string.lab_reference, "${reference.display()} ${test.unit}"),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         Column {
             history.forEach { result ->
-                val status = result.status(sex)
+                val status = result.status()
                 ListItem(
                     headlineContent = { Text(result.displayValue()) },
                     supportingContent = {
@@ -700,9 +758,7 @@ internal fun LabResultDetailSheet(
                                 .joinToString("\n")
                         )
                     },
-                    trailingContent = if (status == LabStatus.NORMAL) null else {
-                        { LabStatusLabel(status) }
-                    },
+                    trailingContent = status?.let { { LabStatusLabel(it) } },
                     modifier = Modifier.clickable { onEdit(result) },
                     colors = settingsRowColors(),
                 )
@@ -718,14 +774,14 @@ internal fun LabResultDetailSheet(
 
 /**
  * Courbe des valeurs, abscisses proportionnelles au temps écoulé, sur la bande des valeurs
- * de référence. L'axe vertical englobe valeurs et bornes ; sans borne basse (CRP), il part
- * de zéro. Points pleins colorés selon le statut, creux pour un seuil (« < 1 »).
- * [points] dans l'ordre chronologique, non vide.
+ * du laboratoire s'il y en a. L'axe vertical englobe valeurs et bornes ; sans borne basse
+ * (CRP), il part de zéro. Points pleins, en couleur d'erreur hors des valeurs du laboratoire,
+ * creux pour un seuil (« < 1 »). [points] dans l'ordre chronologique, non vide.
  */
 @Composable
-private fun LabChart(test: LabTest, points: List<LabResult>, reference: ReferenceRange, sex: Sex?) {
-    val low = reference.low
-    val high = reference.high
+private fun LabChart(test: LabTest, points: List<LabResult>, reference: ReferenceRange?) {
+    val low = reference?.low
+    val high = reference?.high
     val valuesMin = points.minOf { it.value }
     val min = when {
         low != null -> minOf(valuesMin, low)
@@ -735,9 +791,9 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
     val max = listOfNotNull(points.maxOf { it.value }, low, high).max()
     val lineColor = MaterialTheme.colorScheme.outline
     val gridColor = MaterialTheme.colorScheme.outlineVariant
-    val bandColor = bristolColor(3).copy(alpha = 0.15f) // vert « normal » de l'app
-    val normalColor = labStatusColor(LabStatus.NORMAL)
-    val abnormalColor = labStatusColor(LabStatus.HIGH)
+    val bandColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.10f)
+    val inRangeColor = labStatusColor(null)
+    val outsideColor = labStatusColor(LabStatus.ABOVE)
     val holeColor = MaterialTheme.colorScheme.surface
     val labelStyle = MaterialTheme.typography.labelSmall
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -768,7 +824,7 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
                     if (max == min) size.height / 2
                     else pad + height * ((max - value) / (max - min)).toFloat()
 
-                // Bande des valeurs normales ; une borne absente la prolonge jusqu'au bord.
+                // Bande des valeurs du laboratoire ; une borne absente la prolonge jusqu'au bord.
                 if (low != null || high != null) {
                     val top = high?.let { y(it) } ?: 0f
                     val bottom = low?.let { y(it) } ?: size.height
@@ -796,7 +852,7 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
                 val radius = 4.dp.toPx()
                 points.forEachIndexed { index, point ->
                     val center = Offset(x(index), y(point.value))
-                    val color = if (point.status(sex) == LabStatus.NORMAL) normalColor else abnormalColor
+                    val color = if (point.status() == null) inRangeColor else outsideColor
                     if (point.qualifier == LabQualifier.EXACT) {
                         drawCircle(color, radius = radius, center = center)
                     } else {

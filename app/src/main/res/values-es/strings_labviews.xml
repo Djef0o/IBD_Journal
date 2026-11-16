@@ -5,7 +5,7 @@
     <string name="lab_view_by_date">Por fecha</string>
 
     <!-- Groupes de la vue par analyse -->
-    <string name="lab_group_watch">A vigilar</string>
+    <string name="lab_group_outside">Fuera de los valores del laboratorio</string>
 
     <!-- En-tête de la colonne des analyses du tableau -->
     <string name="lab_table_test">Análisis</string>
@@ -26,9 +26,9 @@
         <item quantity="many">%1$d análisis seguidos</item>
         <item quantity="other">%1$d análisis seguidos</item>
     </plurals>
-    <plurals name="lab_summary_watch">
-        <item quantity="one">%1$d a vigilar</item>
-        <item quantity="many">%1$d a vigilar</item>
-        <item quantity="other">%1$d a vigilar</item>
+    <plurals name="lab_summary_outside">
+        <item quantity="one">%1$d fuera de los valores del laboratorio</item>
+        <item quantity="many">%1$d fuera de los valores del laboratorio</item>
+        <item quantity="other">%1$d fuera de los valores del laboratorio</item>
     </plurals>
 </resources>

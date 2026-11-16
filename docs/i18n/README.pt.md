@@ -26,32 +26,34 @@ Os seus dados de saúde ficam no seu celular.
 ### Histórico e tendências
 - Calendário mensal colorido pela consistência das fezes.
 - Evacuações por dia, 30 dias / 90 dias / todo o histórico, e dias com cada sintoma comparados ao período anterior.
-- **Relatório para o médico (PDF)**: resumo do período, sintomas, tratamentos com adesão e últimos exames de sangue com valores normais.
+- **Relatório para o médico (PDF)**: resumo do período, sintomas, tratamentos com adesão e últimos exames de sangue com as faixas de referência do laboratório.
 
 ### Cuidados
 - **Tratamentos**: medicamentos usuais para DII, lembretes, "tomado / esquecido" pela notificação, adesão e alertas de reposição.
 - **Exames de sangue e de fezes** agendados com lembretes.
-- **Colonoscopia e retossigmoidoscopia**: data do exame, dieta sem resíduos, doses do preparo intestinal (dose fracionada), consulta de anestesia com aviso se estiver faltando ou se faltarem menos de 48 h para o exame. Um lembrete para cada etapa.
-- **Resultados de exames**: 43 exames comuns (PCR, calprotectina fecal, hemograma, ferro, rins, fígado, lipídios…), valores de referência do seu laboratório ou padrões para adultos (por sexo), valores fora da faixa destacados, gráficos e uma tabela dos exames de sangue.
-- **Importação de laudos** (PDF ou fotos, vários de uma vez): o reconhecimento de texto roda no celular, os valores são convertidos para as unidades do aplicativo, e nada é salvo antes da sua revisão.
+- **Colonoscopia e retossigmoidoscopia**: data do exame, dieta sem resíduos e doses do preparo intestinal conforme prescritas pelo seu médico, consulta de anestesia. Um lembrete para cada etapa.
+- **Resultados de exames**: 43 exames comuns (PCR, calprotectina fecal, hemograma, ferro, rins, fígado, lipídios…), com a faixa de referência impressa pelo seu laboratório, gráficos e uma tabela dos exames de sangue. O aplicativo não fornece valores normais próprios.
+- **Importação de laudos** (PDFs de laboratório, vários de uma vez): o texto do PDF é lido no celular, os valores são convertidos para as unidades do aplicativo, e nada é salvo antes da sua revisão. Documentos digitalizados não são suportados.
 
 <p>
   <img src="../screenshots/labs.png" width="200" alt="Resultados por exame">
   <img src="../screenshots/lab-panels.png" width="200" alt="Tabela de exames de sangue">
-  <img src="../screenshots/lab-chart.png" width="200" alt="Gráfico de PCR com faixa de referência">
+  <img src="../screenshots/lab-chart.png" width="200" alt="Gráfico de PCR com a faixa do laboratório">
 </p>
 
 ### Também
 - Lembretes como notificações do aplicativo ou como eventos no calendário do celular.
-- Backup e restauração (exportação de arquivo, backup opcional no Google Drive).
+- Backup e restauração criptografados por senha, em um arquivo que você mesmo guarda.
 - Primeira abertura guiada, temas claro e escuro, várias paletas de cores.
 - Disponível em inglês, francês, alemão, espanhol, italiano e português.
 
 ## Privacidade
 
 - O diário, os tratamentos e os resultados de exames são armazenados em um banco de dados local no celular. Não há conta nem servidor do aplicativo.
-- Os laudos são lidos no próprio dispositivo (reconhecimento de texto do Google ML Kit); os documentos nunca são enviados. O ML Kit pode enviar estatísticas anônimas de uso ao Google.
-- O acesso à rede é usado apenas para consultas de código de barras (Open Food Facts) e, se você ativar, para o backup no Google Drive.
+- Sem serviços do Google e sem rastreadores: os laudos são lidos a partir do próprio texto do PDF (PdfBox-Android) e os códigos de barras são lidos com ZXing, tudo no celular.
+- O acesso à rede é usado apenas para consultas de código de barras (Open Food Facts). Sem backup na nuvem: o backup automático do Google no Android está desativado para o app.
+- As exportações são criptografadas com uma senha que você escolhe (AES-256-GCM, derivação de chave PBKDF2).
+- A sincronização de calendário vem desativada por padrão. Ao ativá-la, os nomes de tratamentos e exames são gravados no calendário do celular, que pode ser sincronizado com uma conta online; o aplicativo avisa antes de ativar.
 
 ## Compilação
 
@@ -68,9 +70,9 @@ A assinatura de release lê `keystore.properties` (não versionado).
 
 | Módulo | Conteúdo |
 |---|---|
-| `shared/` | Kotlin Multiplatform: modelos de dados, banco de dados Room, análises, leitor de laudos, regras de lembretes e exames. Compila para Android e iOS. |
-| `app/` | Aplicativo Android: interface Jetpack Compose (Material 3), Hilt, notificações, sincronização de calendário, relatório em PDF, OCR com ML Kit. |
+| `shared/` | Kotlin Multiplatform: modelos de dados, banco de dados Room, análises, leitor de laudos, cronogramas de lembretes e exames. Compila para Android e iOS. |
+| `app/` | Aplicativo Android: interface Jetpack Compose (Material 3), Hilt, notificações, sincronização de calendário, relatório em PDF, extração de texto de PDF (PdfBox-Android), leitura de código de barras (ZXing). |
 
 ## Aviso legal
 
-IBD Journal é uma ferramenta pessoal de acompanhamento. Ele não substitui a orientação médica: siga sempre as instruções do seu médico, especialmente para o preparo dos exames e para os tratamentos.
+IBD Journal é um diário pessoal. Ele registra e exibe o que você informa; não interpreta seus resultados nem sugere qualquer decisão médica, e não é um dispositivo médico. Ele não substitui a orientação médica: siga sempre as instruções do seu médico, especialmente para o preparo dos exames e para os tratamentos.

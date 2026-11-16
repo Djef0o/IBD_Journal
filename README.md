@@ -26,32 +26,34 @@ Your health data stays on your phone.
 ### History and trends
 - Monthly calendar colored by stool consistency.
 - Stools per day, 30 days / 90 days / all history, days with each symptom compared with the previous period.
-- **Doctor report (PDF)**: summary of the period, symptoms, treatments with adherence, latest blood panels with normal values.
+- **Doctor report (PDF)**: summary of the period, symptoms, treatments with adherence, latest blood panels with the lab's reference ranges.
 
 ### Care
 - **Treatments**: standard IBD medications, reminders, "taken / missed" from the notification, adherence, refill alerts.
 - **Blood and stool tests** scheduled with reminders.
-- **Colonoscopy and rectosigmoidoscopy**: exam date, low-residue diet, bowel preparation doses (split dose), anesthesiologist appointment with a warning if it is missing or less than 48 h before the exam. A reminder for each step.
-- **Lab results**: 43 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids…), normal ranges from your lab or adult defaults (by sex), out-of-range values highlighted, charts and a table of blood panels.
-- **Import lab reports** (PDF or photos, several at once): text recognition runs on the phone, values are converted to the app's units, and nothing is saved before you review it.
+- **Colonoscopy and rectosigmoidoscopy**: exam date, low-residue diet and bowel preparation doses as prescribed by your doctor, anesthesiologist appointment. A reminder for each step.
+- **Lab results**: 43 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids…), with the reference range printed by your lab, charts and a table of blood panels. The app provides no normal values of its own.
+- **Import lab reports** (lab PDFs, several at once): the text of the PDF is read on the phone, values are converted to the app's units, and nothing is saved before you review it. Scanned documents are not supported.
 
 <p>
   <img src="docs/screenshots/labs.png" width="200" alt="Lab results by test">
   <img src="docs/screenshots/lab-panels.png" width="200" alt="Blood panels table">
-  <img src="docs/screenshots/lab-chart.png" width="200" alt="CRP chart with normal range">
+  <img src="docs/screenshots/lab-chart.png" width="200" alt="CRP chart with the lab's range">
 </p>
 
 ### Also
 - Reminders as app notifications or as events in the phone calendar.
-- Backup and restore (file export, optional Google Drive backup).
+- Password-encrypted backup and restore to a file you keep yourself.
 - Guided first launch, light and dark themes, several color palettes.
 - Available in English, French, German, Spanish, Italian and Portuguese.
 
 ## Privacy
 
 - The journal, treatments and lab results are stored in a local database on the phone. There is no account and no app server.
-- Lab reports are read on the device (Google ML Kit text recognition); the documents are never uploaded. ML Kit may send anonymous usage statistics to Google.
-- Network access is only used for barcode lookups (Open Food Facts) and, if you turn it on, the Google Drive backup.
+- No Google services and no trackers: lab reports are read from the PDF's own text (PdfBox-Android) and barcodes are scanned with ZXing, both entirely on the phone.
+- Network access is only used for barcode lookups (Open Food Facts). No cloud backup: Android's automatic Google backup is turned off for the app.
+- Exports are encrypted with a password you choose (AES-256-GCM, PBKDF2 key derivation).
+- Calendar sync is off by default. Turning it on writes treatment and exam names into the phone calendar, which may be synced with an online account; the app warns about this before enabling it.
 
 ## Build
 
@@ -68,9 +70,9 @@ Release signing reads `keystore.properties` (not committed).
 
 | Module | Content |
 |---|---|
-| `shared/` | Kotlin Multiplatform: data models, Room database, analysis, lab report parser, reminder and exam rules. Compiles for Android and iOS. |
-| `app/` | Android app: Jetpack Compose (Material 3) UI, Hilt, notifications, calendar sync, PDF report, ML Kit OCR. |
+| `shared/` | Kotlin Multiplatform: data models, Room database, analysis, lab report parser, reminder and exam schedules. Compiles for Android and iOS. |
+| `app/` | Android app: Jetpack Compose (Material 3) UI, Hilt, notifications, calendar sync, PDF report, PDF text extraction (PdfBox-Android), barcode scanning (ZXing). |
 
 ## Disclaimer
 
-IBD Journal is a personal tracking tool. It does not replace medical advice: always follow your doctor's instructions, especially for exam preparation and treatments.
+IBD Journal is a personal journal. It records and displays what you enter; it does not interpret your results or suggest any medical decision, and it is not a medical device. It does not replace medical advice: always follow your doctor's instructions, especially for exam preparation and treatments.

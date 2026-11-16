@@ -18,10 +18,16 @@
     <string name="lab_result_value_invalid">Saisissez un nombre positif</string>
     <string name="lab_result_date">Date de l\'analyse</string>
     <string name="lab_result_note">Note (facultatif)</string>
+    <string name="lab_result_reference_title">Valeurs du laboratoire (facultatif)</string>
+    <string name="lab_result_reference_desc">Telles qu\'imprimées sur le compte rendu, dans la même unité.</string>
+    <string name="lab_result_reference_low">Min</string>
+    <string name="lab_result_reference_high">Max</string>
+    <string name="lab_result_number_invalid">Saisissez un nombre</string>
+    <string name="lab_result_reference_reversed">Le min dépasse le max</string>
     <string name="lab_chart_description">Évolution de %1$s dans le temps</string>
-    <string name="lab_status_low">Bas</string>
-    <string name="lab_status_high">Élevé</string>
-    <string name="lab_reference">Valeurs normales : %1$s</string>
+    <string name="lab_status_below">En dessous</string>
+    <string name="lab_status_above">Au-dessus</string>
+    <string name="lab_reference">Valeurs du laboratoire : %1$s</string>
 
     <!-- Observance d'un traitement : prises confirmées / prévues sur 30 jours -->
     <plurals name="treatment_adherence">

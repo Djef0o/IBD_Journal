@@ -13,7 +13,6 @@
     <string name="profile_born_on">Born %1$s · %2$s</string>
     <string name="profile_sex">Sex</string>
     <string name="profile_sex_missing">Sex not set</string>
-    <string name="profile_sex_hint">Used for the normal values of hemoglobin and ferritin.</string>
     <string name="sex_female">Female</string>
     <string name="sex_male">Male</string>
     <plurals name="profile_age">

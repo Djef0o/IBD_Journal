@@ -7,7 +7,6 @@ import fr.ibdjournal.app.data.ProfileRepository
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoseLog
 import fr.ibdjournal.app.data.model.LabResult
-import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.domain.LabReportScan
 import fr.ibdjournal.app.domain.parseLabReport
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import fr.ibdjournal.app.data.model.Exam
@@ -38,10 +36,6 @@ class CareViewModel @Inject constructor(
 
     val labResults: StateFlow<List<LabResult>> = repository.labResults
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    /** Sexe du profil : choisit les valeurs de référence par défaut (hémoglobine, ferritine). */
-    val sex: StateFlow<Sex?> = repository.profile.map { it.sex }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     /** Prises confirmées, pour l'observance affichée sous chaque traitement. */
     val doseLogs: StateFlow<List<DoseLog>> = repository.doseLogs

@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
@@ -30,14 +32,18 @@ import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Upload
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -57,6 +63,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -94,8 +103,6 @@ fun SettingsScreen(
         onReminderEnabled = viewModel::setReminderEnabled,
         onReminderTimeChanged = viewModel::setReminderTime,
         onSendTestNotification = viewModel::sendTestNotification,
-        onExport = viewModel::exportData,
-        onImport = viewModel::importData,
     )
 }
 
@@ -110,8 +117,6 @@ fun SettingsContent(
     onReminderEnabled: (Boolean) -> Unit,
     onReminderTimeChanged: (Int, Int) -> Unit,
     onSendTestNotification: () -> Unit,
-    onExport: (java.io.OutputStream) -> Unit,
-    onImport: (java.io.InputStream) -> Unit,
 ) {
     val context = LocalContext.current
     var showTimePicker by remember { mutableStateOf(false) }
@@ -129,18 +134,6 @@ fun SettingsContent(
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
-    }
-
-    val exportLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.CreateDocument("application/json")
-    ) { uri ->
-        uri?.let { context.contentResolver.openOutputStream(it)?.let(onExport) }
-    }
-
-    val importLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenDocument()
-    ) { uri ->
-        uri?.let { context.contentResolver.openInputStream(it)?.let(onImport) }
     }
 
     var isPermissionGranted by remember {
@@ -366,31 +359,7 @@ fun SettingsContent(
 
             CalendarSection()
 
-            CloudBackupSection()
-
-            Spacer(Modifier.height(16.dp))
-            Text(
-                text = stringResource(R.string.data_management),
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 16.dp)
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.export_data)) },
-                leadingContent = { Icon(Icons.Outlined.Download, contentDescription = null) },
-                modifier = Modifier.clickable {
-                    exportLauncher.launch("ibd_journal_backup.json")
-                },
-                colors = settingsRowColors(),
-            )
-            ListItem(
-                headlineContent = { Text(stringResource(R.string.import_data)) },
-                leadingContent = { Icon(Icons.Outlined.Upload, contentDescription = null) },
-                modifier = Modifier.clickable {
-                    importLauncher.launch(arrayOf("application/json"))
-                },
-                colors = settingsRowColors(),
-            )
+            BackupSection()
         }
     }
 
@@ -478,6 +447,209 @@ private fun openExactAlarmSettings(context: Context) {
     }
 }
 
+private const val MIN_PASSWORD_LENGTH = 8
+
+/** Export toujours chiffré par mot de passe ; import des sauvegardes chiffrées et des anciens JSON en clair. */
+@Composable
+private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
+    val state by viewModel.backupState.collectAsStateWithLifecycle()
+    val exportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/octet-stream"),
+        viewModel::exportTo,
+    )
+    val importLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+        viewModel::importFrom,
+    )
+
+    Spacer(Modifier.height(16.dp))
+    Text(
+        text = stringResource(R.string.data_management),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(horizontal = 16.dp)
+    )
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.export_data)) },
+        supportingContent = { Text(stringResource(R.string.backup_export_desc)) },
+        leadingContent = { Icon(Icons.Outlined.Download, contentDescription = null) },
+        modifier = Modifier.clickable { viewModel.startExport() },
+        colors = settingsRowColors(),
+    )
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.import_data)) },
+        supportingContent = { Text(stringResource(R.string.backup_import_desc)) },
+        leadingContent = { Icon(Icons.Outlined.Upload, contentDescription = null) },
+        // Tout type de fichier : les fichiers .ibdj n'ont pas de type MIME reconnu.
+        modifier = Modifier.clickable { importLauncher.launch(arrayOf("*/*")) },
+        colors = settingsRowColors(),
+    )
+
+    when (val current = state) {
+        BackupState.Idle -> Unit
+        BackupState.ExportPassword -> ExportPasswordDialog(
+            onConfirm = { password ->
+                viewModel.setExportPassword(password)
+                exportLauncher.launch("ibd-journal-backup-${today()}.ibdj")
+            },
+            onDismiss = viewModel::dismissBackup,
+        )
+        is BackupState.Working -> AlertDialog(
+            onDismissRequest = {},
+            confirmButton = {},
+            text = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(24.dp))
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        stringResource(
+                            if (current.exporting) R.string.backup_exporting else R.string.backup_importing
+                        )
+                    )
+                }
+            },
+        )
+        is BackupState.ImportPassword -> ImportPasswordDialog(
+            wrongPassword = current.wrongPassword,
+            onConfirm = viewModel::importWithPassword,
+            onDismiss = viewModel::dismissBackup,
+        )
+        BackupState.ImportPlainConfirm -> AlertDialog(
+            onDismissRequest = viewModel::dismissBackup,
+            title = { Text(stringResource(R.string.backup_import_plain_title)) },
+            text = { Text(stringResource(R.string.backup_import_plain_message)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmPlainImport) {
+                    Text(stringResource(R.string.backup_import_button))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissBackup) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+        is BackupState.Finished -> AlertDialog(
+            onDismissRequest = viewModel::dismissBackup,
+            text = { Text(stringResource(current.message)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::dismissBackup) { Text(stringResource(R.string.ok)) }
+            },
+        )
+    }
+}
+
+@Composable
+private fun ExportPasswordDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var password by remember { mutableStateOf("") }
+    var confirmation by remember { mutableStateOf("") }
+    val tooShort = password.length < MIN_PASSWORD_LENGTH
+    val mismatch = confirmation.isNotEmpty() && confirmation != password
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.backup_export_title)) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.backup_export_message))
+                Spacer(Modifier.height(12.dp))
+                PasswordField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = stringResource(R.string.backup_password),
+                    isError = password.isNotEmpty() && tooShort,
+                    supportingText = stringResource(R.string.backup_password_min_length, MIN_PASSWORD_LENGTH),
+                )
+                PasswordField(
+                    value = confirmation,
+                    onValueChange = { confirmation = it },
+                    label = stringResource(R.string.backup_password_confirm),
+                    isError = mismatch,
+                    supportingText = if (mismatch) stringResource(R.string.backup_password_mismatch) else null,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.backup_password_warning),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(password) }, enabled = !tooShort && confirmation == password) {
+                Text(stringResource(R.string.backup_export_choose_file))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+@Composable
+private fun ImportPasswordDialog(wrongPassword: Boolean, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+    var password by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.backup_import_title)) },
+        text = {
+            Column {
+                Text(stringResource(R.string.backup_import_message))
+                Spacer(Modifier.height(12.dp))
+                PasswordField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = stringResource(R.string.backup_password),
+                    isError = wrongPassword,
+                    supportingText = if (wrongPassword) stringResource(R.string.backup_import_wrong_password) else null,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(password) }, enabled = password.isNotEmpty()) {
+                Text(stringResource(R.string.backup_import_button))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+        },
+    )
+}
+
+/** Champ de mot de passe masqué, avec bouton afficher/masquer. */
+@Composable
+private fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    isError: Boolean,
+    supportingText: String?,
+) {
+    var visible by remember { mutableStateOf(false) }
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        isError = isError,
+        supportingText = if (supportingText != null) {
+            { Text(supportingText) }
+        } else {
+            null
+        },
+        visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        trailingIcon = {
+            IconButton(onClick = { visible = !visible }) {
+                Icon(
+                    imageVector = if (visible) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = stringResource(
+                        if (visible) R.string.backup_password_hide else R.string.backup_password_show
+                    ),
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun SettingsPreview() {
@@ -491,8 +663,6 @@ private fun SettingsPreview() {
             onReminderEnabled = {},
             onReminderTimeChanged = { _, _ -> },
             onSendTestNotification = {},
-            onExport = {},
-            onImport = {},
         )
     }
 }

@@ -24,37 +24,8 @@ data class ExamStepTime(val step: ExamStep, val at: LocalDateTime)
 /** Le régime sans résidu commence ce jour-là, rappel le matin. */
 val DIET_REMINDER_TIME = LocalTime(8, 0)
 
-/** Préparation de la veille, en début de soirée. */
-val PREP_EVENING_TIME = LocalTime(19, 0)
-
 /** Rappel d'un rendez-vous (examen, anesthésiste) : avant l'heure, le temps de s'y rendre. */
 val APPOINTMENT_REMINDER_LEAD: Duration = 2.hours
-
-/**
- * Consultation d'anesthésie : au moins 48 h avant l'examen (Code de la santé publique,
- * art. D. 6124-92 : « plusieurs jours » avant une intervention programmée).
- */
-val MIN_ANESTHESIA_LEAD: Duration = 48.hours
-
-/** Seconde prise d'une préparation fractionnée : le matin, quelques heures avant l'examen. */
-private val SECOND_DOSE_LEAD = 5.hours
-
-/** Durée habituelle du régime sans résidu avant l'examen. */
-fun defaultDietDays(type: ExamType): Int = when (type) {
-    ExamType.COLONOSCOPY -> 3
-    ExamType.RECTOSIGMOIDOSCOPY -> 1
-}
-
-/**
- * Préparation proposée pour un examen à [at] : régime sans résidu, une prise la veille au
- * soir et, pour la coloscopie, une seconde le matin (prise fractionnée). Les consignes du
- * médecin priment : chaque valeur reste modifiable.
- */
-fun Exam.withDefaultPreparation(): Exam = copy(
-    dietDays = defaultDietDays(type),
-    prepFirstAt = at.date.minus(DatePeriod(days = 1)).atTime(PREP_EVENING_TIME),
-    prepSecondAt = if (type == ExamType.COLONOSCOPY) at.minusDuration(SECOND_DOSE_LEAD) else null,
-)
 
 /** Premier jour du régime sans résidu, ou null sans régime. */
 fun Exam.dietStart(): LocalDate? =
@@ -80,12 +51,6 @@ val ExamType.needsAnesthesia: Boolean get() = this == ExamType.COLONOSCOPY
 
 /** Consultation d'anesthésie à prendre (coloscopie sans rendez-vous fixé). */
 fun Exam.anesthesiaMissing(): Boolean = type.needsAnesthesia && anesthesiaAt == null
-
-/** Consultation d'anesthésie fixée trop tard : moins de 48 h avant l'examen, ou après. */
-fun Exam.anesthesiaTooLate(): Boolean {
-    val consultation = anesthesiaAt ?: return false
-    return type.needsAnesthesia && consultation > at.minusDuration(MIN_ANESTHESIA_LEAD)
-}
 
 /** Arithmétique d'horloge, indépendante des changements d'heure : on reste en heure locale. */
 @OptIn(ExperimentalTime::class)

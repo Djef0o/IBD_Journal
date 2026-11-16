@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EventAvailable
 import androidx.compose.material3.AlertDialog
@@ -100,6 +102,7 @@ fun CalendarSection(modifier: Modifier = Modifier) {
     val calendars by viewModel.calendars.collectAsStateWithLifecycle()
     val permission by viewModel.permission.collectAsStateWithLifecycle()
     var choosing by remember { mutableStateOf(false) }
+    var confirmingPrivacy by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions(),
@@ -154,17 +157,25 @@ fun CalendarSection(modifier: Modifier = Modifier) {
 
         ListItem(
             headlineContent = { Text(stringResource(R.string.calendar_sync)) },
-            supportingContent = { Text(stringResource(R.string.calendar_sync_desc)) },
+            supportingContent = {
+                Column {
+                    Text(stringResource(R.string.calendar_sync_desc))
+                    if (settings.enabled) {
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.calendar_privacy_note),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            },
             leadingContent = { Icon(Icons.Outlined.EventAvailable, contentDescription = null) },
             trailingContent = {
                 Switch(
                     checked = settings.enabled,
                     onCheckedChange = { enabled ->
-                        if (enabled && !permission) {
-                            permissionLauncher.launch(PhoneCalendar.PERMISSIONS)
-                        } else {
-                            viewModel.setEnabled(enabled)
-                        }
+                        // Activation : prévenir d'abord que les noms de traitements et d'examens quittent l'app.
+                        if (enabled) confirmingPrivacy = true else viewModel.setEnabled(false)
                     },
                 )
             },
@@ -220,6 +231,34 @@ fun CalendarSection(modifier: Modifier = Modifier) {
             confirmButton = {},
             dismissButton = {
                 TextButton(onClick = { choosing = false }) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+    }
+
+    if (confirmingPrivacy) {
+        AlertDialog(
+            onDismissRequest = { confirmingPrivacy = false },
+            title = { Text(stringResource(R.string.calendar_privacy_title)) },
+            text = {
+                Text(
+                    stringResource(R.string.calendar_privacy_message),
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmingPrivacy = false
+                        if (permission) {
+                            viewModel.setEnabled(true)
+                        } else {
+                            permissionLauncher.launch(PhoneCalendar.PERMISSIONS)
+                        }
+                    },
+                ) { Text(stringResource(R.string.calendar_privacy_confirm)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmingPrivacy = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

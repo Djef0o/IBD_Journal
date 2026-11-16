@@ -11,8 +11,8 @@ import kotlinx.datetime.until
 import kotlinx.serialization.Serializable
 
 /**
- * Identité de l'utilisateur (Réglages → Profil). [sex] : sert aux valeurs usuelles des analyses
- * qui en dépendent (hémoglobine, ferritine) ; null = non renseigné.
+ * Identité de l'utilisateur (Réglages → Profil). [sex] : mention d'identité du rapport PDF ;
+ * null = non renseigné. L'app n'en tire aucune interprétation.
  */
 @Serializable
 data class Profile(
