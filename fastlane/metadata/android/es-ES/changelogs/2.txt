@@ -1,0 +1,1 @@
+Sin servicios de Google ni copia en la nube: todo queda en tu teléfono. Exportación cifrada con contraseña, importación de PDF de análisis leídos en el dispositivo, escaneo con ZXing, valores de referencia solo de tu laboratorio.

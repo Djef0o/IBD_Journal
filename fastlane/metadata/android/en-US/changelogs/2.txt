@@ -1,0 +1,1 @@
+No Google services or cloud backup: everything stays on your phone. Password-encrypted export, PDF lab import read on the device, barcode scan with ZXing, lab reference ranges taken only from your lab.

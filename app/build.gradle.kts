@@ -41,8 +41,8 @@ android {
         applicationId = "fr.ibdjournal.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
     }
 
     buildTypes {

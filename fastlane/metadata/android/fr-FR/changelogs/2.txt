@@ -1,0 +1,1 @@
+Plus aucun service Google ni sauvegarde cloud : tout reste sur votre téléphone. Export chiffré par mot de passe, import des PDF d'analyses lus sur l'appareil, scan de codes-barres avec ZXing, valeurs de référence issues uniquement de votre laboratoire.

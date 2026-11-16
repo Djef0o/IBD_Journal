@@ -1,0 +1,1 @@
+Nessun servizio Google né backup nel cloud: tutto resta sul tuo telefono. Esportazione cifrata con password, importazione dei PDF degli esami letti sul dispositivo, scansione con ZXing, valori di riferimento solo dal tuo laboratorio.

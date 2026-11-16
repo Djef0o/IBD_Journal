@@ -1,0 +1,1 @@
+Sem serviços do Google nem backup na nuvem: tudo fica no seu celular. Exportação criptografada com senha, importação de PDFs de exames lidos no dispositivo, leitura de código de barras com ZXing, valores de referência apenas do seu laboratório.

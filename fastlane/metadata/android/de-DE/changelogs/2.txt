@@ -1,0 +1,1 @@
+Keine Google-Dienste und keine Cloud-Sicherung: alles bleibt auf deinem Handy. Passwortverschlüsselter Export, PDF-Laborimport auf dem Gerät, Barcode-Scan mit ZXing, Referenzwerte nur von deinem Labor.
