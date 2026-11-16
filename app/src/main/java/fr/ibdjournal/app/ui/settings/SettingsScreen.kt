@@ -200,6 +200,7 @@ fun SettingsContent(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
+            ProfileSection()
             AppearanceSection(
                 appearance = appearance,
                 onModeChange = onThemeModeChange,
@@ -362,6 +363,8 @@ fun SettingsContent(
                 },
                 colors = settingsRowColors(),
             )
+
+            CalendarSection()
 
             CloudBackupSection()
 

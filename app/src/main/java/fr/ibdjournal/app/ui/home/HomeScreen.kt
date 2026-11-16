@@ -25,6 +25,8 @@ import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +52,8 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.DoseStatus
+import fr.ibdjournal.app.domain.DoseDue
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 import fr.ibdjournal.app.ui.calendar.CalendarUiState
 import fr.ibdjournal.app.ui.calendar.CalendarViewModel
@@ -70,8 +74,10 @@ import kotlinx.datetime.plus
 fun HomeScreen(
     onOpenSettings: () -> Unit,
     viewModel: CalendarViewModel = hiltViewModel(),
+    dosesViewModel: TodayDosesViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val doses by dosesViewModel.doses.collectAsStateWithLifecycle()
     var showQuickStool by rememberSaveable { mutableStateOf(false) }
     var showMealTypes by rememberSaveable { mutableStateOf(false) }
 
@@ -82,6 +88,8 @@ fun HomeScreen(
         onAddStool = { showQuickStool = true },
         onEditMeal = { meal -> viewModel.openMealEditor(meal.type, meal) },
         onEditStool = { stool -> viewModel.openStoolSheet(stool) },
+        doses = doses,
+        onDose = dosesViewModel::toggle,
     )
 
     if (showMealTypes) {
@@ -119,6 +127,8 @@ fun HomeContent(
     onAddStool: () -> Unit,
     onEditMeal: (Meal) -> Unit = {},
     onEditStool: (Stool) -> Unit = {},
+    doses: List<DoseDue> = emptyList(),
+    onDose: (DoseDue, DoseStatus) -> Unit = { _, _ -> },
 ) {
     val today = today()
     val meals = state.mealsByDay[today].orEmpty()
@@ -162,6 +172,10 @@ fun HomeContent(
                     container = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
                     onClick = onAddStool,
                 )
+            }
+
+            if (doses.isNotEmpty()) {
+                DosesCard(doses = doses, onDose = onDose)
             }
 
             Text(
@@ -609,6 +623,63 @@ private fun ReminderCard(hour: Int, minute: Int) {
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+            }
+        }
+    }
+}
+
+/** Prises du jour : confirmation rapide, re-toucher le statut actif l'annule. */
+@Composable
+private fun DosesCard(doses: List<DoseDue>, onDose: (DoseDue, DoseStatus) -> Unit) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Text(
+                text = stringResource(R.string.home_doses_title).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            doses.forEach { dose ->
+                Spacer(Modifier.height(10.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = listOf(dose.medication.name, dose.medication.dosage)
+                                .filter { it.isNotBlank() }
+                                .joinToString(" · "),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            text = DateFormats.time(dose.at.hour, dose.at.minute),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    Spacer(Modifier.width(8.dp))
+                    FilterChip(
+                        selected = dose.status == DoseStatus.TAKEN,
+                        onClick = { onDose(dose, DoseStatus.TAKEN) },
+                        label = { Text(stringResource(R.string.dose_taken)) },
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    FilterChip(
+                        selected = dose.status == DoseStatus.MISSED,
+                        onClick = { onDose(dose, DoseStatus.MISSED) },
+                        label = { Text(stringResource(R.string.dose_missed)) },
+                        colors = FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = MaterialTheme.colorScheme.errorContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onErrorContainer,
+                        ),
+                    )
+                }
             }
         }
     }

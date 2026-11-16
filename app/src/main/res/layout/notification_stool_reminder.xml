@@ -10,12 +10,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/stool_type_question"
-        android:textColor="?android:attr/textColorPrimary"
+        android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
         android:textSize="14sp"
         android:textStyle="bold"
         android:paddingBottom="6dp" />
 
     <LinearLayout
+        android:id="@+id/row_bristol"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
@@ -230,6 +231,92 @@
                 android:textColor="?android:attr/textColorSecondary" />
         </LinearLayout>
 
+    </LinearLayout>
+
+    <!-- Douleur du jour, de 0 (aucune) à 5 (très vive) : question et échelle sur une ligne -->
+    <LinearLayout
+        android:id="@+id/pain_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/pain_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/checkin_pain_question"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/pain_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/level_hint_pain"
+            android:textSize="10sp"
+            android:textColor="?android:attr/textColorSecondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_pain"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView android:id="@+id/pain_0" style="@style/NotificationLevel" android:text="0" />
+        <TextView android:id="@+id/pain_1" style="@style/NotificationLevel" android:text="1" />
+        <TextView android:id="@+id/pain_2" style="@style/NotificationLevel" android:text="2" />
+        <TextView android:id="@+id/pain_3" style="@style/NotificationLevel" android:text="3" />
+        <TextView android:id="@+id/pain_4" style="@style/NotificationLevel" android:text="4" />
+        <TextView android:id="@+id/pain_5" style="@style/NotificationLevel" android:text="5" />
+    </LinearLayout>
+
+    <!-- Fatigue du jour, de 0 (en forme) à 5 (épuisé) -->
+    <LinearLayout
+        android:id="@+id/fatigue_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="bottom"
+        android:paddingTop="8dp"
+        android:paddingBottom="4dp">
+
+        <TextView
+            android:id="@+id/fatigue_title"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/checkin_fatigue_question"
+            android:textAppearance="@style/TextAppearance.Compat.Notification.Title"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/fatigue_hint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/level_hint_fatigue"
+            android:textSize="10sp"
+            android:textColor="?android:attr/textColorSecondary" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_fatigue"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <TextView android:id="@+id/fatigue_0" style="@style/NotificationLevel" android:text="0" />
+        <TextView android:id="@+id/fatigue_1" style="@style/NotificationLevel" android:text="1" />
+        <TextView android:id="@+id/fatigue_2" style="@style/NotificationLevel" android:text="2" />
+        <TextView android:id="@+id/fatigue_3" style="@style/NotificationLevel" android:text="3" />
+        <TextView android:id="@+id/fatigue_4" style="@style/NotificationLevel" android:text="4" />
+        <TextView android:id="@+id/fatigue_5" style="@style/NotificationLevel" android:text="5" />
     </LinearLayout>
 
 </LinearLayout>

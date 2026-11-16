@@ -7,8 +7,11 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Indication
 import fr.ibdjournal.app.data.model.MealType
+import fr.ibdjournal.app.data.model.LabCategory
+import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.MedicationCategory
 import fr.ibdjournal.app.data.model.RepeatUnit
+import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.data.model.StandardMedication
 import fr.ibdjournal.app.data.model.SupportiveMedication
 import fr.ibdjournal.app.domain.AnalysisPeriod
@@ -85,6 +88,70 @@ val Symptom.labelRes: Int
         Symptom.MUCUS -> R.string.analysis_mucus
         Symptom.STRONG_PAIN -> R.string.analysis_pain_strong
         Symptom.STRONG_FATIGUE -> R.string.analysis_fatigue_strong
+        Symptom.URGENCY -> R.string.analysis_urgency
+        Symptom.NOCTURNAL -> R.string.analysis_nocturnal
+    }
+
+@get:StringRes
+val LabTest.labelRes: Int
+    get() = when (this) {
+        LabTest.CRP -> R.string.lab_crp
+        LabTest.CALPROTECTIN -> R.string.lab_calprotectin
+        LabTest.RED_BLOOD_CELLS -> R.string.lab_red_blood_cells
+        LabTest.HEMOGLOBIN -> R.string.lab_hemoglobin
+        LabTest.HEMATOCRIT -> R.string.lab_hematocrit
+        LabTest.MCV -> R.string.lab_mcv
+        LabTest.MCH -> R.string.lab_mch
+        LabTest.MCHC -> R.string.lab_mchc
+        LabTest.WHITE_BLOOD_CELLS -> R.string.lab_white_blood_cells
+        LabTest.NEUTROPHILS -> R.string.lab_neutrophils
+        LabTest.LYMPHOCYTES -> R.string.lab_lymphocytes
+        LabTest.MONOCYTES -> R.string.lab_monocytes
+        LabTest.EOSINOPHILS -> R.string.lab_eosinophils
+        LabTest.BASOPHILS -> R.string.lab_basophils
+        LabTest.PLATELETS -> R.string.lab_platelets
+        LabTest.FERRITIN -> R.string.lab_ferritin
+        LabTest.IRON -> R.string.lab_iron
+        LabTest.TRANSFERRIN -> R.string.lab_transferrin
+        LabTest.IRON_BINDING_CAPACITY -> R.string.lab_iron_binding_capacity
+        LabTest.TRANSFERRIN_SATURATION -> R.string.lab_transferrin_saturation
+        LabTest.CREATININE -> R.string.lab_creatinine
+        LabTest.EGFR -> R.string.lab_egfr
+        LabTest.SODIUM -> R.string.lab_sodium
+        LabTest.POTASSIUM -> R.string.lab_potassium
+        LabTest.CHLORIDE -> R.string.lab_chloride
+        LabTest.CALCIUM -> R.string.lab_calcium
+        LabTest.URINE_PROTEIN -> R.string.lab_urine_protein
+        LabTest.AST -> R.string.lab_ast
+        LabTest.ALT -> R.string.lab_alt
+        LabTest.GGT -> R.string.lab_ggt
+        LabTest.ALKALINE_PHOSPHATASE -> R.string.lab_alkaline_phosphatase
+        LabTest.BILIRUBIN_TOTAL -> R.string.lab_bilirubin_total
+        LabTest.BILIRUBIN_DIRECT -> R.string.lab_bilirubin_direct
+        LabTest.BILIRUBIN_INDIRECT -> R.string.lab_bilirubin_indirect
+        LabTest.GLUCOSE -> R.string.lab_glucose
+        LabTest.CHOLESTEROL_TOTAL -> R.string.lab_cholesterol_total
+        LabTest.CHOLESTEROL_HDL -> R.string.lab_cholesterol_hdl
+        LabTest.CHOLESTEROL_LDL -> R.string.lab_cholesterol_ldl
+        LabTest.TRIGLYCERIDES -> R.string.lab_triglycerides
+        LabTest.VITAMIN_D -> R.string.lab_vitamin_d
+        LabTest.ALBUMIN -> R.string.lab_albumin
+        LabTest.PROTHROMBIN_TIME -> R.string.lab_prothrombin_time
+        LabTest.PSA -> R.string.lab_psa
+    }
+
+/** Libellé de la famille d'analyses (en-tête de groupe). */
+@get:StringRes
+val LabCategory.labelRes: Int
+    get() = when (this) {
+        LabCategory.INFLAMMATION -> R.string.lab_category_inflammation
+        LabCategory.BLOOD_COUNT -> R.string.lab_category_blood_count
+        LabCategory.IRON -> R.string.lab_category_iron
+        LabCategory.KIDNEY -> R.string.lab_category_kidney
+        LabCategory.LIVER -> R.string.lab_category_liver
+        LabCategory.METABOLIC -> R.string.lab_category_metabolic
+        LabCategory.NUTRITION -> R.string.lab_category_nutrition
+        LabCategory.OTHER -> R.string.lab_category_other
     }
 
 /** Libellé court du sélecteur de période (« 30 jours »). */
@@ -103,4 +170,11 @@ val AnalysisPeriod.labelRes: Int
         AnalysisPeriod.LAST_30 -> R.string.analysis_period_30
         AnalysisPeriod.LAST_90 -> R.string.analysis_period_90
         AnalysisPeriod.ALL -> R.string.analysis_period_all
+    }
+
+@get:StringRes
+val Sex.labelRes: Int
+    get() = when (this) {
+        Sex.FEMALE -> R.string.sex_female
+        Sex.MALE -> R.string.sex_male
     }

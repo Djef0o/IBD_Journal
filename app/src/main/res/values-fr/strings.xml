@@ -83,7 +83,7 @@
     <string name="settings">Réglages</string>
     <string name="notifications">Notifications</string>
     <string name="daily_reminder">Rappel quotidien</string>
-    <string name="daily_reminder_desc">Recevoir une notification pour enregistrer vos selles</string>
+    <string name="daily_reminder_desc">Recevoir une notification pour noter vos selles, votre douleur et votre fatigue</string>
     <string name="reminder_time">Heure du rappel</string>
     <string name="test_notification">Tester la notification</string>
     <string name="test_notification_desc">Envoyer immédiatement une notification de démonstration</string>
@@ -172,6 +172,8 @@
     <string name="analysis_mucus">Glaires</string>
     <string name="analysis_pain_strong">Douleur forte (≥ 3/5)</string>
     <string name="analysis_fatigue_strong">Fatigue forte (≥ 3/5)</string>
+    <string name="analysis_urgency">Urgence</string>
+    <string name="analysis_nocturnal">Selles nocturnes</string>
     <plurals name="analysis_symptom_days">
         <item quantity="one">%1$d jour</item>
         <item quantity="other">%1$d jours</item>

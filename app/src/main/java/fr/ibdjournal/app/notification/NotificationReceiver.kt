@@ -10,6 +10,8 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.ProfileRepository
+import fr.ibdjournal.app.data.model.DoseStatus
 import fr.ibdjournal.app.domain.today
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -35,6 +37,9 @@ class NotificationReceiver : BroadcastReceiver() {
     @Inject
     lateinit var treatmentReminders: TreatmentReminderScheduler
 
+    @Inject
+    lateinit var profileRepository: ProfileRepository
+
     override fun onReceive(context: Context, intent: Intent) {
         val pendingResult = goAsync()
 
@@ -42,8 +47,11 @@ class NotificationReceiver : BroadcastReceiver() {
             try {
                 when (intent.action) {
                     ACTION_RECORD_STOOL -> recordStool(context, intent)
+                    ACTION_RECORD_LEVEL -> recordLevel(context, intent)
                     NotificationHelper.ACTION_ALARM_REMINDER -> onReminderAlarm(context, intent)
                     TreatmentReminderScheduler.ACTION_TREATMENT_REMINDER -> treatmentReminders.onAlarm(intent)
+                    TreatmentReminderScheduler.ACTION_DOSE_TAKEN -> logDose(intent, DoseStatus.TAKEN)
+                    TreatmentReminderScheduler.ACTION_DOSE_MISSED -> logDose(intent, DoseStatus.MISSED)
                 }
             } catch (_: Throwable) {
                 // Ne jamais laisser une erreur (base, préférences…) casser la chaîne du rappel.
@@ -53,24 +61,59 @@ class NotificationReceiver : BroadcastReceiver() {
         }
     }
 
+    /** Réponse « Pris » / « Oublié » depuis la notification : on journalise puis on la retire. */
+    private suspend fun logDose(intent: Intent, status: DoseStatus) {
+        val medicationId = intent.getLongExtra(TreatmentReminderScheduler.EXTRA_MEDICATION_ID, -1L)
+        val scheduledAt = intent.getLongExtra(TreatmentReminderScheduler.EXTRA_SCHEDULED_AT, -1L)
+        if (medicationId < 0 || scheduledAt < 0) return
+        treatmentReminders.cancelMedicationNotification(medicationId)
+        profileRepository.logDose(medicationId, scheduledAt, status)
+    }
+
+    /**
+     * Type de selle choisi dans la notification : une seule selle par rappel, corrigée si
+     * l'utilisateur change d'avis, avec la douleur et la fatigue déjà données.
+     */
     private suspend fun recordStool(context: Context, intent: Intent) {
         val bristolType = intent.getIntExtra(EXTRA_BRISTOL_TYPE, 4)
-        diaryRepository.saveStool(
-            Stool(
-                date = today(),
-                bristolType = bristolType,
-            )
+        val checkIn = appPrefs.dailyCheckIn(today().toEpochDays())
+        val existing = checkIn.stoolId?.let { diaryRepository.getStool(it) }
+        val stoolId = diaryRepository.saveStool(
+            existing?.copy(bristolType = bristolType)
+                ?: Stool(
+                    date = today(),
+                    bristolType = bristolType,
+                    painLevel = checkIn.painLevel ?: 0,
+                    fatigueLevel = checkIn.fatigueLevel ?: 0,
+                )
         )
-        withContext(Dispatchers.Main) {
-            val message = if (bristolType == 0) {
-                context.getString(R.string.stool_recorded_type_0)
-            } else {
-                context.getString(R.string.stool_recorded_format, bristolType)
-            }
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+        val updated = checkIn.copy(stoolId = stoolId, bristolType = bristolType)
+        appPrefs.saveDailyCheckIn(updated)
+        notificationHelper.showDailyCheckIn(updated)
+        toast(
+            context,
+            if (bristolType == 0) context.getString(R.string.stool_recorded_type_0)
+            else context.getString(R.string.stool_recorded_format, bristolType),
+        )
+    }
+
+    /** Douleur ou fatigue choisie dans la notification : portée par la selle du rappel, ou en attente d'elle. */
+    private suspend fun recordLevel(context: Context, intent: Intent) {
+        val scale = intent.getStringExtra(EXTRA_SCALE)
+            ?.let { name -> CheckInScale.entries.firstOrNull { it.name == name } } ?: return
+        val level = intent.getIntExtra(EXTRA_LEVEL, 0)
+        val checkIn = appPrefs.dailyCheckIn(today().toEpochDays())
+        checkIn.stoolId?.let { diaryRepository.getStool(it) }?.let { stool ->
+            diaryRepository.saveStool(scale.applyTo(stool, level))
         }
-        val manager = NotificationManagerCompat.from(context)
-        manager.cancel(NotificationHelper.NOTIFICATION_ID)
+        val updated = scale.answered(checkIn, level)
+        appPrefs.saveDailyCheckIn(updated)
+        notificationHelper.showDailyCheckIn(updated)
+        toast(context, context.getString(scale.recordedFormat, level))
+    }
+
+    private suspend fun toast(context: Context, message: String) = withContext(Dispatchers.Main) {
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
     }
 
     private suspend fun onReminderAlarm(context: Context, intent: Intent) {
@@ -90,7 +133,7 @@ class NotificationReceiver : BroadcastReceiver() {
             ?: intent.getIntExtra(NotificationHelper.EXTRA_MINUTE, DEFAULT_MINUTE)
         notificationHelper.scheduleDailyReminder(hour, minute)
 
-        NotificationHelper.showReminder(context)
+        notificationHelper.startDailyCheckIn()
         if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
             runCatching { appPrefs.markReminderShown() }
         }
@@ -99,6 +142,9 @@ class NotificationReceiver : BroadcastReceiver() {
     companion object {
         const val ACTION_RECORD_STOOL = "fr.ibdjournal.app.ACTION_RECORD_STOOL"
         const val EXTRA_BRISTOL_TYPE = "extra_bristol_type"
+        const val ACTION_RECORD_LEVEL = "fr.ibdjournal.app.ACTION_RECORD_LEVEL"
+        const val EXTRA_SCALE = "extra_scale"
+        const val EXTRA_LEVEL = "extra_level"
         private const val DEFAULT_HOUR = 19
         private const val DEFAULT_MINUTE = 0
     }

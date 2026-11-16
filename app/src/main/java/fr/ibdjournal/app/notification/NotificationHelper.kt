@@ -11,6 +11,9 @@ import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.work.WorkManager
+import android.view.View
+import fr.ibdjournal.app.data.DailyCheckIn
+import fr.ibdjournal.app.domain.today
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.ibdjournal.app.MainActivity
 import fr.ibdjournal.app.R
@@ -23,7 +26,7 @@ import kotlinx.coroutines.flow.first
 
 /**
  * Programme le rappel quotidien avec AlarmManager.setExactAndAllowWhileIdle et affiche la
- * notification interactive avec les 8 choix de Bristol (0 à 7).
+ * notification interactive du soir : type de selle (Bristol 0 à 7) et fatigue (0 à 5).
  *
  * Volontairement pas de setAlarmClock : il affiche une icône de réveil dans la barre
  * d'état et se présente comme « prochaine alarme » au système, ce qui n'est pas le rôle
@@ -41,6 +44,7 @@ import kotlinx.coroutines.flow.first
 @Singleton
 class NotificationHelper @Inject constructor(
     @ApplicationContext private val context: Context,
+    private val appPrefs: AppPrefs,
 ) {
 
     private val alarmManager: AlarmManager
@@ -122,11 +126,6 @@ class NotificationHelper @Inject constructor(
         }
     }
 
-    /** Affiche la notification de rappel. */
-    fun showStoolReminder() {
-        showReminder(context)
-    }
-
     // Prochaine occurrence de HH:MM (demain si l'heure est déjà passée aujourd'hui).
     private fun nextOccurrenceMillis(hour: Int, minute: Int): Long {
         val zone = ZoneId.systemDefault()
@@ -162,69 +161,129 @@ class NotificationHelper @Inject constructor(
         const val EXTRA_HOUR = "extra_hour"
         const val EXTRA_MINUTE = "extra_minute"
         private const val ALARM_REQUEST_CODE = 2001
+        private const val STOOL_REQUEST_BASE = 100
+        private const val LEVEL_REQUEST_BASE = 200
 
         /** Nom du travail périodique WorkManager de l'ancienne implémentation. */
         private const val LEGACY_WORK_NAME = "daily_reminder"
 
-        /** Affiche la notification de rappel avec les 8 icônes d'enregistrement direct (0 à 7). */
-        fun showReminder(context: Context) {
-            val manager = NotificationManagerCompat.from(context)
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    context.getString(R.string.daily_reminder),
-                    NotificationManager.IMPORTANCE_DEFAULT,
-                )
-            )
-            if (!manager.areNotificationsEnabled()) return
+        private val BRISTOL_ITEMS = intArrayOf(
+            R.id.item_bristol_0, R.id.item_bristol_1, R.id.item_bristol_2, R.id.item_bristol_3,
+            R.id.item_bristol_4, R.id.item_bristol_5, R.id.item_bristol_6, R.id.item_bristol_7,
+        )
+        private val BRISTOL_BUTTONS = intArrayOf(
+            R.id.btn_bristol_0, R.id.btn_bristol_1, R.id.btn_bristol_2, R.id.btn_bristol_3,
+            R.id.btn_bristol_4, R.id.btn_bristol_5, R.id.btn_bristol_6, R.id.btn_bristol_7,
+        )
+    }
 
-            val contentIntent = PendingIntent.getActivity(
-                context,
-                0,
-                Intent(context, MainActivity::class.java),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-            )
+    /** Nouveau rappel du soir : les réponses repartent de zéro pour aujourd'hui. */
+    suspend fun startDailyCheckIn() {
+        val checkIn = DailyCheckIn(today().toEpochDays())
+        appPrefs.saveDailyCheckIn(checkIn)
+        showDailyCheckIn(checkIn)
+    }
 
-            val remoteViews = RemoteViews(context.packageName, R.layout.notification_stool_reminder)
-
-            val itemIds = intArrayOf(
-                R.id.item_bristol_0, R.id.item_bristol_1, R.id.item_bristol_2, R.id.item_bristol_3,
-                R.id.item_bristol_4, R.id.item_bristol_5, R.id.item_bristol_6, R.id.item_bristol_7,
-            )
-            val btnIds = intArrayOf(
-                R.id.btn_bristol_0, R.id.btn_bristol_1, R.id.btn_bristol_2, R.id.btn_bristol_3,
-                R.id.btn_bristol_4, R.id.btn_bristol_5, R.id.btn_bristol_6, R.id.btn_bristol_7,
-            )
-
-            for (i in 0..7) {
-                val intent = Intent(context, NotificationReceiver::class.java).apply {
-                    action = NotificationReceiver.ACTION_RECORD_STOOL
-                    putExtra(NotificationReceiver.EXTRA_BRISTOL_TYPE, i)
-                }
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context,
-                    i + 100,
-                    intent,
-                    PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
-                )
-
-                remoteViews.setOnClickPendingIntent(itemIds[i], pendingIntent)
-                remoteViews.setOnClickPendingIntent(btnIds[i], pendingIntent)
-            }
-
-            val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_reminder)
-                .setContentTitle(context.getString(R.string.daily_reminder))
-                .setContentText(context.getString(R.string.daily_reminder_desc))
-                .setStyle(NotificationCompat.DecoratedCustomViewStyle())
-                .setCustomContentView(remoteViews)
-                .setCustomBigContentView(remoteViews)
-                .setContentIntent(contentIntent)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build()
-
-            manager.notify(NOTIFICATION_ID, notification)
+    /**
+     * Affiche la notification avec les réponses déjà données, ou la retire quand la selle, la
+     * douleur et la fatigue sont toutes renseignées.
+     */
+    fun showDailyCheckIn(checkIn: DailyCheckIn) {
+        val manager = NotificationManagerCompat.from(context)
+        if (checkIn.complete) {
+            manager.cancel(NOTIFICATION_ID)
+            return
         }
+        manager.createNotificationChannel(
+            NotificationChannel(
+                CHANNEL_ID,
+                context.getString(R.string.daily_reminder),
+                NotificationManager.IMPORTANCE_DEFAULT,
+            )
+        )
+        if (!manager.areNotificationsEnabled()) return
+
+        val contentIntent = PendingIntent.getActivity(
+            context,
+            0,
+            Intent(context, MainActivity::class.java),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val collapsed = checkInViews(checkIn, onlyFirstPending = true)
+        val expanded = checkInViews(checkIn, onlyFirstPending = false)
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_stat_reminder)
+            .setContentTitle(context.getString(R.string.daily_reminder))
+            .setContentText(context.getString(R.string.daily_reminder_desc))
+            .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+            .setCustomContentView(collapsed)
+            .setCustomBigContentView(expanded)
+            .setContentIntent(contentIntent)
+            // Reste affichée tant qu'une réponse manque ; les mises à jour ne resonnent pas.
+            .setAutoCancel(false)
+            .setOnlyAlertOnce(true)
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+            .build()
+
+        manager.notify(NOTIFICATION_ID, notification)
+    }
+
+    /**
+     * [onlyFirstPending] : vue repliée, réduite à la première question sans réponse
+     * (selle, puis douleur, puis fatigue) ; sinon toutes les questions.
+     */
+    private fun checkInViews(checkIn: DailyCheckIn, onlyFirstPending: Boolean): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.notification_stool_reminder)
+        val firstPendingScale = CheckInScale.entries.firstOrNull { it.answer(checkIn) == null }
+        fun visibility(shown: Boolean) = if (shown) View.VISIBLE else View.GONE
+
+        val showStool = !onlyFirstPending || checkIn.bristolType == null
+        views.setViewVisibility(R.id.notification_title, visibility(showStool))
+        views.setViewVisibility(R.id.row_bristol, visibility(showStool))
+        BRISTOL_ITEMS.forEachIndexed { type, itemId ->
+            val pendingIntent = answerIntent(NotificationReceiver.ACTION_RECORD_STOOL, STOOL_REQUEST_BASE + type) {
+                putExtra(NotificationReceiver.EXTRA_BRISTOL_TYPE, type)
+            }
+            views.setOnClickPendingIntent(itemId, pendingIntent)
+            views.setOnClickPendingIntent(BRISTOL_BUTTONS[type], pendingIntent)
+            views.setInt(itemId, "setBackgroundResource", if (checkIn.bristolType == type) R.drawable.notification_choice_selected else 0)
+        }
+
+        CheckInScale.entries.forEach { scale ->
+            val shown = !onlyFirstPending || (!showStool && scale == firstPendingScale)
+            views.setViewVisibility(scale.headerId, visibility(shown))
+            views.setViewVisibility(scale.rowId, visibility(shown))
+            scale.itemIds.forEachIndexed { level, itemId ->
+                val requestCode = LEVEL_REQUEST_BASE + scale.ordinal * 10 + level
+                views.setOnClickPendingIntent(
+                    itemId,
+                    answerIntent(NotificationReceiver.ACTION_RECORD_LEVEL, requestCode) {
+                        putExtra(NotificationReceiver.EXTRA_SCALE, scale.name)
+                        putExtra(NotificationReceiver.EXTRA_LEVEL, level)
+                    },
+                )
+                views.setInt(
+                    itemId,
+                    "setBackgroundResource",
+                    if (scale.answer(checkIn) == level) R.drawable.notification_choice_selected else R.drawable.notification_choice,
+                )
+            }
+        }
+        return views
+    }
+
+    private fun answerIntent(action: String, requestCode: Int, extras: Intent.() -> Unit): PendingIntent {
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            this.action = action
+            setPackage(context.packageName)
+            extras()
+        }
+        return PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
     }
 }

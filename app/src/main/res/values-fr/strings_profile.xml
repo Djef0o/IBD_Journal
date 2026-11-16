@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nav_profile">Profil</string>
+    <string name="nav_care">Soins</string>
+    <string name="care_title">Soins</string>
     <string name="profile_title">Profil</string>
     <string name="profile_edit">Modifier le profil</string>
     <string name="profile_first_name">Prénom</string>
@@ -10,6 +11,11 @@
     <string name="profile_birth_date_missing">Date de naissance non renseignée</string>
     <string name="profile_empty_name">Ajoutez votre nom</string>
     <string name="profile_born_on">Né(e) le %1$s · %2$s</string>
+    <string name="profile_sex">Sexe</string>
+    <string name="profile_sex_missing">Sexe non renseigné</string>
+    <string name="profile_sex_hint">Sert aux valeurs normales de l\'hémoglobine et de la ferritine.</string>
+    <string name="sex_female">Femme</string>
+    <string name="sex_male">Homme</string>
     <plurals name="profile_age">
         <item quantity="one">%1$d an</item>
         <item quantity="other">%1$d ans</item>
@@ -74,6 +80,16 @@
     <string name="medication_reminder_text_dosage">Prendre %1$s · %2$s</string>
     <string name="checkup_reminder_channel">Rappels de contrôle</string>
     <string name="checkup_reminder_text">Prévu aujourd\'hui</string>
+
+    <!-- Alerte de commande -->
+    <string name="refill_alert_label">Me prévenir %1$d jours avant pour commander</string>
+    <string name="refill_hint_dose">L\'alerte arrive %1$d jours avant chaque prise.</string>
+    <string name="refill_stock_end">Fin du stock le</string>
+    <string name="refill_hint_stock">L\'alerte arrive %1$d jours avant cette date. Mettez-la à jour à chaque renouvellement.</string>
+    <string name="refill_next">Commande : alerte %1$s</string>
+    <string name="refill_reminder_title">Pensez à commander votre traitement</string>
+    <string name="refill_reminder_text_dose">%1$s : prochaine prise %2$s</string>
+    <string name="refill_reminder_text_stock">%1$s : fin du stock %2$s</string>
 
     <!-- Liste des médicaments -->
     <string name="med_category_aminosalicylates">Aminosalicylés (5-ASA)</string>

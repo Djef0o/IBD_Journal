@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -60,7 +61,7 @@ fun StoolSheet(
     initialBristol: Int? = null,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
-    onSave: (bristol: Int, blood: Int, mucus: Int, pain: Int, fatigue: Int, comment: String) -> Unit,
+    onSave: (bristol: Int, blood: Int, mucus: Int, pain: Int, fatigue: Int, comment: String, urgency: Boolean, nocturnal: Boolean) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -82,7 +83,7 @@ fun StoolSheetContent(
     editingStool: fr.ibdjournal.app.data.model.Stool? = null,
     initialBristol: Int? = null,
     onDelete: (() -> Unit)? = null,
-    onSave: (Int, Int, Int, Int, Int, String) -> Unit,
+    onSave: (Int, Int, Int, Int, Int, String, Boolean, Boolean) -> Unit,
 ) {
     var bristolType by remember(editingStool, initialBristol) {
         mutableIntStateOf(editingStool?.bristolType ?: initialBristol ?: 4)
@@ -92,6 +93,8 @@ fun StoolSheetContent(
     var painLevel by remember(editingStool) { mutableIntStateOf(editingStool?.painLevel ?: 0) }
     var fatigueLevel by remember(editingStool) { mutableIntStateOf(editingStool?.fatigueLevel ?: 0) }
     var comment by remember(editingStool) { mutableStateOf(editingStool?.comment ?: "") }
+    var urgency by remember(editingStool) { mutableStateOf(editingStool?.urgency ?: false) }
+    var nocturnal by remember(editingStool) { mutableStateOf(editingStool?.nocturnal ?: false) }
 
     val timestamp = editingStool?.createdAt ?: System.currentTimeMillis()
     val moment = DateFormats.weekdayDayMonth(
@@ -205,6 +208,26 @@ fun StoolSheetContent(
                 onChange = { fatigueLevel = it },
             )
 
+            // Impériosité et réveil nocturne : marqueurs d'activité suivis par les scores cliniques.
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = urgency,
+                    onClick = { urgency = !urgency },
+                    label = { Text(stringResource(R.string.stool_urgency)) },
+                    shape = RoundedCornerShape(12.dp),
+                )
+                FilterChip(
+                    selected = nocturnal,
+                    onClick = { nocturnal = !nocturnal },
+                    label = { Text(stringResource(R.string.stool_nocturnal)) },
+                    shape = RoundedCornerShape(12.dp),
+                )
+            }
+
             Spacer(Modifier.height(12.dp))
             OutlinedTextField(
                 value = comment,
@@ -235,7 +258,7 @@ fun StoolSheetContent(
             ) {
                 Button(
                     onClick = {
-                        onSave(bristolType, bloodLevel, mucusLevel, painLevel, fatigueLevel, comment)
+                        onSave(bristolType, bloodLevel, mucusLevel, painLevel, fatigueLevel, comment, urgency, nocturnal)
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -417,7 +440,7 @@ private fun StoolSheetPreview() {
     IBDJournalTheme(fr.ibdjournal.app.data.Appearance(fr.ibdjournal.app.data.ThemeMode.DARK)) {
         Box(Modifier.height(760.dp)) {
             Surface {
-                StoolSheetContent(onSave = { _, _, _, _, _, _ -> })
+                StoolSheetContent(onSave = { _, _, _, _, _, _, _, _ -> })
             }
         }
     }

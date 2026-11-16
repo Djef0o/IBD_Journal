@@ -1,6 +1,8 @@
 package fr.ibdjournal.app.data.model
 
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.minus
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
@@ -8,13 +10,20 @@ import kotlinx.datetime.plus
 import kotlinx.datetime.until
 import kotlinx.serialization.Serializable
 
-/** Identité de l'utilisateur, affichée dans l'onglet Profil. */
+/**
+ * Identité de l'utilisateur (Réglages → Profil). [sex] : sert aux valeurs usuelles des analyses
+ * qui en dépendent (hémoglobine, ferritine) ; null = non renseigné.
+ */
 @Serializable
 data class Profile(
     val firstName: String = "",
     val lastName: String = "",
     val birthDate: LocalDate? = null,
+    val sex: Sex? = null,
 )
+
+@Serializable
+enum class Sex { FEMALE, MALE }
 
 @Serializable
 enum class RepeatUnit { ONCE, DAY, WEEK, MONTH }
@@ -58,14 +67,59 @@ data class ReminderSchedule(
     }
 }
 
-/** Traitement suivi, issu de la liste standard ou saisi librement. */
+/** Avance de l'alerte « pensez à commander », en jours. */
+const val REFILL_LEAD_DAYS = 7
+
+/** Référence de l'alerte de commande, déduite de la fréquence des prises. */
+enum class RefillBasis {
+    /** Prises espacées de plus de [REFILL_LEAD_DAYS] jours (injections…) : avant chaque prise. */
+    BEFORE_DOSE,
+
+    /** Prises rapprochées (quotidiennes…) : avant la date de fin du stock saisie. */
+    STOCK_END,
+}
+
+/**
+ * Traitement suivi, issu de la liste standard ou saisi librement. [refillAlert] active
+ * l'alerte de commande ; [stockEndDate] n'est utilisée qu'en mode [RefillBasis.STOCK_END].
+ */
 @Serializable
 data class Medication(
     val id: Long = 0,
     val name: String,
     val dosage: String = "",
     val schedule: ReminderSchedule,
-)
+    val refillAlert: Boolean = false,
+    val stockEndDate: LocalDate? = null,
+) {
+    val refillBasis: RefillBasis
+        get() {
+            val intervalDays = when (schedule.repeatUnit) {
+                RepeatUnit.ONCE -> return RefillBasis.BEFORE_DOSE
+                RepeatUnit.DAY -> schedule.repeatEvery
+                RepeatUnit.WEEK -> schedule.repeatEvery * 7
+                RepeatUnit.MONTH -> schedule.repeatEvery * 28
+            }
+            return if (intervalDays > REFILL_LEAD_DAYS) RefillBasis.BEFORE_DOSE else RefillBasis.STOCK_END
+        }
+
+    /**
+     * Prochaine alerte de commande strictement après [after], à l'heure de prise, ou null.
+     * Avant une prise : la prise doit tomber plus de [REFILL_LEAD_DAYS] jours après [after].
+     */
+    fun nextRefillAlert(after: LocalDateTime): LocalDateTime? {
+        if (!refillAlert) return null
+        val lead = DatePeriod(days = REFILL_LEAD_DAYS)
+        val alert = when (refillBasis) {
+            RefillBasis.BEFORE_DOSE -> {
+                val dose = schedule.nextOccurrence(after.date.plus(lead).atTime(after.time)) ?: return null
+                dose.date.minus(lead).atTime(dose.time)
+            }
+            RefillBasis.STOCK_END -> stockEndDate?.minus(lead)?.atTime(schedule.hour, schedule.minute)
+        }
+        return alert?.takeIf { it > after }
+    }
+}
 
 @Serializable
 enum class CheckupType { BLOOD_TEST, STOOL_TEST }

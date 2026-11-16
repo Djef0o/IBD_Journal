@@ -83,7 +83,7 @@
     <string name="settings">Configurações</string>
     <string name="notifications">Notificações</string>
     <string name="daily_reminder">Lembrete diário</string>
-    <string name="daily_reminder_desc">Receber uma notificação para registrar suas evacuações</string>
+    <string name="daily_reminder_desc">Receber uma notificação para registrar suas evacuações, sua dor e seu cansaço</string>
     <string name="reminder_time">Horário do lembrete</string>
     <string name="test_notification">Testar notificação</string>
     <string name="test_notification_desc">Enviar agora uma notificação de demonstração</string>
@@ -172,6 +172,8 @@
     <string name="analysis_mucus">Muco</string>
     <string name="analysis_pain_strong">Dor forte (≥ 3/5)</string>
     <string name="analysis_fatigue_strong">Cansaço forte (≥ 3/5)</string>
+    <string name="analysis_urgency">Urgência</string>
+    <string name="analysis_nocturnal">Evacuações noturnas</string>
     <plurals name="analysis_symptom_days">
         <item quantity="one">%1$d dia</item>
         <item quantity="many">%1$d dias</item>

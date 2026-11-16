@@ -27,7 +27,10 @@ data class Meal(
     val product: Product? = null,
 )
 
-/** Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). */
+/**
+ * Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). [urgency] : besoin
+ * impérieux ; [nocturnal] : selle qui a réveillé la nuit (critères des scores d'activité).
+ */
 @Serializable
 data class Stool(
     val id: Long = 0,
@@ -39,6 +42,8 @@ data class Stool(
     val fatigueLevel: Int = 0, // 0 à 5
     val comment: String = "",
     val createdAt: Long = nowEpochMillis(),
+    val urgency: Boolean = false,
+    val nocturnal: Boolean = false,
 )
 
 /** Produit alimentaire (issu d'Open Food Facts ou du cache local). */
@@ -53,8 +58,8 @@ data class Product(
 )
 
 /**
- * Objet racine pour l'export/import JSON. Profil, traitements et contrôles sont absents
- * (null) des sauvegardes antérieures : l'import conserve alors les données actuelles.
+ * Objet racine pour l'export/import JSON. Les sections absentes (null) des sauvegardes
+ * antérieures laissent les données actuelles intactes à l'import.
  */
 @Serializable
 data class BackupData(
@@ -63,6 +68,8 @@ data class BackupData(
     val profile: Profile? = null,
     val medications: List<Medication>? = null,
     val checkups: List<Checkup>? = null,
+    val labResults: List<LabResult>? = null,
+    val doseLogs: List<DoseLog>? = null,
 )
 
 /** Résultat d'une recherche de produit par code-barres. */

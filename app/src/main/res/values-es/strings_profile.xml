@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nav_profile">Perfil</string>
+    <string name="nav_care">Cuidados</string>
+    <string name="care_title">Cuidados</string>
     <string name="profile_title">Perfil</string>
     <string name="profile_edit">Editar perfil</string>
     <string name="profile_first_name">Nombre</string>
@@ -10,6 +11,11 @@
     <string name="profile_birth_date_missing">Fecha de nacimiento sin indicar</string>
     <string name="profile_empty_name">Añade tu nombre</string>
     <string name="profile_born_on">Nacimiento: %1$s · %2$s</string>
+    <string name="profile_sex">Sexo</string>
+    <string name="profile_sex_missing">Sexo no indicado</string>
+    <string name="profile_sex_hint">Se usa para los valores normales de hemoglobina y ferritina.</string>
+    <string name="sex_female">Mujer</string>
+    <string name="sex_male">Hombre</string>
     <plurals name="profile_age">
         <item quantity="one">%1$d año</item>
         <item quantity="many">%1$d años</item>
@@ -78,6 +84,16 @@
     <string name="medication_reminder_text_dosage">Tomar %1$s · %2$s</string>
     <string name="checkup_reminder_channel">Recordatorios de análisis</string>
     <string name="checkup_reminder_text">Previsto para hoy</string>
+
+    <!-- Aviso de pedido -->
+    <string name="refill_alert_label">Avisarme %1$d días antes para pedirlo</string>
+    <string name="refill_hint_dose">El aviso llega %1$d días antes de cada toma.</string>
+    <string name="refill_stock_end">Fin de las existencias</string>
+    <string name="refill_hint_stock">El aviso llega %1$d días antes de esta fecha. Actualízala cada vez que renueves el tratamiento.</string>
+    <string name="refill_next">Pedido: aviso %1$s</string>
+    <string name="refill_reminder_title">Es hora de pedir tu tratamiento</string>
+    <string name="refill_reminder_text_dose">%1$s: próxima toma %2$s</string>
+    <string name="refill_reminder_text_stock">%1$s: se acaba %2$s</string>
 
     <!-- Lista de medicamentos -->
     <string name="med_category_aminosalicylates">Aminosalicilatos (5-ASA)</string>

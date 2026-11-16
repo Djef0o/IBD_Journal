@@ -1,5 +1,17 @@
 package fr.ibdjournal.app
 
+import fr.ibdjournal.app.data.model.DoseLog
+import fr.ibdjournal.app.data.model.DoseStatus
+import fr.ibdjournal.app.domain.Adherence
+import fr.ibdjournal.app.domain.adherence
+import fr.ibdjournal.app.domain.dosesOn
+import fr.ibdjournal.app.domain.occurrencesBetween
+import fr.ibdjournal.app.domain.toEpochMillis
+import kotlinx.datetime.atTime
+import fr.ibdjournal.app.domain.doseEvent
+import fr.ibdjournal.app.domain.refillEvent
+import fr.ibdjournal.app.data.model.Medication
+import fr.ibdjournal.app.data.model.RefillBasis
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
@@ -56,6 +68,62 @@ class ReminderScheduleTest {
     @Test
     fun onceIsOverAfterItsDate() {
         assertNull(next(schedule("2026-11-01", 1, RepeatUnit.ONCE), "2026-11-15T10:00"))
+    }
+
+    @Test
+    fun spacedInjectionAlertsSevenDaysBeforeEachDose() {
+        // Adalimumab toutes les 2 semaines depuis le 2 novembre : prises le 16, le 30…
+        val injection = Medication(
+            name = "Adalimumab",
+            schedule = schedule("2026-11-02", 2, RepeatUnit.WEEK),
+            refillAlert = true,
+        )
+        assertEquals(RefillBasis.BEFORE_DOSE, injection.refillBasis)
+        assertEquals("2026-11-23T08:00", injection.nextRefillAlert(LocalDateTime.parse("2026-11-15T10:00")).toString())
+    }
+
+    @Test
+    fun dailyTreatmentAlertsSevenDaysBeforeStockEnd() {
+        val daily = Medication(
+            name = "Mesalazine",
+            schedule = schedule("2026-11-01", 1, RepeatUnit.DAY),
+            refillAlert = true,
+            stockEndDate = LocalDate.parse("2026-12-01"),
+        )
+        assertEquals(RefillBasis.STOCK_END, daily.refillBasis)
+        assertEquals("2026-11-24T08:00", daily.nextRefillAlert(LocalDateTime.parse("2026-11-15T10:00")).toString())
+        // Alerte passée : plus rien tant que la date de fin n'est pas renouvelée.
+        assertNull(daily.nextRefillAlert(LocalDateTime.parse("2026-11-24T08:00")))
+    }
+
+    @Test
+    fun calendarEventsMirrorTheReminders() {
+        val injection = Medication(
+            id = 4,
+            name = "Adalimumab",
+            schedule = schedule("2026-11-02", 2, RepeatUnit.WEEK),
+            refillAlert = true,
+        )
+        val dose = injection.doseEvent()!!
+        val refill = injection.refillEvent()!!
+
+        assertEquals("dose:4", dose.key)
+        assertEquals("2026-11-02T08:00", dose.start.toString())
+        // Série des commandes : même rythme, 7 jours avant chaque prise.
+        assertEquals("2026-10-26T08:00", refill.start.toString())
+        assertEquals(RepeatUnit.WEEK, refill.repeatUnit)
+        assertEquals(2, refill.repeatEvery)
+
+        val daily = Medication(
+            id = 5,
+            name = "Mesalazine",
+            schedule = schedule("2026-11-01", 1, RepeatUnit.DAY).copy(enabled = false),
+            refillAlert = true,
+            stockEndDate = LocalDate.parse("2026-12-01"),
+        )
+        assertNull(daily.doseEvent())
+        assertEquals("2026-11-24T08:00", daily.refillEvent()!!.start.toString())
+        assertEquals(RepeatUnit.ONCE, daily.refillEvent()!!.repeatUnit)
     }
 }
 
@@ -121,5 +189,54 @@ class BackupFormatTest {
         assertEquals(LocalDate(2026, 11, 15), backup.stools.single().date)
         assertNull(backup.profile)
         assertNull(backup.medications)
+    }
+}
+
+class AdherenceTest {
+
+    private fun schedule(start: String, every: Int, unit: RepeatUnit) =
+        ReminderSchedule(startDate = LocalDate.parse(start), hour = 8, minute = 0, repeatEvery = every, repeatUnit = unit)
+
+    @Test
+    fun occurrencesFollowTheSameGridAsReminders() {
+        val monthly = schedule("2026-01-31", 1, RepeatUnit.MONTH)
+        assertEquals(
+            listOf("2026-01-31T08:00", "2026-02-28T08:00", "2026-03-31T08:00"),
+            monthly.occurrencesBetween(LocalDate.parse("2026-01-01"), LocalDate.parse("2026-03-31")).map { it.toString() },
+        )
+        val everyTwoWeeks = schedule("2026-11-02", 2, RepeatUnit.WEEK)
+        assertEquals(
+            listOf("2026-11-02T08:00", "2026-11-16T08:00"),
+            everyTwoWeeks.occurrencesBetween(LocalDate.parse("2026-11-01"), LocalDate.parse("2026-11-20")).map { it.toString() },
+        )
+    }
+
+    @Test
+    fun adherenceCountsOnlyDosesDueSoFar() {
+        val medication = Medication(id = 1, name = "Azathioprine", schedule = schedule("2026-11-10", 1, RepeatUnit.DAY))
+        val due = medication.schedule.occurrencesBetween(LocalDate.parse("2026-11-10"), LocalDate.parse("2026-11-15"))
+        val logs = listOf(
+            DoseLog(medicationId = 1, scheduledAt = due[0].toEpochMillis(), status = DoseStatus.TAKEN),
+            DoseLog(medicationId = 1, scheduledAt = due[1].toEpochMillis(), status = DoseStatus.MISSED),
+            DoseLog(medicationId = 2, scheduledAt = due[2].toEpochMillis(), status = DoseStatus.TAKEN),
+        )
+
+        // Le 15 à 07:00, la prise de 08:00 n'est pas encore due : 10 → 14 = 5 prises.
+        val result = adherence(medication, logs, LocalDate.parse("2026-11-01"), LocalDateTime.parse("2026-11-15T07:00"))
+
+        assertEquals(Adherence(expected = 5, taken = 1, missed = 1), result)
+        assertEquals(0.2, result.takenRate)
+    }
+
+    @Test
+    fun dosesOfTheDayCarryTheirConfirmation() {
+        val daily = Medication(id = 1, name = "Mesalazine", schedule = schedule("2026-11-01", 1, RepeatUnit.DAY))
+        val weekly = Medication(id = 2, name = "Methotrexate", schedule = schedule("2026-11-06", 1, RepeatUnit.WEEK))
+        val today = LocalDate.parse("2026-11-13")
+        val logs = listOf(DoseLog(medicationId = 1, scheduledAt = today.atTime(8, 0).toEpochMillis(), status = DoseStatus.TAKEN))
+
+        val doses = dosesOn(today, listOf(daily, weekly), logs)
+
+        assertEquals(listOf(1L to DoseStatus.TAKEN, 2L to null), doses.map { it.medication.id to it.status })
     }
 }

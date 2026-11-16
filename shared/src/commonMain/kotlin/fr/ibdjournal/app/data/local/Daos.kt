@@ -50,6 +50,9 @@ interface StoolDao {
     @Query("DELETE FROM stools WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("SELECT * FROM stools WHERE id = :id")
+    suspend fun get(id: Long): StoolEntity?
+
     @Query("SELECT * FROM stools")
     suspend fun getAll(): List<StoolEntity>
 
@@ -130,5 +133,53 @@ interface CheckupDao {
     suspend fun insertAll(checkups: List<CheckupEntity>)
 
     @Query("DELETE FROM checkups")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface LabResultDao {
+
+    @Query("SELECT * FROM lab_results ORDER BY dateEpochDay, id")
+    fun observeAll(): Flow<List<LabResultEntity>>
+
+    @Query("SELECT * FROM lab_results")
+    suspend fun getAll(): List<LabResultEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(result: LabResultEntity): Long
+
+    @Query("DELETE FROM lab_results WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Insert
+    suspend fun insertAll(results: List<LabResultEntity>)
+
+    @Query("DELETE FROM lab_results")
+    suspend fun deleteAll()
+}
+
+@Dao
+interface DoseLogDao {
+
+    @Query("SELECT * FROM dose_logs ORDER BY scheduledAt")
+    fun observeAll(): Flow<List<DoseLogEntity>>
+
+    @Query("SELECT * FROM dose_logs")
+    suspend fun getAll(): List<DoseLogEntity>
+
+    /** Remplace l'éventuelle confirmation de la même occurrence (index unique). */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(log: DoseLogEntity): Long
+
+    @Query("DELETE FROM dose_logs WHERE medicationId = :medicationId AND scheduledAt = :scheduledAt")
+    suspend fun delete(medicationId: Long, scheduledAt: Long)
+
+    @Query("DELETE FROM dose_logs WHERE medicationId = :medicationId")
+    suspend fun deleteForMedication(medicationId: Long)
+
+    @Insert
+    suspend fun insertAll(logs: List<DoseLogEntity>)
+
+    @Query("DELETE FROM dose_logs")
     suspend fun deleteAll()
 }

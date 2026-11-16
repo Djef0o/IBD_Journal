@@ -67,7 +67,7 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun sendTestNotification() {
-        notificationHelper.showStoolReminder()
+        viewModelScope.launch { notificationHelper.startDailyCheckIn() }
     }
 
     fun exportData(outputStream: OutputStream) {

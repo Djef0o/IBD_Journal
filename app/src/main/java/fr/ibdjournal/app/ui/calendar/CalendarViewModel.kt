@@ -202,6 +202,8 @@ class CalendarViewModel @Inject constructor(
         painLevel: Int,
         fatigueLevel: Int,
         comment: String,
+        urgency: Boolean = false,
+        nocturnal: Boolean = false,
     ) {
         val existing = _stoolEditor.value?.stool
         val date = selectedDate.value
@@ -216,6 +218,8 @@ class CalendarViewModel @Inject constructor(
                     painLevel = painLevel,
                     fatigueLevel = fatigueLevel,
                     comment = comment,
+                    urgency = urgency,
+                    nocturnal = nocturnal,
                     createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 )
             )

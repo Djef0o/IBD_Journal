@@ -15,13 +15,16 @@ suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connectio
             profile = profileDao().get()?.toProfile(),
             medications = medicationDao().getAll().map { it.toMedication() },
             checkups = checkupDao().getAll().map { it.toCheckup() },
+            labResults = labResultDao().getAll().map { it.toLabResult() },
+            doseLogs = doseLogDao().getAll().map { it.toDoseLog() },
         )
     }
 }
 
 /**
- * Remplace le journal par [backup], en une transaction. Profil, traitements et contrôles
- * absents (sauvegardes antérieures) sont conservés tels quels.
+ * Remplace le journal par [backup], en une transaction. Les sections absentes des
+ * sauvegardes antérieures (profil, traitements, contrôles, résultats, prises) sont conservées.
+ * Les identifiants des traitements sont conservés : les prises confirmées y restent liées.
  */
 suspend fun AppDatabase.restore(backup: BackupData) {
     useWriterConnection { connection ->
@@ -38,6 +41,14 @@ suspend fun AppDatabase.restore(backup: BackupData) {
             backup.checkups?.let { list ->
                 checkupDao().deleteAll()
                 checkupDao().insertAll(list.map { it.toCheckupEntity() })
+            }
+            backup.labResults?.let { list ->
+                labResultDao().deleteAll()
+                labResultDao().insertAll(list.map { it.toLabResultEntity() })
+            }
+            backup.doseLogs?.let { list ->
+                doseLogDao().deleteAll()
+                doseLogDao().insertAll(list.map { it.toDoseLogEntity() })
             }
         }
     }

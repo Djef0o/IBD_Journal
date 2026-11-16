@@ -13,8 +13,10 @@ import androidx.room.RoomDatabaseConstructor
         ProfileEntity::class,
         MedicationEntity::class,
         CheckupEntity::class,
+        LabResultEntity::class,
+        DoseLogEntity::class,
     ],
-    version = 3,
+    version = 6,
     exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -25,6 +27,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun profileDao(): ProfileDao
     abstract fun medicationDao(): MedicationDao
     abstract fun checkupDao(): CheckupDao
+    abstract fun labResultDao(): LabResultDao
+    abstract fun doseLogDao(): DoseLogDao
 
     companion object {
         const val NAME = "ibd_diary.db"

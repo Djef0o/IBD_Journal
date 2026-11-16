@@ -1,11 +1,18 @@
 package fr.ibdjournal.app.data.local
 
+import androidx.room.ColumnInfo
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import fr.ibdjournal.app.data.model.Checkup
+import fr.ibdjournal.app.data.model.DoseLog
+import fr.ibdjournal.app.data.model.DoseStatus
+import fr.ibdjournal.app.data.model.LabResult
+import fr.ibdjournal.app.data.model.LabQualifier
+import fr.ibdjournal.app.data.model.Sex
+import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
@@ -41,6 +48,9 @@ data class StoolEntity(
     val fatigueLevel: Int,
     val comment: String = "",
     val createdAt: Long = nowEpochMillis(),
+    /** Ajoutées en version 5 : défaut SQL identique à celui de la migration 4 → 5. */
+    @ColumnInfo(defaultValue = "0") val urgency: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val nocturnal: Boolean = false,
 )
 
 /** Cache des produits Open Food Facts, par code-barres. */
@@ -110,6 +120,8 @@ fun StoolEntity.toStool() = Stool(
     fatigueLevel = fatigueLevel,
     comment = comment,
     createdAt = createdAt,
+    urgency = urgency,
+    nocturnal = nocturnal,
 )
 
 fun Stool.toStoolEntity() = StoolEntity(
@@ -122,6 +134,73 @@ fun Stool.toStoolEntity() = StoolEntity(
     fatigueLevel = fatigueLevel,
     comment = comment,
     createdAt = createdAt,
+    urgency = urgency,
+    nocturnal = nocturnal,
+)
+
+/** Résultats d'analyses (version 5 ; seuil et valeurs de référence en version 6). */
+@Entity(tableName = "lab_results", indices = [Index("test", "dateEpochDay")])
+data class LabResultEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val test: LabTest,
+    val value: Double,
+    val dateEpochDay: Long,
+    val note: String,
+    /** null = résultat exact : colonne nullable, ajoutée sans valeur par défaut. */
+    val qualifier: LabQualifier? = null,
+    val referenceLow: Double? = null,
+    val referenceHigh: Double? = null,
+)
+
+/** Prises confirmées ou oubliées (version 5) : une ligne par traitement et par occurrence. */
+@Entity(
+    tableName = "dose_logs",
+    indices = [Index(value = ["medicationId", "scheduledAt"], unique = true)],
+)
+data class DoseLogEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val medicationId: Long,
+    val scheduledAt: Long,
+    val status: DoseStatus,
+    val loggedAt: Long,
+)
+
+fun LabResultEntity.toLabResult() = LabResult(
+    id = id,
+    test = test,
+    value = value,
+    date = LocalDate.fromEpochDays(dateEpochDay),
+    note = note,
+    qualifier = qualifier ?: LabQualifier.EXACT,
+    referenceLow = referenceLow,
+    referenceHigh = referenceHigh,
+)
+
+fun LabResult.toLabResultEntity() = LabResultEntity(
+    id = id,
+    test = test,
+    value = value,
+    dateEpochDay = date.toEpochDays(),
+    note = note,
+    qualifier = qualifier.takeIf { it != LabQualifier.EXACT },
+    referenceLow = referenceLow,
+    referenceHigh = referenceHigh,
+)
+
+fun DoseLogEntity.toDoseLog() = DoseLog(
+    id = id,
+    medicationId = medicationId,
+    scheduledAt = scheduledAt,
+    status = status,
+    loggedAt = loggedAt,
+)
+
+fun DoseLog.toDoseLogEntity() = DoseLogEntity(
+    id = id,
+    medicationId = medicationId,
+    scheduledAt = scheduledAt,
+    status = status,
+    loggedAt = loggedAt,
 )
 
 fun ProductEntity.toProduct() = Product(
@@ -149,6 +228,8 @@ data class ProfileEntity(
     val firstName: String,
     val lastName: String,
     val birthDateEpochDay: Long?,
+    /** Ajouté en version 6. */
+    val sex: Sex? = null,
 ) {
     companion object {
         const val SINGLE_ID = 1
@@ -172,6 +253,9 @@ data class MedicationEntity(
     val dosage: String,
     @Embedded val schedule: ScheduleColumns,
     val createdAt: Long = nowEpochMillis(),
+    /** Ajoutées en version 4 : défaut SQL identique à celui de la migration 3 → 4. */
+    @ColumnInfo(defaultValue = "0") val refillAlert: Boolean = false,
+    val stockEndEpochDay: Long? = null,
 )
 
 @Entity(tableName = "checkups")
@@ -187,12 +271,14 @@ fun ProfileEntity.toProfile() = Profile(
     firstName = firstName,
     lastName = lastName,
     birthDate = birthDateEpochDay?.let { LocalDate.fromEpochDays(it) },
+    sex = sex,
 )
 
 fun Profile.toProfileEntity() = ProfileEntity(
     firstName = firstName,
     lastName = lastName,
     birthDateEpochDay = birthDate?.toEpochDays(),
+    sex = sex,
 )
 
 fun ScheduleColumns.toSchedule() = ReminderSchedule(
@@ -218,6 +304,8 @@ fun MedicationEntity.toMedication() = Medication(
     name = name,
     dosage = dosage,
     schedule = schedule.toSchedule(),
+    refillAlert = refillAlert,
+    stockEndDate = stockEndEpochDay?.let { LocalDate.fromEpochDays(it) },
 )
 
 fun Medication.toMedicationEntity() = MedicationEntity(
@@ -225,6 +313,8 @@ fun Medication.toMedicationEntity() = MedicationEntity(
     name = name,
     dosage = dosage,
     schedule = schedule.toColumns(),
+    refillAlert = refillAlert,
+    stockEndEpochDay = stockEndDate?.toEpochDays(),
 )
 
 fun CheckupEntity.toCheckup() = Checkup(

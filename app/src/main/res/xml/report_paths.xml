@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Seul le dossier des rapports PDF est partageable via le FileProvider. -->
+<paths>
+    <cache-path
+        name="reports"
+        path="reports/" />
+</paths>

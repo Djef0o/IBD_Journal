@@ -1,5 +1,7 @@
 package fr.ibdjournal.app.ui.analysis
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -11,19 +13,27 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.PictureAsPdf
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -38,6 +48,7 @@ import fr.ibdjournal.app.ui.chipRes
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.theme.bristolColor
+import fr.ibdjournal.app.report.shareReport
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -50,14 +61,36 @@ fun AnalysisScreen(
     viewModel: AnalysisViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    AnalysisContent(state, onPeriodChange = viewModel::setPeriod)
+    val exportingReport by viewModel.exportingReport.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    // Contexte de l'activité : le sélecteur de partage s'ouvre par-dessus l'app.
+    LaunchedEffect(viewModel) {
+        viewModel.reports.collect { result ->
+            result
+                .onSuccess { uri -> shareReport(context, uri) }
+                .onFailure { error ->
+                    Log.e("AnalysisScreen", "Report generation failed", error)
+                    Toast.makeText(context, R.string.report_error, Toast.LENGTH_LONG).show()
+                }
+        }
+    }
+    AnalysisContent(
+        state = state,
+        onPeriodChange = viewModel::setPeriod,
+        exportingReport = exportingReport,
+        onExportReport = viewModel::exportReport,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AnalysisContent(state: AnalysisSummary, onPeriodChange: (AnalysisPeriod) -> Unit) {
+fun AnalysisContent(
+    state: AnalysisSummary,
+    onPeriodChange: (AnalysisPeriod) -> Unit,
+    exportingReport: Boolean,
+    onExportReport: () -> Unit,
+) {
     val stools = state.stools
-    val average = stools.map { it.bristolType }.average().takeIf { !it.isNaN() }
     val daysFollowed = (stools.map { it.date } + state.meals.map { it.date }).distinct().size
 
     Column(
@@ -90,6 +123,26 @@ fun AnalysisContent(state: AnalysisSummary, onPeriodChange: (AnalysisPeriod) -> 
                     }
                 }
             }
+            Spacer(Modifier.height(10.dp))
+            // Rapport PDF de la période choisie, à partager avec le médecin.
+            OutlinedButton(
+                onClick = onExportReport,
+                enabled = !exportingReport,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (exportingReport) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(Icons.Outlined.PictureAsPdf, contentDescription = null, modifier = Modifier.size(18.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(if (exportingReport) R.string.report_generating else R.string.report_action),
+                )
+            }
         }
 
         Column(
@@ -99,12 +152,12 @@ fun AnalysisContent(state: AnalysisSummary, onPeriodChange: (AnalysisPeriod) -> 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 MetricTile(
                     modifier = Modifier.weight(1f),
-                    value = stools.size.toString(),
+                    value = state.realStools.size.toString(),
                     label = stringResource(R.string.analysis_stools),
                 )
                 MetricTile(
                     modifier = Modifier.weight(1f),
-                    value = average?.let { formatDecimal(it) } ?: "—",
+                    value = state.averageBristol?.let { formatDecimal(it) } ?: "—",
                     label = stringResource(R.string.analysis_avg),
                 )
             }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nav_profile">Perfil</string>
+    <string name="nav_care">Cuidados</string>
+    <string name="care_title">Cuidados</string>
     <string name="profile_title">Perfil</string>
     <string name="profile_edit">Editar perfil</string>
     <string name="profile_first_name">Nome</string>
@@ -10,6 +11,11 @@
     <string name="profile_birth_date_missing">Data de nascimento não informada</string>
     <string name="profile_empty_name">Adicione seu nome</string>
     <string name="profile_born_on">Nascimento: %1$s · %2$s</string>
+    <string name="profile_sex">Sexo</string>
+    <string name="profile_sex_missing">Sexo não informado</string>
+    <string name="profile_sex_hint">Usado para os valores normais de hemoglobina e ferritina.</string>
+    <string name="sex_female">Feminino</string>
+    <string name="sex_male">Masculino</string>
     <plurals name="profile_age">
         <item quantity="one">%1$d ano</item>
         <item quantity="many">%1$d anos</item>
@@ -78,6 +84,16 @@
     <string name="medication_reminder_text_dosage">Tomar %1$s · %2$s</string>
     <string name="checkup_reminder_channel">Lembretes de exames</string>
     <string name="checkup_reminder_text">Previsto para hoje</string>
+
+    <!-- Aviso de pedido -->
+    <string name="refill_alert_label">Avisar-me %1$d dias antes para pedir</string>
+    <string name="refill_hint_dose">O aviso chega %1$d dias antes de cada dose.</string>
+    <string name="refill_stock_end">Fim do estoque</string>
+    <string name="refill_hint_stock">O aviso chega %1$d dias antes desta data. Atualize-a a cada renovação.</string>
+    <string name="refill_next">Pedido: aviso %1$s</string>
+    <string name="refill_reminder_title">Hora de pedir seu tratamento</string>
+    <string name="refill_reminder_text_dose">%1$s: próxima dose %2$s</string>
+    <string name="refill_reminder_text_stock">%1$s: estoque acaba %2$s</string>
 
     <!-- Lista de medicamentos -->
     <string name="med_category_aminosalicylates">Aminossalicilatos (5-ASA)</string>

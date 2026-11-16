@@ -1,4 +1,4 @@
-package fr.ibdjournal.app.ui.profile
+package fr.ibdjournal.app.ui.care
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -22,12 +22,14 @@ import androidx.compose.material.icons.outlined.Bloodtype
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsOff
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Science
+import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
+import fr.ibdjournal.app.labimport.LabReportReader
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +39,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,37 +57,68 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Checkup
+import fr.ibdjournal.app.data.model.DoseLog
+import fr.ibdjournal.app.data.model.LabResult
+import fr.ibdjournal.app.data.model.LabTest
+import fr.ibdjournal.app.data.model.LabQualifier
+import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Medication
-import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
-import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.settings.settingsRowColors
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
+import fr.ibdjournal.app.domain.adherence
+import fr.ibdjournal.app.domain.now
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
+import kotlin.math.roundToInt
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
-import kotlinx.datetime.yearsUntil
+
+/** Fenêtre de l'observance affichée sous chaque traitement, aujourd'hui compris. */
+private const val ADHERENCE_DAYS = 30
 
 @Composable
-fun ProfileScreen(viewModel: ProfileViewModel = hiltViewModel()) {
-    val profile by viewModel.profile.collectAsStateWithLifecycle()
+fun CareScreen(viewModel: CareViewModel = hiltViewModel()) {
     val medications by viewModel.medications.collectAsStateWithLifecycle()
     val checkups by viewModel.checkups.collectAsStateWithLifecycle()
+    val labResults by viewModel.labResults.collectAsStateWithLifecycle()
+    val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
+    val sex by viewModel.sex.collectAsStateWithLifecycle()
+    val labImport by viewModel.labImport.collectAsStateWithLifecycle()
 
-    ProfileContent(
-        profile = profile,
+    val reportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenMultipleDocuments(),
+        viewModel::importLabReports,
+    )
+
+    CareContent(
         medications = medications,
         checkups = checkups,
-        onSaveProfile = viewModel::saveProfile,
+        labResults = labResults,
+        doseLogs = doseLogs,
         onSaveMedication = viewModel::saveMedication,
         onDeleteMedication = viewModel::deleteMedication,
         onSaveCheckup = viewModel::saveCheckup,
         onDeleteCheckup = viewModel::deleteCheckup,
+        onSaveLabResult = viewModel::saveLabResult,
+        onDeleteLabResult = viewModel::deleteLabResult,
+        onImportLabReport = { reportPicker.launch(arrayOf(LabReportReader.PDF_MIME, "image/*")) },
+        sex = sex,
     )
+
+    when (val state = labImport) {
+        LabImportState.Idle -> Unit
+        is LabImportState.Reading -> LabImportProgressDialog(done = state.done, total = state.total)
+        is LabImportState.Review -> LabImportReviewSheet(
+            documents = state.documents,
+            existing = labResults,
+            onDismiss = viewModel::closeLabImport,
+            onSave = viewModel::saveImportedResults,
+        )
+    }
 }
 
 /** Élément en cours d'édition : null = fermé ; `item == null` = création. */
@@ -92,37 +126,54 @@ private data class Editing<T>(val item: T?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileContent(
-    profile: Profile,
+fun CareContent(
     medications: List<Medication>,
     checkups: List<Checkup>,
-    onSaveProfile: (Profile) -> Unit,
+    labResults: List<LabResult>,
+    doseLogs: List<DoseLog>,
     onSaveMedication: (Medication) -> Unit,
     onDeleteMedication: (Medication) -> Unit,
     onSaveCheckup: (Checkup) -> Unit,
     onDeleteCheckup: (Checkup) -> Unit,
+    onSaveLabResult: (LabResult) -> Unit,
+    onDeleteLabResult: (LabResult) -> Unit,
+    onImportLabReport: () -> Unit = {},
+    sex: Sex? = null,
 ) {
     val context = LocalContext.current
-    var editProfile by remember { mutableStateOf(false) }
     var editMedication by remember { mutableStateOf<Editing<Medication>?>(null) }
     var editCheckup by remember { mutableStateOf<Editing<Checkup>?>(null) }
+    var editLab by remember { mutableStateOf<LabEditing?>(null) }
+    var labDetail by remember { mutableStateOf<LabTest?>(null) }
+    // Historique par analyse, du plus récent au plus ancien, dans l'ordre de l'énumération.
+    val labHistories = remember(labResults) {
+        labResults.groupBy { it.test }
+            .mapValues { (_, results) -> results.sortedWith(newestFirst) }
+            .toSortedMap()
+    }
+    // Le dernier résultat d'une analyse supprimé : son détail n'a plus rien à montrer.
+    LaunchedEffect(labHistories, labDetail) {
+        val test = labDetail
+        if (test != null && test !in labHistories) labDetail = null
+    }
 
     var notificationsGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> notificationsGranted = granted }
     // Demande l'autorisation au moment où l'utilisateur active un rappel.
-    val requestPermissionIfNeeded = { schedule: ReminderSchedule ->
-        if (schedule.enabled && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    val requestPermissionIfNeeded = { notifies: Boolean ->
+        if (notifies && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
-    val anyReminder = medications.any { it.schedule.enabled } || checkups.any { it.schedule.enabled }
+    val anyReminder = medications.any { it.schedule.enabled || it.refillAlert } ||
+        checkups.any { it.schedule.enabled }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.profile_title)) },
+                title = { Text(stringResource(R.string.care_title)) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
                 ),
@@ -135,8 +186,6 @@ fun ProfileContent(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
         ) {
-            IdentityCard(profile = profile, onEdit = { editProfile = true })
-
             if (anyReminder && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 PermissionCard(onGrant = { permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS) })
             }
@@ -154,6 +203,9 @@ fun ProfileContent(
                     icon = Icons.Outlined.Medication,
                     title = listOf(medication.name, medication.dosage).filter { it.isNotBlank() }.joinToString(" · "),
                     schedule = medication.schedule,
+                    extra = listOfNotNull(refillStatus(medication), adherenceStatus(medication, doseLogs))
+                        .joinToString("\n")
+                        .ifEmpty { null },
                     onClick = { editMedication = Editing(medication) },
                 )
             }
@@ -178,22 +230,42 @@ fun ProfileContent(
                     onClick = { editCheckup = Editing(checkup) },
                 )
             }
+
+            SectionHeader(
+                title = stringResource(R.string.lab_results_title),
+                addLabel = stringResource(R.string.lab_result_add),
+                onAdd = { editLab = LabEditing(null, labHistories.keys.firstOrNull() ?: LabTest.CRP) },
+            )
+            if (labHistories.isEmpty()) {
+                EmptyLine(stringResource(R.string.lab_results_empty))
+            } else {
+                LabResultsViews(
+                    histories = labHistories,
+                    sex = sex,
+                    onOpenTest = { labDetail = it },
+                    onEditResult = { editLab = LabEditing(it, it.test) },
+                )
+            }
+            // Lecture de comptes rendus PDF ou photos, sur l'appareil, puis vérification.
+            OutlinedButton(
+                onClick = onImportLabReport,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+            ) {
+                Icon(Icons.Outlined.UploadFile, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.lab_import_reports_button))
+            }
             Spacer(Modifier.height(24.dp))
         }
     }
 
-    if (editProfile) {
-        ProfileEditDialog(
-            profile = profile,
-            onDismiss = { editProfile = false },
-            onSave = onSaveProfile,
-        )
-    }
     editMedication?.let { editing ->
         MedicationEditorSheet(
             initial = editing.item,
             onDismiss = { editMedication = null },
-            onSave = { onSaveMedication(it); requestPermissionIfNeeded(it.schedule) },
+            onSave = { onSaveMedication(it); requestPermissionIfNeeded(it.schedule.enabled || it.refillAlert) },
             onDelete = onDeleteMedication,
         )
     }
@@ -201,46 +273,48 @@ fun ProfileContent(
         CheckupEditorSheet(
             initial = editing.item,
             onDismiss = { editCheckup = null },
-            onSave = { onSaveCheckup(it); requestPermissionIfNeeded(it.schedule) },
+            onSave = { onSaveCheckup(it); requestPermissionIfNeeded(it.schedule.enabled) },
             onDelete = onDeleteCheckup,
+        )
+    }
+    // Le détail s'efface pendant la saisie pour ne pas empiler deux feuilles, puis revient.
+    labDetail?.let { test ->
+        val history = labHistories[test]
+        if (history != null && editLab == null) {
+            LabResultDetailSheet(
+                test = test,
+                history = history,
+                sex = sex,
+                onDismiss = { labDetail = null },
+                onAdd = { editLab = LabEditing(null, test) },
+                onEdit = { editLab = LabEditing(it, it.test) },
+            )
+        }
+    }
+    editLab?.let { editing ->
+        LabResultEditorSheet(
+            editing = editing,
+            onDismiss = { editLab = null },
+            onSave = onSaveLabResult,
+            onDelete = onDeleteLabResult,
         )
     }
 }
 
+/** « Observance 30 j : 26/28 prises (93 %) », ou null tant qu'aucune prise n'a été confirmée. */
 @Composable
-private fun IdentityCard(profile: Profile, onEdit: () -> Unit) {
-    val fullName = listOf(profile.firstName, profile.lastName).filter { it.isNotBlank() }.joinToString(" ")
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clickable(onClick = onEdit),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-    ) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Outlined.Person, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-            Spacer(Modifier.width(16.dp))
-            Column(Modifier.weight(1f)) {
-                Text(
-                    text = fullName.ifEmpty { stringResource(R.string.profile_empty_name) },
-                    style = MaterialTheme.typography.titleMedium,
-                )
-                Text(
-                    text = profile.birthDate?.let { birthDate ->
-                        val age = birthDate.yearsUntil(today())
-                        stringResource(
-                            R.string.profile_born_on,
-                            DateFormats.dayMonthYear(birthDate),
-                            pluralStringResource(R.plurals.profile_age, age, age),
-                        )
-                    } ?: stringResource(R.string.profile_birth_date_missing),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            TextButton(onClick = onEdit) { Text(stringResource(R.string.modify)) }
-        }
-    }
+private fun adherenceStatus(medication: Medication, logs: List<DoseLog>): String? {
+    val result = adherence(medication, logs, today().minus(ADHERENCE_DAYS - 1, DateTimeUnit.DAY), now())
+    // Sans aucune réponse, « 0 % » laisserait croire à des oublis.
+    if (result.expected == 0 || result.taken + result.missed == 0) return null
+    val percent = (result.taken * 100.0 / result.expected).roundToInt()
+    return pluralStringResource(
+        R.plurals.treatment_adherence,
+        result.expected,
+        result.taken,
+        result.expected,
+        percent,
+    )
 }
 
 @Composable
@@ -303,10 +377,13 @@ private fun ScheduledRow(
     title: String,
     schedule: ReminderSchedule,
     onClick: () -> Unit,
+    extra: String? = null,
 ) {
     ListItem(
         headlineContent = { Text(title) },
-        supportingContent = { Text(scheduleStatus(schedule)) },
+        supportingContent = {
+            Text(listOfNotNull(scheduleStatus(schedule), extra).joinToString("\n"))
+        },
         leadingContent = { Icon(icon, contentDescription = null) },
         trailingContent = {
             Icon(
@@ -329,11 +406,10 @@ private fun hasNotificationPermission(context: android.content.Context): Boolean
 
 @Preview(showBackground = true)
 @Composable
-private fun ProfilePreview() {
+private fun CarePreview() {
     val today = today()
     IBDJournalTheme {
-        ProfileContent(
-            profile = Profile("Camille", "Martin", LocalDate(1990, 4, 12)),
+        CareContent(
             medications = listOf(
                 Medication(1, "Mesalazine", "2 g", ReminderSchedule(startDate = today)),
                 Medication(
@@ -344,11 +420,23 @@ private fun ProfilePreview() {
             checkups = listOf(
                 Checkup(1, CheckupType.STOOL_TEST, "Calprotectine", ReminderSchedule(startDate = today.plus(10, DateTimeUnit.DAY), repeatUnit = RepeatUnit.ONCE)),
             ),
-            onSaveProfile = {},
+            labResults = listOf(
+                LabResult(1, LabTest.CRP, 18.0, today.minus(40, DateTimeUnit.DAY)),
+                LabResult(2, LabTest.CRP, 6.5, today.minus(5, DateTimeUnit.DAY)),
+                LabResult(3, LabTest.CALPROTECTIN, 250.0, today.minus(12, DateTimeUnit.DAY)),
+                LabResult(4, LabTest.CALPROTECTIN, 30.0, today.minus(5, DateTimeUnit.DAY), qualifier = LabQualifier.BELOW),
+                LabResult(5, LabTest.HEMOGLOBIN, 11.2, today.minus(40, DateTimeUnit.DAY)),
+                LabResult(6, LabTest.HEMOGLOBIN, 12.4, today.minus(5, DateTimeUnit.DAY)),
+                LabResult(7, LabTest.FERRITIN, 9.0, today.minus(5, DateTimeUnit.DAY)),
+            ),
+            sex = Sex.FEMALE,
+            doseLogs = emptyList(),
             onSaveMedication = {},
             onDeleteMedication = {},
             onSaveCheckup = {},
             onDeleteCheckup = {},
+            onSaveLabResult = {},
+            onDeleteLabResult = {},
         )
     }
 }

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="nav_profile">Profil</string>
+    <string name="nav_care">Behandlung</string>
+    <string name="care_title">Behandlung</string>
     <string name="profile_title">Profil</string>
     <string name="profile_edit">Profil bearbeiten</string>
     <string name="profile_first_name">Vorname</string>
@@ -10,6 +11,11 @@
     <string name="profile_birth_date_missing">Geburtsdatum nicht angegeben</string>
     <string name="profile_empty_name">Gib deinen Namen ein</string>
     <string name="profile_born_on">Geboren am %1$s · %2$s</string>
+    <string name="profile_sex">Geschlecht</string>
+    <string name="profile_sex_missing">Geschlecht nicht angegeben</string>
+    <string name="profile_sex_hint">Wird für die Normalwerte von Hämoglobin und Ferritin verwendet.</string>
+    <string name="sex_female">Weiblich</string>
+    <string name="sex_male">Männlich</string>
     <plurals name="profile_age">
         <item quantity="one">%1$d Jahr</item>
         <item quantity="other">%1$d Jahre</item>
@@ -74,6 +80,16 @@
     <string name="medication_reminder_text_dosage">%1$s einnehmen · %2$s</string>
     <string name="checkup_reminder_channel">Test-Erinnerungen</string>
     <string name="checkup_reminder_text">Für heute geplant</string>
+
+    <!-- Bestellerinnerung -->
+    <string name="refill_alert_label">%1$d Tage vorher zum Bestellen erinnern</string>
+    <string name="refill_hint_dose">Die Erinnerung kommt %1$d Tage vor jeder Einnahme.</string>
+    <string name="refill_stock_end">Vorrat reicht bis</string>
+    <string name="refill_hint_stock">Die Erinnerung kommt %1$d Tage vor diesem Datum. Aktualisiere es bei jeder neuen Packung.</string>
+    <string name="refill_next">Bestellung: Erinnerung %1$s</string>
+    <string name="refill_reminder_title">Zeit, deine Behandlung zu bestellen</string>
+    <string name="refill_reminder_text_dose">%1$s: nächste Einnahme %2$s</string>
+    <string name="refill_reminder_text_stock">%1$s: Vorrat leer %2$s</string>
 
     <!-- Medikamentenliste -->
     <string name="med_category_aminosalicylates">Aminosalicylate (5-ASA)</string>

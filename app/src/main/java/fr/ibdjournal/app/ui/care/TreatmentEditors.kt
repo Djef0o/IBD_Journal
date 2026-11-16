@@ -1,4 +1,4 @@
-package fr.ibdjournal.app.ui.profile
+package fr.ibdjournal.app.ui.care
 
 import android.text.format.DateFormat
 import androidx.compose.foundation.clickable
@@ -37,6 +37,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -58,8 +59,9 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Medication
-import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.ReminderSchedule
+import fr.ibdjournal.app.data.model.REFILL_LEAD_DAYS
+import fr.ibdjournal.app.data.model.RefillBasis
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.StandardMedication
 import fr.ibdjournal.app.data.model.StandardMedications
@@ -71,78 +73,12 @@ import fr.ibdjournal.app.ui.displayName
 import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 private const val MAX_REPEAT_EVERY = 99
 
 /** Le DatePicker travaille en millisecondes UTC à minuit : jour epoch × durée d'un jour. */
 private const val MILLIS_PER_DAY = 86_400_000L
-
-// --- Identité ---
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun ProfileEditDialog(
-    profile: Profile,
-    onDismiss: () -> Unit,
-    onSave: (Profile) -> Unit,
-) {
-    var firstName by remember { mutableStateOf(profile.firstName) }
-    var lastName by remember { mutableStateOf(profile.lastName) }
-    var birthDate by remember { mutableStateOf(profile.birthDate) }
-    var pickDate by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.profile_edit)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = firstName,
-                    onValueChange = { firstName = it },
-                    label = { Text(stringResource(R.string.profile_first_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OutlinedTextField(
-                    value = lastName,
-                    onValueChange = { lastName = it },
-                    label = { Text(stringResource(R.string.profile_last_name)) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                FieldRow(
-                    label = stringResource(R.string.profile_birth_date),
-                    value = birthDate?.let(DateFormats::dayMonthYear) ?: stringResource(R.string.profile_not_set),
-                ) {
-                    TextButton(onClick = { pickDate = true }) { Text(stringResource(R.string.modify)) }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = {
-                    onSave(Profile(firstName.trim(), lastName.trim(), birthDate))
-                    onDismiss()
-                },
-            ) { Text(stringResource(R.string.save)) }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
-        },
-    )
-
-    if (pickDate) {
-        DatePickerDialogFor(
-            initial = birthDate ?: today().minus(30, DateTimeUnit.YEAR),
-            maxDate = today(),
-            onDismiss = { pickDate = false },
-            onPick = { birthDate = it },
-        )
-    }
-}
 
 // --- Traitement ---
 
@@ -158,13 +94,26 @@ fun MedicationEditorSheet(
     var dosage by remember { mutableStateOf(initial?.dosage.orEmpty()) }
     var schedule by remember { mutableStateOf(initial?.schedule ?: defaultSchedule(RepeatUnit.DAY)) }
     var showPicker by remember { mutableStateOf(initial == null) }
+    var refillAlert by remember { mutableStateOf(initial?.refillAlert ?: false) }
+    var stockEndDate by remember { mutableStateOf(initial?.stockEndDate) }
+
+    val draft = Medication(
+        id = initial?.id ?: 0,
+        name = name.trim(),
+        dosage = dosage.trim(),
+        schedule = schedule,
+        refillAlert = refillAlert,
+        stockEndDate = stockEndDate,
+    )
+    // En mode « fin du stock », l'alerte n'a pas de sens sans la date.
+    val refillIncomplete = refillAlert && draft.refillBasis == RefillBasis.STOCK_END && stockEndDate == null
 
     EditorSheet(
         title = stringResource(if (initial == null) R.string.treatment_add else R.string.treatment_edit),
-        canSave = name.isNotBlank(),
+        canSave = name.isNotBlank() && !refillIncomplete,
         onDismiss = onDismiss,
         onSave = {
-            onSave(Medication(id = initial?.id ?: 0, name = name.trim(), dosage = dosage.trim(), schedule = schedule))
+            onSave(draft)
             onDismiss()
         },
         onDelete = initial?.let { { onDelete(it); onDismiss() } },
@@ -198,6 +147,11 @@ fun MedicationEditorSheet(
             dateLabel = stringResource(R.string.treatment_start_date),
             onChange = { schedule = it },
         )
+        RefillEditor(
+            medication = draft,
+            onRefillAlert = { refillAlert = it },
+            onStockEnd = { stockEndDate = it },
+        )
     }
 
     if (showPicker) {
@@ -207,6 +161,82 @@ fun MedicationEditorSheet(
             onPick = { name = it; showPicker = false },
         )
     }
+}
+
+/**
+ * Alerte « pensez à commander ». Le mode dépend de la fréquence : avant chaque prise pour un
+ * traitement espacé, avant la date de fin du stock pour un traitement quotidien.
+ */
+@Composable
+private fun RefillEditor(
+    medication: Medication,
+    onRefillAlert: (Boolean) -> Unit,
+    onStockEnd: (LocalDate) -> Unit,
+) {
+    var pickDate by remember { mutableStateOf(false) }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { onRefillAlert(!medication.refillAlert) },
+        ) {
+            Checkbox(checked = medication.refillAlert, onCheckedChange = onRefillAlert)
+            Text(
+                text = stringResource(R.string.refill_alert_label, REFILL_LEAD_DAYS),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        }
+        if (medication.refillAlert) {
+            when (medication.refillBasis) {
+                RefillBasis.BEFORE_DOSE -> RefillHint(stringResource(R.string.refill_hint_dose, REFILL_LEAD_DAYS))
+                RefillBasis.STOCK_END -> {
+                    FieldRow(
+                        label = stringResource(R.string.refill_stock_end),
+                        value = medication.stockEndDate?.let(DateFormats::dayMonthYear)
+                            ?: stringResource(R.string.profile_not_set),
+                    ) {
+                        TextButton(onClick = { pickDate = true }) { Text(stringResource(R.string.modify)) }
+                    }
+                    RefillHint(stringResource(R.string.refill_hint_stock, REFILL_LEAD_DAYS))
+                }
+            }
+            refillStatus(medication)?.let { RefillHint(it) }
+        }
+    }
+
+    if (pickDate) {
+        DatePickerDialogFor(
+            initial = medication.stockEndDate ?: today().plus(30, DateTimeUnit.DAY),
+            maxDate = null,
+            onDismiss = { pickDate = false },
+            onPick = onStockEnd,
+        )
+    }
+}
+
+@Composable
+private fun RefillHint(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+/** « Commande : alerte le lundi 23 novembre à 08:00 », ou null sans alerte à venir. */
+@Composable
+fun refillStatus(medication: Medication): String? {
+    val next = medication.nextRefillAlert(now()) ?: return null
+    return stringResource(
+        R.string.refill_next,
+        stringResource(
+            R.string.date_at,
+            DateFormats.weekdayDayMonth(next.date),
+            DateFormats.time(next.hour, next.minute),
+        ),
+    )
 }
 
 /** Liste standard filtrable ; « Autre » garde le texte saisi tel quel. */
@@ -383,7 +413,7 @@ private fun EditorSheet(
 
 /** Libellé, valeur et action, aligné sur les champs de saisie (sans le retrait d'un ListItem). */
 @Composable
-private fun FieldRow(label: String, value: String, trailing: @Composable () -> Unit) {
+internal fun FieldRow(label: String, value: String, trailing: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.bodyLarge)
@@ -514,7 +544,7 @@ fun scheduleStatus(schedule: ReminderSchedule): String {
 /** Le DatePicker travaille en millisecondes UTC à minuit. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DatePickerDialogFor(
+internal fun DatePickerDialogFor(
     initial: LocalDate,
     maxDate: LocalDate?,
     onDismiss: () -> Unit,

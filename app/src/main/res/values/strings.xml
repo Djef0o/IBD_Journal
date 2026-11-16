@@ -83,7 +83,7 @@
     <string name="settings">Settings</string>
     <string name="notifications">Notifications</string>
     <string name="daily_reminder">Daily reminder</string>
-    <string name="daily_reminder_desc">Get a notification to log your stools</string>
+    <string name="daily_reminder_desc">Get a notification to log your stools, pain and fatigue</string>
     <string name="reminder_time">Reminder time</string>
     <string name="test_notification">Test notification</string>
     <string name="test_notification_desc">Send a demo notification right now</string>
@@ -172,6 +172,8 @@
     <string name="analysis_mucus">Mucus</string>
     <string name="analysis_pain_strong">Strong pain (≥ 3/5)</string>
     <string name="analysis_fatigue_strong">Strong fatigue (≥ 3/5)</string>
+    <string name="analysis_urgency">Urgency</string>
+    <string name="analysis_nocturnal">Night-time stools</string>
     <plurals name="analysis_symptom_days">
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>

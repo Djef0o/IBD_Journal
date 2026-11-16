@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Résultats d'analyses : vue par analyse ou tableau des bilans -->
+    <string name="lab_view_by_test">Por análisis</string>
+    <string name="lab_view_by_date">Por fecha</string>
+
+    <!-- Groupes de la vue par analyse -->
+    <string name="lab_group_watch">A vigilar</string>
+
+    <!-- En-tête de la colonne des analyses du tableau -->
+    <string name="lab_table_test">Análisis</string>
+
+    <!-- Description des symboles « = », « < », « > » de la saisie -->
+    <string name="lab_qualifier_exact">Valor exacto</string>
+    <string name="lab_qualifier_below">Por debajo del límite de medición</string>
+    <string name="lab_qualifier_above">Por encima del límite de medición</string>
+
+    <!-- Période de la courbe -->
+    <string name="lab_period_6_months">6 meses</string>
+    <string name="lab_period_1_year">1 año</string>
+    <string name="lab_period_all">Todo</string>
+</resources>

@@ -78,9 +78,10 @@ class DiaryRepository @Inject constructor(
 
     // --- Selles ---
 
-    suspend fun saveStool(stool: Stool) {
-        stoolDao.upsert(stool.toStoolEntity())
-    }
+    /** Enregistre (ou remplace) la selle et renvoie son identifiant. */
+    suspend fun saveStool(stool: Stool): Long = stoolDao.upsert(stool.toStoolEntity())
+
+    suspend fun getStool(id: Long): Stool? = stoolDao.get(id)?.toStool()
 
     suspend fun deleteStool(stool: Stool) = stoolDao.deleteById(stool.id)
 

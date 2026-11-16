@@ -83,7 +83,7 @@
     <string name="settings">Einstellungen</string>
     <string name="notifications">Benachrichtigungen</string>
     <string name="daily_reminder">Tägliche Erinnerung</string>
-    <string name="daily_reminder_desc">Benachrichtigung erhalten, um deinen Stuhlgang einzutragen</string>
+    <string name="daily_reminder_desc">Benachrichtigung erhalten, um Stuhlgang, Schmerzen und Erschöpfung einzutragen</string>
     <string name="reminder_time">Uhrzeit der Erinnerung</string>
     <string name="test_notification">Benachrichtigung testen</string>
     <string name="test_notification_desc">Sofort eine Test-Benachrichtigung senden</string>
@@ -172,6 +172,8 @@
     <string name="analysis_mucus">Schleim</string>
     <string name="analysis_pain_strong">Starke Schmerzen (≥ 3/5)</string>
     <string name="analysis_fatigue_strong">Starke Erschöpfung (≥ 3/5)</string>
+    <string name="analysis_urgency">Stuhldrang</string>
+    <string name="analysis_nocturnal">Nächtlicher Stuhlgang</string>
     <plurals name="analysis_symptom_days">
         <item quantity="one">%1$d Tag</item>
         <item quantity="other">%1$d Tage</item>

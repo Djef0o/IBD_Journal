@@ -122,6 +122,8 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
+    // Import des comptes rendus d'analyses : reconnaissance de texte sur l'appareil, sans envoi.
+    implementation(libs.mlkit.text.recognition)
 
     // Image loading
     implementation(libs.coil.compose)

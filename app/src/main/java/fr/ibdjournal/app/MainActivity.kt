@@ -12,7 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -21,6 +21,9 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -40,7 +43,7 @@ import fr.ibdjournal.app.ui.day.DayScreen
 import fr.ibdjournal.app.ui.history.HistoryScreen
 import fr.ibdjournal.app.ui.home.HomeScreen
 import fr.ibdjournal.app.ui.onboarding.OnboardingScreen
-import fr.ibdjournal.app.ui.profile.ProfileScreen
+import fr.ibdjournal.app.ui.care.CareScreen
 import fr.ibdjournal.app.ui.settings.SettingsScreen
 import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.ui.calendar.CalendarViewModel
@@ -96,7 +99,7 @@ private val tabs = listOf(
     Tab("home", R.string.nav_home, Icons.Outlined.Home),
     Tab("history", R.string.nav_history, Icons.Outlined.CalendarMonth),
     Tab("analysis", R.string.nav_analysis, Icons.Outlined.BarChart),
-    Tab("profile", R.string.nav_profile, Icons.Outlined.Person),
+    Tab("care", R.string.nav_care, Icons.Outlined.MedicalServices),
     Tab("settings", R.string.nav_settings, Icons.Outlined.Settings),
 )
 
@@ -124,7 +127,19 @@ private fun MainScaffold() {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = null) },
-                            label = { Text(stringResource(tab.labelRes)) },
+                            // Une seule ligne, réduite si besoin : avec une grande police système,
+                            // « Aujourd'hui » passait sur deux lignes et décalait son onglet.
+                            label = {
+                                Text(
+                                    stringResource(tab.labelRes),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    autoSize = TextAutoSize.StepBased(
+                                        minFontSize = 8.sp,
+                                        maxFontSize = MaterialTheme.typography.labelMedium.fontSize,
+                                    ),
+                                )
+                            },
                             colors = NavigationBarItemDefaults.colors(),
                         )
                     }
@@ -154,7 +169,7 @@ private fun MainScaffold() {
                 )
             }
             composable("analysis") { AnalysisScreen() }
-            composable("profile") { ProfileScreen() }
+            composable("care") { CareScreen() }
             composable("settings") { SettingsScreen(onBack = null) }
             composable("day/{${CalendarViewModel.ARG_DATE}}") {
                 DayScreen(onBack = { navController.popBackStack() })

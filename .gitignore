@@ -14,3 +14,6 @@ keystore/
 
 # Sauvegardes locales de données personnelles
 .backup/
+# Comptes rendus d'analyses réels (données de santé) déposés à la racine pour les tests
+/*.pdf
+/Labos/

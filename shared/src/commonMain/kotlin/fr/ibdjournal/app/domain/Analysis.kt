@@ -32,6 +32,8 @@ enum class Symptom(val isPresent: (Stool) -> Boolean) {
     MUCUS({ it.mucusLevel > 0 }),
     STRONG_PAIN({ it.painLevel >= STRONG_LEVEL }),
     STRONG_FATIGUE({ it.fatigueLevel >= STRONG_LEVEL }),
+    URGENCY({ it.urgency }),
+    NOCTURNAL({ it.nocturnal }),
 }
 
 /** [previousDays] vaut null sans période de comparaison ou si rien n'y a été noté. */
@@ -50,7 +52,13 @@ data class AnalysisSummary(
     val symptomDays: List<SymptomDays> = emptyList(),
     /** Selles liquides par jour noté sur la période ; null sans aucun jour noté. */
     val liquidPerDay: Double? = null,
-)
+) {
+    /** Selles réelles : une entrée « type 0 » note une journée sans selle. */
+    val realStools: List<Stool> get() = stools.filter { it.bristolType > 0 }
+
+    /** Bristol moyen des selles réelles, ou null sans selle. */
+    val averageBristol: Double? get() = realStools.map { it.bristolType }.average().takeIf { !it.isNaN() }
+}
 
 /** Premier jour de [period] se terminant à [today], ou null pour « tout l'historique ». */
 fun AnalysisPeriod.startFrom(today: LocalDate): LocalDate? =
