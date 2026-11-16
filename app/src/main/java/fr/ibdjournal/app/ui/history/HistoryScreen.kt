@@ -88,7 +88,7 @@ fun HistoryContent(
     val monthLabel = DateFormats.monthYear(state.month)
 
     val monthStools = state.stoolsByDay.values.flatten()
-    val average = monthStools.map { it.bristolType }.average().takeIf { !it.isNaN() }
+    val average = monthStools.filter { it.isRealStool }.map { it.bristolType }.average().takeIf { !it.isNaN() }
 
     Column(
         modifier = Modifier
@@ -331,7 +331,7 @@ private fun StatsCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = pluralStringResource(R.plurals.history_month_stools, stools.size, stools.size),
+                    text = stools.count { it.isRealStool }.let { pluralStringResource(R.plurals.history_month_stools, it, it) },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                 )
@@ -362,7 +362,7 @@ private fun StatsCard(
                 Spacer(Modifier.height(8.dp))
                 val today = today()
                 val days = (6 downTo 0).map { offset -> today.minus(offset, DateTimeUnit.DAY) }
-                val counts = days.map { date -> stoolsByDay[date].orEmpty().size }
+                val counts = days.map { date -> stoolsByDay[date].orEmpty().count { it.isRealStool } }
                 val max = counts.max().coerceAtLeast(1)
 
                 Row(
@@ -474,7 +474,7 @@ private fun RecentDays(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Text(
-                                text = pluralStringResource(R.plurals.stools_count, stools.size, stools.size) +
+                                text = stools.count { it.isRealStool }.let { pluralStringResource(R.plurals.stools_count, it, it) } +
                                     " · " + stringResource(R.string.analysis_type, stool.bristolType),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,

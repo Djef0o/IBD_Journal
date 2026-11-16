@@ -1,6 +1,7 @@
 package fr.ibdjournal.app.domain
 
 import fr.ibdjournal.app.data.model.Checkup
+import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.REFILL_LEAD_DAYS
 import fr.ibdjournal.app.data.model.RefillBasis
@@ -12,7 +13,12 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
 
 /** Type d'événement d'agenda, une clé stable par élément de l'app. */
-enum class CalendarEventKind { DOSE, REFILL, CHECKUP }
+enum class CalendarEventKind {
+    DOSE, REFILL, CHECKUP,
+
+    /** Étapes d'un examen : une série d'événements uniques par examen. */
+    EXAM_ANESTHESIA, EXAM_DIET, EXAM_PREP_FIRST, EXAM_PREP_SECOND, EXAM,
+}
 
 /**
  * Événement d'agenda dérivé d'un rappel, indépendant de la plateforme (Android Calendar,
@@ -69,3 +75,26 @@ fun Medication.refillEvent(): CalendarEventSpec? {
 /** Événement de contrôle (prise de sang, test des selles), si le rappel est activé. */
 fun Checkup.event(): CalendarEventSpec? =
     schedule.takeIf { it.enabled }?.event(CalendarEventKind.CHECKUP, id)
+
+/** Type d'événement d'agenda de chaque étape d'examen. */
+val ExamStep.calendarKind: CalendarEventKind
+    get() = when (this) {
+        ExamStep.ANESTHESIA -> CalendarEventKind.EXAM_ANESTHESIA
+        ExamStep.DIET -> CalendarEventKind.EXAM_DIET
+        ExamStep.PREP_FIRST -> CalendarEventKind.EXAM_PREP_FIRST
+        ExamStep.PREP_SECOND -> CalendarEventKind.EXAM_PREP_SECOND
+        ExamStep.EXAM -> CalendarEventKind.EXAM
+    }
+
+/**
+ * Événement de chaque étape d'examen, à l'heure de l'étape (l'agenda prévient lui-même) ;
+ * null pour une étape absente ou quand les rappels de l'examen sont coupés.
+ */
+fun Exam.events(): Map<ExamStep, CalendarEventSpec?> {
+    val byStep = if (remindersEnabled) steps().associateBy { it.step } else emptyMap()
+    return ExamStep.entries.associateWith { step ->
+        byStep[step]?.let {
+            CalendarEventSpec(step.calendarKind, id, it.at, repeatEvery = 1, repeatUnit = RepeatUnit.ONCE)
+        }
+    }
+}

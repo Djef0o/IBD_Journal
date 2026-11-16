@@ -106,6 +106,12 @@ internal data class LabEditing(val result: LabResult?, val test: LabTest)
 internal val newestFirst: Comparator<LabResult> =
     compareByDescending<LabResult> { it.date }.thenByDescending { it.id }
 
+/** Historique par analyse, du plus récent au plus ancien, dans l'ordre de l'énumération. */
+internal fun labHistories(results: List<LabResult>): Map<LabTest, List<LabResult>> =
+    results.groupBy { it.test }
+        .mapValues { (_, history) -> history.sortedWith(newestFirst) }
+        .toSortedMap()
+
 /** Accepte la virgule comme le point, quel que soit le clavier ; null si pas un nombre positif. */
 internal fun parseLabValue(text: String): Double? =
     text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 }

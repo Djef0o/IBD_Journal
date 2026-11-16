@@ -19,4 +19,16 @@
     <string name="lab_period_6_months">6 meses</string>
     <string name="lab_period_1_year">1 año</string>
     <string name="lab_period_all">Todo</string>
+    <!-- Résumé des analyses dans l'onglet Soins -->
+    <string name="lab_summary_latest">Último análisis: %1$s</string>
+    <plurals name="lab_summary_tests">
+        <item quantity="one">%1$d análisis seguido</item>
+        <item quantity="many">%1$d análisis seguidos</item>
+        <item quantity="other">%1$d análisis seguidos</item>
+    </plurals>
+    <plurals name="lab_summary_watch">
+        <item quantity="one">%1$d a vigilar</item>
+        <item quantity="many">%1$d a vigilar</item>
+        <item quantity="other">%1$d a vigilar</item>
+    </plurals>
 </resources>

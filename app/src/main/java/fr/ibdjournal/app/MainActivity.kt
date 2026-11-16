@@ -41,6 +41,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import fr.ibdjournal.app.ui.analysis.AnalysisScreen
 import fr.ibdjournal.app.ui.day.DayScreen
 import fr.ibdjournal.app.ui.history.HistoryScreen
+import fr.ibdjournal.app.ui.care.LabsScreen
 import fr.ibdjournal.app.ui.home.HomeScreen
 import fr.ibdjournal.app.ui.onboarding.OnboardingScreen
 import fr.ibdjournal.app.ui.care.CareScreen
@@ -169,7 +170,8 @@ private fun MainScaffold() {
                 )
             }
             composable("analysis") { AnalysisScreen() }
-            composable("care") { CareScreen() }
+            composable("care") { CareScreen(onOpenLabs = { navController.navigate("care/labs") }) }
+            composable("care/labs") { LabsScreen(onBack = { navController.popBackStack() }) }
             composable("settings") { SettingsScreen(onBack = null) }
             composable("day/{${CalendarViewModel.ARG_DATE}}") {
                 DayScreen(onBack = { navController.popBackStack() })

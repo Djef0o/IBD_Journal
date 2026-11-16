@@ -32,6 +32,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.MealType
@@ -40,15 +41,15 @@ import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 
 /**
- * Saisie rapide d'une selle : les 8 types Bristol, un bouton.
+ * Saisie rapide d'une selle : les 8 types Bristol ou une fausse envie, un bouton.
  * « Plus de détails » bascule vers la feuille complète (sang, glaires, douleur, commentaire).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun QuickStoolSheet(
     onDismiss: () -> Unit,
-    onDetails: (Int) -> Unit,
-    onSave: (Int) -> Unit,
+    onDetails: (type: Int, falseUrge: Boolean) -> Unit,
+    onSave: (type: Int, falseUrge: Boolean) -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var selected by remember { mutableIntStateOf(4) }
@@ -101,9 +102,16 @@ fun QuickStoolSheet(
                 if (row == 0) Spacer(Modifier.height(8.dp))
             }
 
+            // Fausse envie : pas de selle, mais un passage aux toilettes à noter (poussées).
+            Spacer(Modifier.height(8.dp))
+            QuickFalseUrgeTile(
+                selected = selected == FALSE_URGE_CHOICE,
+                onClick = { selected = FALSE_URGE_CHOICE },
+            )
+
             Spacer(Modifier.height(18.dp))
             Button(
-                onClick = { onSave(selected) },
+                onClick = { onSave(selected.coerceAtLeast(0), selected == FALSE_URGE_CHOICE) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp),
@@ -116,7 +124,7 @@ fun QuickStoolSheet(
                 )
             }
             TextButton(
-                onClick = { onDetails(selected) },
+                onClick = { onDetails(selected.coerceAtLeast(0), selected == FALSE_URGE_CHOICE) },
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
@@ -125,6 +133,39 @@ fun QuickStoolSheet(
                 )
             }
         }
+    }
+}
+
+/** Choix « fausse envie » de la saisie rapide : hors des 8 types de Bristol. */
+private const val FALSE_URGE_CHOICE = -1
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun QuickFalseUrgeTile(selected: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = if (selected) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f)
+        },
+        border = BorderStroke(
+            1.dp,
+            if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
+        ),
+    ) {
+        Text(
+            text = stringResource(R.string.false_urge),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 12.dp),
+        )
     }
 }
 

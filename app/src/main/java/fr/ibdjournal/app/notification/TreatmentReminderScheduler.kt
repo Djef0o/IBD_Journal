@@ -18,6 +18,12 @@ import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RefillBasis
+import fr.ibdjournal.app.data.local.toExam
+import fr.ibdjournal.app.data.model.Exam
+import fr.ibdjournal.app.domain.ExamStep
+import fr.ibdjournal.app.domain.ExamStepTime
+import fr.ibdjournal.app.domain.reminderAt
+import fr.ibdjournal.app.domain.steps
 import fr.ibdjournal.app.domain.localDateTimeAt
 import fr.ibdjournal.app.domain.now
 import fr.ibdjournal.app.domain.occurrencesBetween
@@ -31,7 +37,8 @@ import fr.ibdjournal.app.calendar.CalendarSync
 import fr.ibdjournal.app.data.AppPrefs
 
 /**
- * Rappels de prise de traitement, de commande et de contrôles (prise de sang, test des selles).
+ * Rappels de prise de traitement, de commande, de contrôles (prise de sang, test des selles)
+ * et des étapes d'examen (coloscopie, rectosigmoïdoscopie).
  *
  * Deux modes, choisis dans les réglages :
  * - notifications de l'app : une alarme par rappel, identifiée par l'URI de son intent
@@ -51,7 +58,20 @@ class TreatmentReminderScheduler @Inject constructor(
     private val prefs: AppPrefs,
 ) {
 
-    enum class Kind(val path: String) { MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup") }
+    enum class Kind(val path: String) {
+        MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
+        EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
+        EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
+    }
+
+    /** Rappel de chaque étape d'examen. */
+    private val EXAM_KINDS = mapOf(
+        ExamStep.ANESTHESIA to Kind.EXAM_ANESTHESIA,
+        ExamStep.DIET to Kind.EXAM_DIET,
+        ExamStep.PREP_FIRST to Kind.EXAM_PREP_FIRST,
+        ExamStep.PREP_SECOND to Kind.EXAM_PREP_SECOND,
+        ExamStep.EXAM to Kind.EXAM,
+    )
 
     /** Rappel de prise et alerte de commande : deux rappels distincts par traitement. */
     suspend fun schedule(medication: Medication, after: LocalDateTime = now()) {
@@ -85,6 +105,27 @@ class TreatmentReminderScheduler @Inject constructor(
         calendarSync.removeCheckup(id)
     }
 
+    /**
+     * Une alarme par étape d'examen (rendez-vous d'anesthésie, début du régime, prises de la
+     * préparation, examen) ; seules les étapes encore à venir sont posées.
+     */
+    suspend fun schedule(exam: Exam, after: LocalDateTime = now()) {
+        if (calendarSync.isActive()) {
+            EXAM_KINDS.values.forEach { cancelAlarms(it, exam.id) }
+            calendarSync.sync(exam)
+            return
+        }
+        val reminders = if (exam.remindersEnabled) exam.steps().associate { it.step to it.reminderAt() } else emptyMap()
+        EXAM_KINDS.forEach { (step, kind) ->
+            schedule(kind, exam.id, reminders[step]?.takeIf { it > after })
+        }
+    }
+
+    suspend fun cancelExam(id: Long) {
+        EXAM_KINDS.values.forEach { cancelAlarms(it, id) }
+        calendarSync.removeExam(id)
+    }
+
     private fun cancelAlarms(kind: Kind, id: Long) {
         notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
         NotificationManagerCompat.from(context).cancel(kind.path, id.toInt())
@@ -93,11 +134,13 @@ class TreatmentReminderScheduler @Inject constructor(
     suspend fun rescheduleAll() {
         database.medicationDao().getAll().forEach { schedule(it.toMedication()) }
         database.checkupDao().getAll().forEach { schedule(it.toCheckup()) }
+        database.examDao().getAll().forEach { schedule(it.toExam()) }
     }
 
     suspend fun cancelAll() {
         database.medicationDao().getAll().forEach { cancelMedication(it.id) }
         database.checkupDao().getAll().forEach { cancelCheckup(it.id) }
+        database.examDao().getAll().forEach { cancelExam(it.id) }
     }
 
     /**
@@ -151,6 +194,14 @@ class TreatmentReminderScheduler @Inject constructor(
                 if (!checkup.schedule.enabled) return
                 schedule(kind, id, checkup.schedule.nextOccurrence(firedAt))
                 showCheckup(checkup)
+            }
+            else -> {
+                // Étape d'examen : rappel unique, rien à reprogrammer. L'examen a pu changer
+                // depuis la pose de l'alarme : on ne notifie que l'étape encore prévue.
+                val step = EXAM_KINDS.entries.firstOrNull { it.value == kind }?.key ?: return
+                val exam = database.examDao().get(id)?.toExam()?.takeIf { it.remindersEnabled } ?: return
+                val stepTime = exam.steps().firstOrNull { it.step == step } ?: return
+                showExamStep(exam, stepTime, kind)
             }
         }
     }
@@ -239,6 +290,17 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    private fun showExamStep(exam: Exam, step: ExamStepTime, kind: Kind) {
+        notify(
+            kind = kind,
+            id = exam.id,
+            channelId = CHANNEL_EXAM,
+            channelName = context.getString(R.string.exam_reminder_channel),
+            title = examStepTitle(context, exam, step.step),
+            text = examStepText(context, exam, step.step, step.at),
+        )
+    }
+
     /** « Pensez à commander » : avant la prochaine prise ou avant la fin du stock. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
@@ -311,5 +373,6 @@ class TreatmentReminderScheduler @Inject constructor(
         const val EXTRA_SCHEDULED_AT = "extra_scheduled_at"
         private const val CHANNEL_MEDICATION = "medication_reminder"
         private const val CHANNEL_CHECKUP = "checkup_reminder"
+        private const val CHANNEL_EXAM = "exam_reminder"
     }
 }

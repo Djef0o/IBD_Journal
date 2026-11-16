@@ -370,7 +370,7 @@ private fun defaultSchedule(unit: RepeatUnit) = ReminderSchedule(startDate = tod
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun EditorSheet(
+internal fun EditorSheet(
     title: String,
     canSave: Boolean,
     onDismiss: () -> Unit,
@@ -580,7 +580,7 @@ internal fun DatePickerDialogFor(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun TimePickerDialogFor(
+internal fun TimePickerDialogFor(
     hour: Int,
     minute: Int,
     onDismiss: () -> Unit,

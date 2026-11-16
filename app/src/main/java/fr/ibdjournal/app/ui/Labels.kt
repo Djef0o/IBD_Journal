@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.CheckupType
+import fr.ibdjournal.app.data.model.ExamType
 import fr.ibdjournal.app.data.model.Indication
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.LabCategory
@@ -15,6 +16,7 @@ import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.data.model.StandardMedication
 import fr.ibdjournal.app.data.model.SupportiveMedication
 import fr.ibdjournal.app.domain.AnalysisPeriod
+import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.Symptom
 
 /*
@@ -44,6 +46,23 @@ val CheckupType.labelRes: Int
     get() = when (this) {
         CheckupType.BLOOD_TEST -> R.string.checkup_blood_test
         CheckupType.STOOL_TEST -> R.string.checkup_stool_test
+    }
+
+@get:StringRes
+val ExamType.labelRes: Int
+    get() = when (this) {
+        ExamType.COLONOSCOPY -> R.string.exam_colonoscopy
+        ExamType.RECTOSIGMOIDOSCOPY -> R.string.exam_rectosigmoidoscopy
+    }
+
+@get:StringRes
+val ExamStep.labelRes: Int
+    get() = when (this) {
+        ExamStep.ANESTHESIA -> R.string.exam_step_anesthesia
+        ExamStep.DIET -> R.string.exam_step_diet
+        ExamStep.PREP_FIRST -> R.string.exam_step_prep_first
+        ExamStep.PREP_SECOND -> R.string.exam_step_prep_second
+        ExamStep.EXAM -> R.string.exam_step_exam
     }
 
 @get:StringRes
@@ -90,6 +109,7 @@ val Symptom.labelRes: Int
         Symptom.STRONG_FATIGUE -> R.string.analysis_fatigue_strong
         Symptom.URGENCY -> R.string.analysis_urgency
         Symptom.NOCTURNAL -> R.string.analysis_nocturnal
+        Symptom.FALSE_URGE -> R.string.analysis_false_urge
     }
 
 @get:StringRes

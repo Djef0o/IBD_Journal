@@ -277,7 +277,7 @@ private fun DayColumn(
 
 @Composable
 private fun DayDetail(day: DayBar) {
-    val real = day.stools.filter { it.bristolType > 0 }
+    val real = day.stools.filter { it.isRealStool }
     Column {
         Text(
             text = DateFormats.weekdayDayMonth(day.date),
@@ -295,6 +295,9 @@ private fun DayDetail(day: DayBar) {
             if (real.isNotEmpty()) {
                 add(stringResource(R.string.analysis_detail_types, real.joinToString(", ") { it.bristolType.toString() }))
             }
+            // Nombre de fausses envies du jour : un signe de poussée, hors du compte des selles.
+            val falseUrges = day.stools.count { it.falseUrge }
+            if (falseUrges > 0) add(pluralStringResource(R.plurals.false_urge_count, falseUrges, falseUrges))
             if (day.blood) add(stringResource(R.string.stool_flag_blood))
         }
         Text(

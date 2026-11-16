@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import fr.ibdjournal.app.data.model.Exam
 
 @HiltViewModel
 class CareViewModel @Inject constructor(
@@ -60,6 +61,18 @@ class CareViewModel @Inject constructor(
 
     fun deleteCheckup(checkup: Checkup) {
         viewModelScope.launch { repository.deleteCheckup(checkup.id) }
+    }
+
+    /** Coloscopies et rectosigmoïdoscopies, la plus proche d'abord. */
+    val exams: StateFlow<List<Exam>> = repository.exams
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveExam(exam: Exam) {
+        viewModelScope.launch { repository.saveExam(exam) }
+    }
+
+    fun deleteExam(exam: Exam) {
+        viewModelScope.launch { repository.deleteExam(exam.id) }
     }
 
     fun saveLabResult(result: LabResult) {

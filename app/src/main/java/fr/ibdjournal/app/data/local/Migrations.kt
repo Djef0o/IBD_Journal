@@ -104,7 +104,25 @@ object Migrations {
         ),
     )
 
-    val ALL = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
+    /** Examens (coloscopie, rectosigmoïdoscopie) et leur préparation. SQL généré par Room pour [ExamEntity]. */
+    val MIGRATION_6_7 = object : Migration(6, 7) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `exams` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`type` TEXT NOT NULL, `at` TEXT NOT NULL, `note` TEXT NOT NULL, `dietDays` INTEGER NOT NULL, " +
+                    "`prepFirstAt` TEXT, `prepSecondAt` TEXT, `anesthesiaAt` TEXT, `remindersEnabled` INTEGER NOT NULL)"
+            )
+        }
+    }
+
+    /** Fausses envies : une colonne, les selles existantes n'en sont pas. */
+    val MIGRATION_7_8 = object : Migration(7, 8) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `stools` ADD COLUMN `falseUrge` INTEGER NOT NULL DEFAULT 0")
+        }
+    }
+
+    val ALL = arrayOf(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8)
 
     private const val SCHEDULE_COLUMNS =
         "`reminderEnabled` INTEGER NOT NULL, `startDateEpochDay` INTEGER NOT NULL, " +

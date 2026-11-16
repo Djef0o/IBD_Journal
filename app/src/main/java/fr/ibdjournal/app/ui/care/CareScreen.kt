@@ -18,20 +18,21 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Biotech
 import androidx.compose.material.icons.outlined.Bloodtype
 import androidx.compose.material.icons.outlined.Medication
+import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material.icons.outlined.Science
-import androidx.compose.material.icons.outlined.UploadFile
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import fr.ibdjournal.app.labimport.LabReportReader
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -39,7 +40,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -58,6 +59,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoseLog
+import fr.ibdjournal.app.data.model.Exam
+import fr.ibdjournal.app.data.model.ExamType
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.LabQualifier
@@ -69,30 +72,34 @@ import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.ui.settings.settingsRowColors
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.domain.adherence
+import fr.ibdjournal.app.domain.ExamStep
+import fr.ibdjournal.app.domain.anesthesiaMissing
+import fr.ibdjournal.app.domain.anesthesiaTooLate
+import fr.ibdjournal.app.domain.steps
+import fr.ibdjournal.app.domain.withDefaultPreparation
 import fr.ibdjournal.app.domain.now
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
+import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.domain.LabStatus
+import fr.ibdjournal.app.domain.status
 import kotlin.math.roundToInt
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
+import kotlinx.datetime.atTime
 
 /** Fenêtre de l'observance affichée sous chaque traitement, aujourd'hui compris. */
 private const val ADHERENCE_DAYS = 30
 
 @Composable
-fun CareScreen(viewModel: CareViewModel = hiltViewModel()) {
+fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
     val medications by viewModel.medications.collectAsStateWithLifecycle()
     val checkups by viewModel.checkups.collectAsStateWithLifecycle()
     val labResults by viewModel.labResults.collectAsStateWithLifecycle()
+    val exams by viewModel.exams.collectAsStateWithLifecycle()
     val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
-    val labImport by viewModel.labImport.collectAsStateWithLifecycle()
-
-    val reportPicker = rememberLauncherForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments(),
-        viewModel::importLabReports,
-    )
 
     CareContent(
         medications = medications,
@@ -103,22 +110,12 @@ fun CareScreen(viewModel: CareViewModel = hiltViewModel()) {
         onDeleteMedication = viewModel::deleteMedication,
         onSaveCheckup = viewModel::saveCheckup,
         onDeleteCheckup = viewModel::deleteCheckup,
-        onSaveLabResult = viewModel::saveLabResult,
-        onDeleteLabResult = viewModel::deleteLabResult,
-        onImportLabReport = { reportPicker.launch(arrayOf(LabReportReader.PDF_MIME, "image/*")) },
+        exams = exams,
+        onSaveExam = viewModel::saveExam,
+        onDeleteExam = viewModel::deleteExam,
+        onOpenLabs = onOpenLabs,
         sex = sex,
     )
-
-    when (val state = labImport) {
-        LabImportState.Idle -> Unit
-        is LabImportState.Reading -> LabImportProgressDialog(done = state.done, total = state.total)
-        is LabImportState.Review -> LabImportReviewSheet(
-            documents = state.documents,
-            existing = labResults,
-            onDismiss = viewModel::closeLabImport,
-            onSave = viewModel::saveImportedResults,
-        )
-    }
 }
 
 /** Élément en cours d'édition : null = fermé ; `item == null` = création. */
@@ -135,27 +132,16 @@ fun CareContent(
     onDeleteMedication: (Medication) -> Unit,
     onSaveCheckup: (Checkup) -> Unit,
     onDeleteCheckup: (Checkup) -> Unit,
-    onSaveLabResult: (LabResult) -> Unit,
-    onDeleteLabResult: (LabResult) -> Unit,
-    onImportLabReport: () -> Unit = {},
+    onOpenLabs: () -> Unit = {},
     sex: Sex? = null,
+    exams: List<Exam> = emptyList(),
+    onSaveExam: (Exam) -> Unit = {},
+    onDeleteExam: (Exam) -> Unit = {},
 ) {
     val context = LocalContext.current
     var editMedication by remember { mutableStateOf<Editing<Medication>?>(null) }
     var editCheckup by remember { mutableStateOf<Editing<Checkup>?>(null) }
-    var editLab by remember { mutableStateOf<LabEditing?>(null) }
-    var labDetail by remember { mutableStateOf<LabTest?>(null) }
-    // Historique par analyse, du plus récent au plus ancien, dans l'ordre de l'énumération.
-    val labHistories = remember(labResults) {
-        labResults.groupBy { it.test }
-            .mapValues { (_, results) -> results.sortedWith(newestFirst) }
-            .toSortedMap()
-    }
-    // Le dernier résultat d'une analyse supprimé : son détail n'a plus rien à montrer.
-    LaunchedEffect(labHistories, labDetail) {
-        val test = labDetail
-        if (test != null && test !in labHistories) labDetail = null
-    }
+    var editExam by remember { mutableStateOf<Editing<Exam>?>(null) }
 
     var notificationsGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -167,8 +153,13 @@ fun CareContent(
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
+    val current = now()
+    // À venir : la plus proche d'abord ; passés ensuite, du plus récent au plus ancien.
+    val upcomingExams = exams.filter { it.at >= current }.sortedBy { it.at }
+    val pastExams = exams.filter { it.at < current }.sortedByDescending { it.at }
     val anyReminder = medications.any { it.schedule.enabled || it.refillAlert } ||
-        checkups.any { it.schedule.enabled }
+        checkups.any { it.schedule.enabled } ||
+        upcomingExams.any { it.remindersEnabled }
 
     Scaffold(
         topBar = {
@@ -232,31 +223,27 @@ fun CareContent(
             }
 
             SectionHeader(
-                title = stringResource(R.string.lab_results_title),
-                addLabel = stringResource(R.string.lab_result_add),
-                onAdd = { editLab = LabEditing(null, labHistories.keys.firstOrNull() ?: LabTest.CRP) },
+                title = stringResource(R.string.exams_title),
+                addLabel = stringResource(R.string.exam_add),
+                onAdd = { editExam = Editing(null) },
             )
-            if (labHistories.isEmpty()) {
-                EmptyLine(stringResource(R.string.lab_results_empty))
-            } else {
-                LabResultsViews(
-                    histories = labHistories,
-                    sex = sex,
-                    onOpenTest = { labDetail = it },
-                    onEditResult = { editLab = LabEditing(it, it.test) },
-                )
+            if (exams.isEmpty()) {
+                EmptyLine(stringResource(R.string.exams_empty))
             }
-            // Lecture de comptes rendus PDF ou photos, sur l'appareil, puis vérification.
-            OutlinedButton(
-                onClick = onImportLabReport,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-            ) {
-                Icon(Icons.Outlined.UploadFile, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text(stringResource(R.string.lab_import_reports_button))
+            upcomingExams.forEach { exam ->
+                ExamRow(exam = exam, upcoming = true, onClick = { editExam = Editing(exam) })
             }
+            pastExams.forEach { exam ->
+                ExamRow(exam = exam, upcoming = false, onClick = { editExam = Editing(exam) })
+            }
+
+            Text(
+                text = stringResource(R.string.lab_results_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            LabSummaryCard(labResults = labResults, sex = sex, onOpen = onOpenLabs)
             Spacer(Modifier.height(24.dp))
         }
     }
@@ -277,27 +264,58 @@ fun CareContent(
             onDelete = onDeleteCheckup,
         )
     }
-    // Le détail s'efface pendant la saisie pour ne pas empiler deux feuilles, puis revient.
-    labDetail?.let { test ->
-        val history = labHistories[test]
-        if (history != null && editLab == null) {
-            LabResultDetailSheet(
-                test = test,
-                history = history,
-                sex = sex,
-                onDismiss = { labDetail = null },
-                onAdd = { editLab = LabEditing(null, test) },
-                onEdit = { editLab = LabEditing(it, it.test) },
-            )
-        }
-    }
-    editLab?.let { editing ->
-        LabResultEditorSheet(
-            editing = editing,
-            onDismiss = { editLab = null },
-            onSave = onSaveLabResult,
-            onDelete = onDeleteLabResult,
+    editExam?.let { editing ->
+        ExamEditorSheet(
+            initial = editing.item,
+            onDismiss = { editExam = null },
+            onSave = { onSaveExam(it); requestPermissionIfNeeded(it.remindersEnabled) },
+            onDelete = onDeleteExam,
         )
+    }
+}
+
+/**
+ * Résumé des résultats d'analyses : dernier bilan et analyses hors normes ; le détail est dans
+ * le sous-écran [LabsScreen].
+ */
+@Composable
+private fun LabSummaryCard(labResults: List<LabResult>, sex: Sex?, onOpen: () -> Unit) {
+    val histories = remember(labResults) { labHistories(labResults) }
+    val latest = labResults.maxOfOrNull { it.date }
+    val watch = histories.values.count { it.first().status(sex) != LabStatus.NORMAL }
+    Card(
+        onClick = onOpen,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Outlined.Biotech, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Spacer(Modifier.width(16.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = if (latest == null) stringResource(R.string.lab_results_empty)
+                    else stringResource(R.string.lab_summary_latest, DateFormats.dayMonthYear(latest)),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                if (histories.isNotEmpty()) {
+                    Text(
+                        text = pluralStringResource(R.plurals.lab_summary_tests, histories.size, histories.size),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                if (watch > 0) {
+                    Text(
+                        text = pluralStringResource(R.plurals.lab_summary_watch, watch, watch),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.error,
+                    )
+                }
+            }
+            Icon(Icons.AutoMirrored.Outlined.KeyboardArrowRight, contentDescription = null)
+        }
     }
 }
 
@@ -399,6 +417,68 @@ private fun ScheduledRow(
     )
 }
 
+/**
+ * Examen : date, prochaine étape de la préparation et, avant l'examen, l'alerte sur la
+ * consultation d'anesthésie. Un examen passé est grisé.
+ */
+@Composable
+private fun ExamRow(exam: Exam, upcoming: Boolean, onClick: () -> Unit) {
+    val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val current = now()
+    val next = if (upcoming) exam.steps().firstOrNull { it.at >= current && it.step != ExamStep.EXAM } else null
+    val nextLine = next?.let {
+        stringResource(
+            R.string.exam_next_step,
+            stringResource(it.step.labelRes),
+            // Le régime commence un jour donné : l'heure du rappel n'apporte rien.
+            if (it.step == ExamStep.DIET) DateFormats.weekdayDayMonth(it.at.date) else dateTimeLabel(it.at),
+        )
+    }
+    val warning = when {
+        !upcoming -> null
+        exam.anesthesiaMissing() -> stringResource(R.string.exam_anesthesia_missing)
+        exam.anesthesiaTooLate() -> stringResource(R.string.exam_anesthesia_too_late)
+        else -> null
+    }
+    val lines = listOfNotNull(exam.note.ifBlank { null }, nextLine)
+    ListItem(
+        headlineContent = {
+            Text(
+                text = "${stringResource(exam.type.labelRes)} · ${dateTimeLabel(exam.at)}",
+                color = if (upcoming) Color.Unspecified else muted,
+            )
+        },
+        supportingContent = if (lines.isEmpty() && warning == null) null else {
+            {
+                Column {
+                    if (lines.isNotEmpty()) Text(lines.joinToString("\n"), color = muted)
+                    warning?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                }
+            }
+        },
+        leadingContent = {
+            Icon(
+                Icons.Outlined.MedicalServices,
+                contentDescription = null,
+                tint = if (upcoming) LocalContentColor.current else muted,
+            )
+        },
+        trailingContent = if (!upcoming) null else {
+            {
+                Icon(
+                    if (exam.remindersEnabled) Icons.Outlined.NotificationsActive else Icons.Outlined.NotificationsOff,
+                    contentDescription = stringResource(
+                        if (exam.remindersEnabled) R.string.reminder_enabled else R.string.reminder_off
+                    ),
+                    tint = if (exam.remindersEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                )
+            }
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+        colors = settingsRowColors(),
+    )
+}
+
 private fun hasNotificationPermission(context: android.content.Context): Boolean =
     Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
         ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
@@ -420,6 +500,9 @@ private fun CarePreview() {
             checkups = listOf(
                 Checkup(1, CheckupType.STOOL_TEST, "Calprotectine", ReminderSchedule(startDate = today.plus(10, DateTimeUnit.DAY), repeatUnit = RepeatUnit.ONCE)),
             ),
+            exams = listOf(
+                Exam(1, ExamType.COLONOSCOPY, today.plus(18, DateTimeUnit.DAY).atTime(9, 30)).withDefaultPreparation(),
+            ),
             labResults = listOf(
                 LabResult(1, LabTest.CRP, 18.0, today.minus(40, DateTimeUnit.DAY)),
                 LabResult(2, LabTest.CRP, 6.5, today.minus(5, DateTimeUnit.DAY)),
@@ -435,8 +518,6 @@ private fun CarePreview() {
             onDeleteMedication = {},
             onSaveCheckup = {},
             onDeleteCheckup = {},
-            onSaveLabResult = {},
-            onDeleteLabResult = {},
         )
     }
 }

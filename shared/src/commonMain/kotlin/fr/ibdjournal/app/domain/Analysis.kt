@@ -34,6 +34,7 @@ enum class Symptom(val isPresent: (Stool) -> Boolean) {
     STRONG_FATIGUE({ it.fatigueLevel >= STRONG_LEVEL }),
     URGENCY({ it.urgency }),
     NOCTURNAL({ it.nocturnal }),
+    FALSE_URGE({ it.falseUrge }),
 }
 
 /** [previousDays] vaut null sans période de comparaison ou si rien n'y a été noté. */
@@ -53,8 +54,8 @@ data class AnalysisSummary(
     /** Selles liquides par jour noté sur la période ; null sans aucun jour noté. */
     val liquidPerDay: Double? = null,
 ) {
-    /** Selles réelles : une entrée « type 0 » note une journée sans selle. */
-    val realStools: List<Stool> get() = stools.filter { it.bristolType > 0 }
+    /** Selles réelles : sans les journées sans selle (type 0) ni les fausses envies. */
+    val realStools: List<Stool> get() = stools.filter { it.isRealStool }
 
     /** Bristol moyen des selles réelles, ou null sans selle. */
     val averageBristol: Double? get() = realStools.map { it.bristolType }.average().takeIf { !it.isNaN() }

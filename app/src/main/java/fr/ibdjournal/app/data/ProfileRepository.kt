@@ -3,6 +3,9 @@ package fr.ibdjournal.app.data
 import fr.ibdjournal.app.data.local.AppDatabase
 import fr.ibdjournal.app.data.local.toCheckup
 import fr.ibdjournal.app.data.local.toCheckupEntity
+import fr.ibdjournal.app.data.local.toExam
+import fr.ibdjournal.app.data.local.toExamEntity
+import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.data.local.toDoseLog
 import fr.ibdjournal.app.data.local.toDoseLogEntity
 import fr.ibdjournal.app.data.local.toLabResult
@@ -37,6 +40,7 @@ class ProfileRepository @Inject constructor(
     private val checkupDao = database.checkupDao()
     private val labResultDao = database.labResultDao()
     private val doseLogDao = database.doseLogDao()
+    private val examDao = database.examDao()
 
     val profile: Flow<Profile> = profileDao.observe().map { it?.toProfile() ?: Profile() }
 
@@ -67,6 +71,20 @@ class ProfileRepository @Inject constructor(
     suspend fun deleteCheckup(id: Long) {
         reminders.cancelCheckup(id)
         checkupDao.deleteById(id)
+    }
+
+    // --- Examens (coloscopie, rectosigmoïdoscopie) ---
+
+    val exams: Flow<List<Exam>> = examDao.observeAll().map { list -> list.map { it.toExam() } }
+
+    suspend fun saveExam(exam: Exam) {
+        val id = examDao.upsert(exam.toExamEntity())
+        reminders.schedule(exam.copy(id = id))
+    }
+
+    suspend fun deleteExam(id: Long) {
+        reminders.cancelExam(id)
+        examDao.deleteById(id)
     }
 
     // --- Résultats d'analyses ---

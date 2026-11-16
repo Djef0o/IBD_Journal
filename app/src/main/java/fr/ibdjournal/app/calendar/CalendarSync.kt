@@ -6,6 +6,11 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.Medication
+import fr.ibdjournal.app.data.model.Exam
+import fr.ibdjournal.app.domain.ExamStep
+import fr.ibdjournal.app.domain.calendarKind
+import fr.ibdjournal.app.domain.events
+import fr.ibdjournal.app.notification.examStepTitle
 import fr.ibdjournal.app.domain.CalendarEventKind
 import fr.ibdjournal.app.domain.CalendarEventSpec
 import fr.ibdjournal.app.domain.doseEvent
@@ -46,6 +51,16 @@ class CalendarSync @Inject constructor(
     }
 
     suspend fun removeCheckup(id: Long) = put(CalendarEventKind.CHECKUP, id, null)
+
+    suspend fun sync(exam: Exam) {
+        exam.events().forEach { (step, spec) ->
+            put(step.calendarKind, exam.id, spec?.let { examEvent(exam, step, it) })
+        }
+    }
+
+    suspend fun removeExam(id: Long) {
+        ExamStep.entries.forEach { put(it.calendarKind, id, null) }
+    }
 
     /** Supprime tous les événements créés par l'app (désactivation, changement d'agenda). */
     suspend fun removeAll() {
@@ -99,6 +114,13 @@ class CalendarSync @Inject constructor(
         title = listOf(context.getString(checkup.type.labelRes), checkup.note)
             .filter { it.isNotBlank() }
             .joinToString(" · "),
+        description = context.getString(R.string.calendar_event_description),
+    )
+
+    /** « Coloscopie · Clinique du Parc » ; étapes : « 1re prise de la préparation (coloscopie) ». */
+    private fun examEvent(exam: Exam, step: ExamStep, spec: CalendarEventSpec) = CalendarEvent(
+        spec = spec,
+        title = examStepTitle(context, exam, step),
         description = context.getString(R.string.calendar_event_description),
     )
 }

@@ -35,6 +35,7 @@ fun DiaryEditors(viewModel: CalendarViewModel) {
         StoolSheet(
             stool = editor.stool,
             initialBristol = editor.initialBristol,
+            initialFalseUrge = editor.initialFalseUrge,
             onDismiss = viewModel::closeStoolSheet,
             onDelete = editor.stool?.let { stool ->
                 {

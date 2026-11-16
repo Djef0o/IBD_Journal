@@ -53,7 +53,7 @@ data class MealEditorState(
 )
 
 /** Feuille de saisie d'une selle ouverte ; [stool] est null pour un ajout. */
-data class StoolEditorState(val stool: Stool?, val initialBristol: Int? = null)
+data class StoolEditorState(val stool: Stool?, val initialBristol: Int? = null, val initialFalseUrge: Boolean = false)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -187,8 +187,8 @@ class CalendarViewModel @Inject constructor(
 
     // --- Selles ---
 
-    fun openStoolSheet(stool: Stool?, initialBristol: Int? = null) {
-        _stoolEditor.value = StoolEditorState(stool, initialBristol)
+    fun openStoolSheet(stool: Stool?, initialBristol: Int? = null, initialFalseUrge: Boolean = false) {
+        _stoolEditor.value = StoolEditorState(stool, initialBristol, initialFalseUrge)
     }
 
     fun closeStoolSheet() {
@@ -204,6 +204,7 @@ class CalendarViewModel @Inject constructor(
         comment: String,
         urgency: Boolean = false,
         nocturnal: Boolean = false,
+        falseUrge: Boolean = false,
     ) {
         val existing = _stoolEditor.value?.stool
         val date = selectedDate.value
@@ -220,6 +221,7 @@ class CalendarViewModel @Inject constructor(
                     comment = comment,
                     urgency = urgency,
                     nocturnal = nocturnal,
+                    falseUrge = falseUrge,
                     createdAt = existing?.createdAt ?: System.currentTimeMillis(),
                 )
             )

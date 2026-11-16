@@ -51,6 +51,8 @@ data class StoolEntity(
     /** Ajoutées en version 5 : défaut SQL identique à celui de la migration 4 → 5. */
     @ColumnInfo(defaultValue = "0") val urgency: Boolean = false,
     @ColumnInfo(defaultValue = "0") val nocturnal: Boolean = false,
+    /** Ajoutée en version 8. */
+    @ColumnInfo(defaultValue = "0") val falseUrge: Boolean = false,
 )
 
 /** Cache des produits Open Food Facts, par code-barres. */
@@ -122,6 +124,7 @@ fun StoolEntity.toStool() = Stool(
     createdAt = createdAt,
     urgency = urgency,
     nocturnal = nocturnal,
+    falseUrge = falseUrge,
 )
 
 fun Stool.toStoolEntity() = StoolEntity(
@@ -136,6 +139,7 @@ fun Stool.toStoolEntity() = StoolEntity(
     createdAt = createdAt,
     urgency = urgency,
     nocturnal = nocturnal,
+    falseUrge = falseUrge,
 )
 
 /** Résultats d'analyses (version 5 ; seuil et valeurs de référence en version 6). */

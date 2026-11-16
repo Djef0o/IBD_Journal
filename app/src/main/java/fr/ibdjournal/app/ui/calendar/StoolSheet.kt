@@ -26,6 +26,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -59,9 +62,10 @@ private val FatigueColor = Color(0xFF6FBF8B)
 fun StoolSheet(
     stool: fr.ibdjournal.app.data.model.Stool?,
     initialBristol: Int? = null,
+    initialFalseUrge: Boolean = false,
     onDismiss: () -> Unit,
     onDelete: (() -> Unit)? = null,
-    onSave: (bristol: Int, blood: Int, mucus: Int, pain: Int, fatigue: Int, comment: String, urgency: Boolean, nocturnal: Boolean) -> Unit,
+    onSave: StoolSave,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(
@@ -72,21 +76,27 @@ fun StoolSheet(
         StoolSheetContent(
             editingStool = stool,
             initialBristol = initialBristol,
+            initialFalseUrge = initialFalseUrge,
             onDelete = onDelete,
             onSave = onSave,
         )
     }
 }
 
+/** Enregistrement : type, sang, glaires, douleur, fatigue, commentaire, urgence, nuit, fausse envie. */
+typealias StoolSave = (Int, Int, Int, Int, Int, String, Boolean, Boolean, Boolean) -> Unit
+
 @Composable
 fun StoolSheetContent(
     editingStool: fr.ibdjournal.app.data.model.Stool? = null,
     initialBristol: Int? = null,
+    initialFalseUrge: Boolean = false,
     onDelete: (() -> Unit)? = null,
-    onSave: (Int, Int, Int, Int, Int, String, Boolean, Boolean) -> Unit,
+    onSave: StoolSave,
 ) {
     var bristolType by remember(editingStool, initialBristol) {
-        mutableIntStateOf(editingStool?.bristolType ?: initialBristol ?: 4)
+        // Une fausse envie est enregistrée en type 0 : la repasser en selle repart du type 4.
+        mutableIntStateOf(editingStool?.bristolType?.takeUnless { editingStool.falseUrge } ?: initialBristol ?: 4)
     }
     var bloodLevel by remember(editingStool) { mutableIntStateOf(editingStool?.bloodLevel ?: 0) }
     var mucusLevel by remember(editingStool) { mutableIntStateOf(editingStool?.mucusLevel ?: 0) }
@@ -95,6 +105,9 @@ fun StoolSheetContent(
     var comment by remember(editingStool) { mutableStateOf(editingStool?.comment ?: "") }
     var urgency by remember(editingStool) { mutableStateOf(editingStool?.urgency ?: false) }
     var nocturnal by remember(editingStool) { mutableStateOf(editingStool?.nocturnal ?: false) }
+    var falseUrge by remember(editingStool, initialFalseUrge) {
+        mutableStateOf(editingStool?.falseUrge ?: initialFalseUrge)
+    }
 
     val timestamp = editingStool?.createdAt ?: System.currentTimeMillis()
     val moment = DateFormats.weekdayDayMonth(
@@ -120,7 +133,12 @@ fun StoolSheetContent(
                 Column(Modifier.weight(1f)) {
                     Text(
                         text = stringResource(
-                            if (editingStool != null) R.string.edit_stool else R.string.new_stool
+                            when {
+                                falseUrge && editingStool != null -> R.string.edit_false_urge
+                                falseUrge -> R.string.new_false_urge
+                                editingStool != null -> R.string.edit_stool
+                                else -> R.string.new_stool
+                            }
                         ),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
@@ -140,30 +158,53 @@ fun StoolSheetContent(
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
-                    BristolIcon(type = bristolType, modifier = Modifier.size(32.dp))
+                    BristolIcon(type = if (falseUrge) 0 else bristolType, modifier = Modifier.size(32.dp))
                 }
             }
 
+            // Selle ou fausse envie : la fausse envie n'a pas de type de Bristol.
             Spacer(Modifier.height(14.dp))
-            Text(
-                text = stringResource(R.string.stool_type_question),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(8.dp))
+            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                listOf(false, true).forEachIndexed { index, choice ->
+                    SegmentedButton(
+                        selected = falseUrge == choice,
+                        onClick = { falseUrge = choice },
+                        shape = SegmentedButtonDefaults.itemShape(index, 2),
+                    ) {
+                        Text(stringResource(if (choice) R.string.false_urge else R.string.stool_kind_stool))
+                    }
+                }
+            }
 
-            BristolGrid(
-                selected = bristolType,
-                onSelect = { bristolType = it },
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text = stringResource(R.string.analysis_type, bristolType) +
-                    " · " + stringResource(bristolDescription(bristolType)),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (falseUrge) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.false_urge_hint),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Spacer(Modifier.height(14.dp))
+                Text(
+                    text = stringResource(R.string.stool_type_question),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Spacer(Modifier.height(8.dp))
+
+                BristolGrid(
+                    selected = bristolType,
+                    onSelect = { bristolType = it },
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.analysis_type, bristolType) +
+                        " · " + stringResource(bristolDescription(bristolType)),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             Spacer(Modifier.height(14.dp))
             Row(
@@ -258,7 +299,10 @@ fun StoolSheetContent(
             ) {
                 Button(
                     onClick = {
-                        onSave(bristolType, bloodLevel, mucusLevel, painLevel, fatigueLevel, comment, urgency, nocturnal)
+                        onSave(
+                            if (falseUrge) 0 else bristolType, bloodLevel, mucusLevel, painLevel, fatigueLevel,
+                            comment, urgency, nocturnal, falseUrge,
+                        )
                     },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -440,7 +484,7 @@ private fun StoolSheetPreview() {
     IBDJournalTheme(fr.ibdjournal.app.data.Appearance(fr.ibdjournal.app.data.ThemeMode.DARK)) {
         Box(Modifier.height(760.dp)) {
             Surface {
-                StoolSheetContent(onSave = { _, _, _, _, _, _, _, _ -> })
+                StoolSheetContent(onSave = { _, _, _, _, _, _, _, _, _ -> })
             }
         }
     }

@@ -5,9 +5,10 @@ import androidx.compose.ui.res.stringResource
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Stool
 
-/** « Selle · Type 4 ». */
+/** « Selle · Type 4 », ou « Fausse envie ». */
 @Composable
-fun stoolTitle(stool: Stool): String = stringResource(R.string.stool_title, stool.bristolType)
+fun stoolTitle(stool: Stool): String =
+    if (stool.falseUrge) stringResource(R.string.false_urge) else stringResource(R.string.stool_title, stool.bristolType)
 
 /**
  * Signe le plus notable d'une selle (sang, glaires, douleur), sinon le commentaire.

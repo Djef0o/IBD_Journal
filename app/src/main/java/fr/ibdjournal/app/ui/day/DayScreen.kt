@@ -226,7 +226,7 @@ private fun Header(
 
 @Composable
 private fun SummaryCard(stools: List<Stool>, meals: List<Meal>) {
-    val average = stools.map { it.bristolType }.average().takeIf { !it.isNaN() }
+    val average = stools.filter { it.isRealStool }.map { it.bristolType }.average().takeIf { !it.isNaN() }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(22.dp),
@@ -238,7 +238,7 @@ private fun SummaryCard(stools: List<Stool>, meals: List<Meal>) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             DayStat(
-                value = stools.size.toString(),
+                value = stools.count { it.isRealStool }.toString(),
                 label = stringResource(R.string.stools_section),
                 modifier = Modifier.weight(1f),
             )

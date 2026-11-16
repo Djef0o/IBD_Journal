@@ -69,6 +69,9 @@ object DateFormats {
 
     fun weekdayDayMonth(date: LocalDate): String = capitalize(date.format(formatters.weekdayDayMonth))
 
+    /** Même date au fil d'une phrase, sans majuscule ajoutée : « lundi 30 novembre ». */
+    fun weekdayDayMonthInline(date: LocalDate): String = date.format(formatters.weekdayDayMonth)
+
     /** « 12 mars 1985 » / « March 12, 1985 ». */
     fun dayMonthYear(date: LocalDate): String = date.format(formatters.dayMonthYear)
 

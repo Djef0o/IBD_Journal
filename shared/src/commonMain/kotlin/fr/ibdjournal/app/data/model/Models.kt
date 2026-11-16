@@ -30,6 +30,8 @@ data class Meal(
 /**
  * Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). [urgency] : besoin
  * impérieux ; [nocturnal] : selle qui a réveillé la nuit (critères des scores d'activité).
+ * [falseUrge] : fausse envie (ténesme), passage aux toilettes sans selle, parfois avec sang
+ * ou glaires ; enregistrée avec [bristolType] 0, elle n'est pas comptée comme une selle.
  */
 @Serializable
 data class Stool(
@@ -44,7 +46,11 @@ data class Stool(
     val createdAt: Long = nowEpochMillis(),
     val urgency: Boolean = false,
     val nocturnal: Boolean = false,
-)
+    val falseUrge: Boolean = false,
+) {
+    /** Vraie selle : ni journée sans selle (type 0) ni fausse envie. */
+    val isRealStool: Boolean get() = bristolType > 0
+}
 
 /** Produit alimentaire (issu d'Open Food Facts ou du cache local). */
 @Serializable
@@ -70,6 +76,7 @@ data class BackupData(
     val checkups: List<Checkup>? = null,
     val labResults: List<LabResult>? = null,
     val doseLogs: List<DoseLog>? = null,
+    val exams: List<Exam>? = null,
 )
 
 /** Résultat d'une recherche de produit par code-barres. */

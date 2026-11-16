@@ -105,13 +105,13 @@ fun HomeScreen(
     if (showQuickStool) {
         QuickStoolSheet(
             onDismiss = { showQuickStool = false },
-            onDetails = { type ->
+            onDetails = { type, falseUrge ->
                 showQuickStool = false
-                viewModel.openStoolSheet(null, initialBristol = type)
+                viewModel.openStoolSheet(null, initialBristol = type, initialFalseUrge = falseUrge)
             },
-            onSave = { type ->
+            onSave = { type, falseUrge ->
                 showQuickStool = false
-                viewModel.saveStool(type, 0, 0, 0, 0, "")
+                viewModel.saveStool(type, 0, 0, 0, 0, "", falseUrge = falseUrge)
             },
         )
     }
@@ -137,7 +137,7 @@ fun HomeContent(
     val weekStart = today.minus(6, DateTimeUnit.DAY)
     val weekStools = (0..6).flatMap { state.stoolsByDay[weekStart.plus(it, DateTimeUnit.DAY)].orEmpty() }
     val weekMeals = (0..6).flatMap { state.mealsByDay[weekStart.plus(it, DateTimeUnit.DAY)].orEmpty() }
-    val weekAverage = weekStools.map { it.bristolType }.average().takeIf { !it.isNaN() }
+    val weekAverage = weekStools.filter { it.isRealStool }.map { it.bristolType }.average().takeIf { !it.isNaN() }
 
     Column(
         modifier = Modifier
@@ -238,7 +238,7 @@ private fun Header(onOpenSettings: () -> Unit) {
 
 @Composable
 private fun SummaryCard(stools: List<Stool>, meals: List<Meal>) {
-    val average = stools.map { it.bristolType }.average().takeIf { !it.isNaN() }
+    val average = stools.filter { it.isRealStool }.map { it.bristolType }.average().takeIf { !it.isNaN() }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(24.dp),
@@ -266,9 +266,10 @@ private fun SummaryCard(stools: List<Stool>, meals: List<Meal>) {
             }
             Spacer(Modifier.height(14.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                val realCount = stools.count { it.isRealStool }
                 Stat(
-                    value = stools.size.toString(),
-                    label = pluralStringResource(R.plurals.stools_label, stools.size, stools.size),
+                    value = realCount.toString(),
+                    label = pluralStringResource(R.plurals.stools_label, realCount, realCount),
                     modifier = Modifier.weight(1f),
                 )
                 VerticalSeparator()
@@ -563,9 +564,11 @@ private fun WeekCard(stools: List<Stool>, meals: List<Meal>, average: Double?) {
             )
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
+                // Les journées sans selle (type 0) et les fausses envies ne sont pas des selles.
+                val realCount = stools.count { it.isRealStool }
                 Stat(
-                    value = stools.size.toString(),
-                    label = pluralStringResource(R.plurals.stools_label, stools.size, stools.size),
+                    value = realCount.toString(),
+                    label = pluralStringResource(R.plurals.stools_label, realCount, realCount),
                     modifier = Modifier.weight(1f),
                 )
                 VerticalSeparator()
