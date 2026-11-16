@@ -1,0 +1,14 @@
+IBD Journal è un diario personale per chi convive con la malattia di Crohn o la colite ulcerosa.
+
+• Registra le evacuazioni con due tocchi: scala di Bristol, sangue, muco, dolore, stanchezza, urgenza, falsi stimoli
+• Notifica serale per registrare evacuazioni, dolore e stanchezza senza aprire l'app
+• Pasti con scansione dei codici a barre (Open Food Facts)
+• Terapie con promemoria, aderenza e avvisi di riordino
+• Colonscopia e rettosigmoidoscopia: data, dieta, dosi della preparazione e un promemoria per ogni fase, secondo le indicazioni del tuo medico
+• Esami: 43 esami comuni con i valori di riferimento stampati dal tuo laboratorio, grafici e tabelle; importazione dai PDF del tuo laboratorio, letti sul telefono
+• Report PDF per il tuo medico
+• Backup e ripristino su un file cifrato con password
+
+Privacy: nessun account, nessun server, nessun tracker, nessun servizio Google. I tuoi dati non lasciano il telefono se non li esporti. L'unico uso della rete è la ricerca dei codici a barre su Open Food Facts.
+
+IBD Journal è un diario personale, non un dispositivo medico. Non interpreta i tuoi risultati e non sostituisce il parere medico.

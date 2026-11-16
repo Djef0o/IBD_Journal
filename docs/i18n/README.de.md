@@ -76,3 +76,7 @@ Die Release-Signierung liest `keystore.properties` (nicht im Repository enthalte
 ## Haftungsausschluss
 
 IBD Journal ist ein persönliches Tagebuch. Es erfasst und zeigt an, was du eingibst; es deutet deine Ergebnisse nicht und schlägt keine medizinischen Entscheidungen vor, und es ist kein Medizinprodukt. Es ersetzt keine ärztliche Beratung: Befolge immer die Anweisungen deiner Ärztin oder deines Arztes, besonders bei der Vorbereitung auf Untersuchungen und bei Behandlungen.
+
+## Lizenz
+
+[GNU AGPL-3.0](../../LICENSE). Du darfst die App nutzen, untersuchen, verändern und weitergeben; wer eine veränderte Version verbreitet oder als Online-Dienst anbietet, muss ihren Quellcode unter derselben Lizenz veröffentlichen.

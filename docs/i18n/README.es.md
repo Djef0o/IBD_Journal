@@ -76,3 +76,7 @@ La firma de la versión de publicación lee `keystore.properties` (no incluido e
 ## Aviso legal
 
 IBD Journal es un diario personal. Registra y muestra lo que introduces; no interpreta tus resultados ni sugiere ninguna decisión médica, y no es un producto sanitario. No sustituye al consejo médico: sigue siempre las indicaciones de tu médico, especialmente para la preparación de exámenes y los tratamientos.
+
+## Licencia
+
+[GNU AGPL-3.0](../../LICENSE). Puedes usar, estudiar, modificar y compartir la app; quien distribuya una versión modificada, o la ofrezca como servicio en línea, debe publicar su código fuente bajo la misma licencia.

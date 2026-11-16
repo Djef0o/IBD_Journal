@@ -1,0 +1,14 @@
+IBD Journal ist ein persönliches Tagebuch für Menschen mit Morbus Crohn oder Colitis ulcerosa.
+
+• Stuhlgang mit zwei Tipps erfassen: Bristol-Skala, Blut, Schleim, Schmerzen, Müdigkeit, Stuhldrang, falscher Stuhldrang
+• Abendliche Benachrichtigung zum Erfassen von Stuhl, Schmerzen und Müdigkeit, ohne die App zu öffnen
+• Mahlzeiten mit Barcode-Scan (Open Food Facts)
+• Behandlungen mit Erinnerungen, Einnahmetreue und Nachbestell-Hinweisen
+• Koloskopie und Rektosigmoidoskopie: Termin, Diät, Vorbereitungsdosen und eine Erinnerung pro Schritt, nach den Vorgaben deines Arztes
+• Laborwerte: 43 gängige Werte mit den vom Labor gedruckten Referenzbereichen, Diagramme und Tabellen; Import aus den PDF-Befunden deines Labors, auf dem Handy gelesen
+• PDF-Bericht für deinen Arzt
+• Sicherung und Wiederherstellung in einer mit Passwort verschlüsselten Datei
+
+Datenschutz: kein Konto, kein Server, keine Tracker, keine Google-Dienste. Deine Daten verlassen das Handy nur, wenn du sie exportierst. Die einzige Netzwerknutzung ist die Barcode-Suche bei Open Food Facts.
+
+IBD Journal ist ein persönliches Tagebuch, kein Medizinprodukt. Es wertet deine Ergebnisse nicht aus und ersetzt keine ärztliche Beratung.

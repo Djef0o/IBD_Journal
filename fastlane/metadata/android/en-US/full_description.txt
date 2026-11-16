@@ -1,0 +1,14 @@
+IBD Journal is a personal diary for people living with Crohn's disease or ulcerative colitis.
+
+• Log stools in two taps: Bristol scale, blood, mucus, pain, fatigue, urgency, false urges
+• Evening notification to log stool type, pain and fatigue without opening the app
+• Meals with barcode scanning (Open Food Facts)
+• Treatments with reminders, adherence and refill alerts
+• Colonoscopy and rectosigmoidoscopy: date, diet, preparation doses and a reminder for each step, as prescribed by your doctor
+• Lab results: 43 common tests with the reference range printed by your lab, charts and tables; import from your lab's PDF reports, read on the phone
+• PDF report for your doctor
+• Password-encrypted backup and restore to a file
+
+Privacy: no account, no server, no tracker, no Google services. Your data never leaves the phone unless you export it. The only network use is the barcode lookup on Open Food Facts.
+
+IBD Journal is a personal journal, not a medical device. It does not interpret your results and does not replace medical advice.

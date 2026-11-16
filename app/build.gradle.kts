@@ -20,6 +20,12 @@ android {
     namespace = "fr.ibdjournal.app"
     compileSdk = 37
 
+    // F-Droid refuse le bloc de métadonnées de dépendances signé par Google.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
+    }
+
     signingConfigs {
         if (hasReleaseKeystore) {
             create("release") {
@@ -49,6 +55,7 @@ android {
                 "proguard-rules.pro",
             )
             signingConfig = signingConfigs.findByName("release")
+            vcsInfo.include = false
         }
     }
 

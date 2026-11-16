@@ -1,0 +1,14 @@
+IBD Journal est un journal personnel pour les personnes atteintes de la maladie de Crohn ou de rectocolite hémorragique.
+
+• Notez vos selles en deux touches : échelle de Bristol, sang, glaires, douleur, fatigue, urgence, fausses envies
+• Notification du soir pour noter selles, douleur et fatigue sans ouvrir l'app
+• Repas avec scan de code-barres (Open Food Facts)
+• Traitements avec rappels, observance et alertes de commande
+• Coloscopie et rectosigmoïdoscopie : date, régime, prises de la préparation et un rappel par étape, selon les consignes de votre médecin
+• Analyses : 43 examens courants avec les valeurs de référence imprimées par votre laboratoire, graphiques et tableaux ; import depuis les PDF de votre laboratoire, lus sur le téléphone
+• Rapport PDF pour votre médecin
+• Sauvegarde et restauration dans un fichier chiffré par mot de passe
+
+Confidentialité : ni compte, ni serveur, ni traceur, ni service Google. Vos données ne quittent jamais le téléphone sauf si vous les exportez. Le seul accès réseau est la recherche de codes-barres sur Open Food Facts.
+
+IBD Journal est un journal personnel, pas un dispositif médical. Il n'interprète pas vos résultats et ne remplace pas un avis médical.

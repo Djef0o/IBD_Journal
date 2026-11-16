@@ -76,3 +76,7 @@ Release signing reads `keystore.properties` (not committed).
 ## Disclaimer
 
 IBD Journal is a personal journal. It records and displays what you enter; it does not interpret your results or suggest any medical decision, and it is not a medical device. It does not replace medical advice: always follow your doctor's instructions, especially for exam preparation and treatments.
+
+## License
+
+[GNU AGPL-3.0](LICENSE). You may use, study, modify and share the app; anyone who distributes a modified version, or offers it as an online service, must publish its source code under the same license.
