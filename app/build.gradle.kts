@@ -75,16 +75,6 @@ android {
     }
 }
 
-gradle.taskGraph.whenReady {
-    val buildingRelease = allTasks.any { it.name.endsWith("Release") }
-    if (buildingRelease && !hasReleaseKeystore) {
-        throw GradleException(
-            "Missing keystore.properties in ${rootProject.projectDir} — create it with " +
-                "storeFile/storePassword/keyAlias/keyPassword entries to sign release builds."
-        )
-    }
-}
-
 dependencies {
     // Core / Lifecycle
     implementation(libs.androidx.core.ktx)
