@@ -70,7 +70,7 @@ A assinatura de release lê `keystore.properties` (não versionado).
 
 | Módulo | Conteúdo |
 |---|---|
-| `shared/` | Kotlin Multiplatform: modelos de dados, banco de dados Room, análises, leitor de laudos, cronogramas de lembretes e exames. Compila para Android e iOS. |
+| `shared/` | Kotlin Multiplatform: modelos de dados, banco de dados Room, análises, leitor de laudos, cronogramas de lembretes e exames. |
 | `app/` | Aplicativo Android: interface Jetpack Compose (Material 3), Hilt, notificações, sincronização de calendário, relatório em PDF, extração de texto de PDF (PdfBox-Android), leitura de código de barras (ZXing). |
 
 ## Aviso legal

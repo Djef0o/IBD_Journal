@@ -70,7 +70,7 @@ La firma di rilascio legge `keystore.properties` (non incluso nel repository).
 
 | Modulo | Contenuto |
 |---|---|
-| `shared/` | Kotlin Multiplatform: modelli dei dati, database Room, analisi, parser dei referti di laboratorio, pianificazioni di promemoria ed esami. Compila per Android e iOS. |
+| `shared/` | Kotlin Multiplatform: modelli dei dati, database Room, analisi, parser dei referti di laboratorio, pianificazioni di promemoria ed esami. |
 | `app/` | App Android: interfaccia Jetpack Compose (Material 3), Hilt, notifiche, sincronizzazione del calendario, report PDF, estrazione del testo dai PDF (PdfBox-Android), scansione dei codici a barre (ZXing). |
 
 ## Avvertenza

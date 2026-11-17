@@ -70,7 +70,7 @@ Die Release-Signierung liest `keystore.properties` (nicht im Repository enthalte
 
 | Modul | Inhalt |
 |---|---|
-| `shared/` | Kotlin Multiplatform: Datenmodelle, Room-Datenbank, Auswertung, Parser für Laborberichte, Zeitpläne für Erinnerungen und Untersuchungen. Kompiliert für Android und iOS. |
+| `shared/` | Kotlin Multiplatform: Datenmodelle, Room-Datenbank, Auswertung, Parser für Laborberichte, Zeitpläne für Erinnerungen und Untersuchungen. |
 | `app/` | Android-App: Jetpack Compose (Material 3) UI, Hilt, Benachrichtigungen, Kalendersynchronisation, PDF-Bericht, PDF-Textextraktion (PdfBox-Android), Barcode-Scan (ZXing). |
 
 ## Haftungsausschluss

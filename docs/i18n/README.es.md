@@ -70,7 +70,7 @@ La firma de la versión de publicación lee `keystore.properties` (no incluido e
 
 | Módulo | Contenido |
 |---|---|
-| `shared/` | Kotlin Multiplatform: modelos de datos, base de datos Room, análisis, analizador de informes de laboratorio, calendarios de recordatorios y exámenes. Compila para Android e iOS. |
+| `shared/` | Kotlin Multiplatform: modelos de datos, base de datos Room, análisis, analizador de informes de laboratorio, calendarios de recordatorios y exámenes. |
 | `app/` | App de Android: interfaz con Jetpack Compose (Material 3), Hilt, notificaciones, sincronización del calendario, informe PDF, extracción de texto de PDF (PdfBox-Android), escaneo de códigos de barras (ZXing). |
 
 ## Aviso legal

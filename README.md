@@ -70,7 +70,7 @@ Release signing reads `keystore.properties` (not committed).
 
 | Module | Content |
 |---|---|
-| `shared/` | Kotlin Multiplatform: data models, Room database, analysis, lab report parser, reminder and exam schedules. Compiles for Android and iOS. |
+| `shared/` | Kotlin Multiplatform: data models, Room database, analysis, lab report parser, reminder and exam schedules. |
 | `app/` | Android app: Jetpack Compose (Material 3) UI, Hilt, notifications, calendar sync, PDF report, PDF text extraction (PdfBox-Android), barcode scanning (ZXing). |
 
 ## Disclaimer

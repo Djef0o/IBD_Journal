@@ -1,5 +1,4 @@
-// Multiplatform core of the app: models, Room database, calculations. Android uses it right now;
-// the iOS targets prepare the future iPhone app (compiled here, linked on macOS).
+// Multiplatform-structured core of the app: models, Room database, calculations.
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -15,9 +14,6 @@ kotlin {
         withHostTest {}
     }
 
-    iosArm64()
-    iosSimulatorArm64()
-
     sourceSets {
         commonMain.dependencies {
             api(libs.androidx.room.runtime)
@@ -25,18 +21,13 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
         }
-        iosMain.dependencies {
-            implementation(libs.androidx.sqlite.bundled)
-        }
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
     }
 }
 
-// Room generates its code for each target.
+// Room generates its code for the Android target.
 dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
-    add("kspIosArm64", libs.androidx.room.compiler)
-    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
 }

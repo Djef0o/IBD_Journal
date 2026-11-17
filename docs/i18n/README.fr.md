@@ -70,7 +70,7 @@ La signature de version lit `keystore.properties` (non versionné).
 
 | Module | Contenu |
 |---|---|
-| `shared/` | Kotlin Multiplatform : modèles de données, base Room, analyses, analyseur de comptes rendus d'analyses, calendriers des rappels et des examens. Compile pour Android et iOS. |
+| `shared/` | Kotlin Multiplatform : modèles de données, base Room, analyses, analyseur de comptes rendus d'analyses, calendriers des rappels et des examens. |
 | `app/` | Application Android : interface Jetpack Compose (Material 3), Hilt, notifications, synchronisation du calendrier, rapport PDF, extraction du texte des PDF (PdfBox-Android), lecture des codes-barres (ZXing). |
 
 ## Avertissement

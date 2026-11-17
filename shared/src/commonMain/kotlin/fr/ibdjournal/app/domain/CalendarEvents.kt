@@ -21,8 +21,8 @@ enum class CalendarEventKind {
 }
 
 /**
- * Calendar event derived from a reminder, platform-independent (Android Calendar,
- * iOS EventKit). [repeatUnit] [RepeatUnit.ONCE] = one-off event. Titles: platform side.
+ * Calendar event derived from a reminder, platform-independent (Android Calendar).
+ * [repeatUnit] [RepeatUnit.ONCE] = one-off event. Titles: platform side.
  */
 data class CalendarEventSpec(
     val kind: CalendarEventKind,

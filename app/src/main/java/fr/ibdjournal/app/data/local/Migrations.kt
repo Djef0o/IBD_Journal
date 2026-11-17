@@ -4,8 +4,8 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 /**
- * Migrations for existing Android databases. An iOS install starts directly at the
- * current version: these migrations therefore stay on the Android side.
+ * Migrations for existing databases. They live in the Android module, not in `shared`,
+ * which only holds the current schema.
  */
 object Migrations {
 
