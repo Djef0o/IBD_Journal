@@ -1,0 +1,1 @@
+Privacy: le richieste di rete non vengono più scritte nel registro di sistema. Rimossa l'importazione delle vecchie esportazioni non cifrate: si possono importare solo backup cifrati con password.

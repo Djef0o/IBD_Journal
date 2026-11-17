@@ -1,0 +1,1 @@
+Datenschutz: Netzwerkanfragen werden nicht mehr ins Systemprotokoll geschrieben. Der Import alter unverschlüsselter Exporte entfällt: Nur passwortverschlüsselte Sicherungen können importiert werden.

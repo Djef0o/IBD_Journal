@@ -1,0 +1,1 @@
+Privacidad: las solicitudes de red ya no se escriben en el registro del sistema. Se elimina la importación de exportaciones antiguas sin cifrar: solo se pueden importar copias cifradas con contraseña.

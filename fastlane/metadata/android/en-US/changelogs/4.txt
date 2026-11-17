@@ -1,0 +1,1 @@
+Privacy: network requests are no longer written to the system log. Importing old unencrypted exports is removed: only password-encrypted backups can be imported.

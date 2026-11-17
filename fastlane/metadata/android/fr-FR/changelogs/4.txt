@@ -1,0 +1,1 @@
+Confidentialité : les requêtes réseau ne sont plus écrites dans le journal système. L'import des anciens exports non chiffrés est supprimé : seules les sauvegardes chiffrées par mot de passe peuvent être importées.
