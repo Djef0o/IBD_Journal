@@ -1,0 +1,1 @@
+Cambios en la compilación para publicar en F-Droid. Sin cambios funcionales.

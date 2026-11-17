@@ -1,0 +1,1 @@
+Adaptations du build pour la publication sur F-Droid. Aucun changement fonctionnel.
