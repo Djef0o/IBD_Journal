@@ -77,6 +77,8 @@ La signature de version lit `keystore.properties` (non versionné).
 
 IBD Journal est un journal personnel. Il enregistre et affiche ce que vous saisissez ; il n'interprète pas vos résultats et ne suggère aucune décision médicale, et ce n'est pas un dispositif médical. Il ne remplace pas un avis médical : suivez toujours les instructions de votre médecin, en particulier pour la préparation des examens et les traitements.
 
+Des outils d'IA ont été utilisés pour écrire le code et créer les icônes de l'échelle de Bristol.
+
 ## Licence
 
 [GNU AGPL-3.0](../../LICENSE). Vous pouvez utiliser, étudier, modifier et partager l'application ; quiconque distribue une version modifiée, ou la propose comme service en ligne, doit publier son code source sous la même licence.
