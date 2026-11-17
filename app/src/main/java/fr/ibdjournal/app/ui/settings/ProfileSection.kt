@@ -64,7 +64,7 @@ class ProfileSettingsViewModel @Inject constructor(
     }
 }
 
-/** Identité du patient (nom, date de naissance), reprise en tête du rapport médecin. */
+/** Patient identity (name, date of birth), shown at the top of the doctor report. */
 @Composable
 fun ProfileSection(modifier: Modifier = Modifier) {
     val viewModel: ProfileSettingsViewModel = hiltViewModel()
@@ -173,7 +173,7 @@ private fun ProfileEditDialog(
     }
 }
 
-/** Femme / Homme : donnée d'identité, reprise dans le rapport. */
+/** Female / Male: identity data, included in the report. */
 @Composable
 fun SexSelector(sex: Sex?, onChange: (Sex) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {

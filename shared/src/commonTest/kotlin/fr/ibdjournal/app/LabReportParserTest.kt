@@ -11,9 +11,9 @@ import kotlin.test.assertTrue
 import kotlinx.datetime.LocalDate
 
 /**
- * Positions reprises d'un compte rendu Cerballiance réel (pdftotext -bbox), sans les lignes
- * d'identité du patient : libellé, résultat, unité, référence et antériorité sont des lignes
- * séparées, alignées sur la même rangée.
+ * Positions taken from a real Cerballiance report (pdftotext -bbox), without the patient's
+ * identity lines: label, result, unit, reference and previous result are separate
+ * lines, aligned on the same row.
  */
 class LabReportParserTest {
 
@@ -40,7 +40,7 @@ class LabReportParserTest {
         line(1, 357, 702, 388, 710, "161 - 398"),
         line(1, 465, 702, 477, 710, "204"),
         line(2, 249, 102, 322, 110, "Prélevé le 19.10.2026"),
-        // Lu tel quel par l'OCR sur l'émulateur : « C » et « réactive » collés.
+        // Read as-is by OCR on the emulator: "C" and "réactive" glued together.
         line(2, 53, 233, 136, 242, "Protéine Créactive"),
         line(2, 247, 233, 266, 242, "<1,0"),
         line(2, 300, 234, 317, 242, "mg/L"),
@@ -50,7 +50,7 @@ class LabReportParserTest {
         line(2, 247, 581, 262, 590, "190"),
         line(2, 300, 582, 315, 590, "µg/L"),
         line(2, 357, 582, 384, 590, "30 - 300"),
-        // Commentaire du laboratoire : « ferritine » n'y est pas en tête de rangée.
+        // Laboratory comment: "ferritine" is not at the start of the row there.
         line(2, 53, 700, 540, 709, "Celui-ci est réalisé si la férritine est normale avec suspicion de carence 12 µg/L"),
     )
 
@@ -64,9 +64,9 @@ class LabReportParserTest {
             setOf(LabTest.RED_BLOOD_CELLS, LabTest.HEMOGLOBIN, LabTest.MCHC, LabTest.PLATELETS, LabTest.CRP, LabTest.FERRITIN),
             byTest.keys,
         )
-        // « C.C.M.H » (34,2 g/dL) est une analyse à part, pas l'hémoglobine.
+        // "C.C.M.H" (34,2 g/dL) is a separate analysis, not hemoglobin.
         assertEquals(34.2, byTest.getValue(LabTest.MCHC).value)
-        // Le résultat du jour, pas la référence (13,4 - 16,7) ni l'antériorité (17,1).
+        // Today's result, not the reference (13,4 - 16,7) nor the previous result (17,1).
         val hemoglobin = byTest.getValue(LabTest.HEMOGLOBIN)
         assertEquals(16.1, hemoglobin.value)
         assertEquals(13.4, hemoglobin.referenceLow)
@@ -74,7 +74,7 @@ class LabReportParserTest {
         assertEquals(199.0, byTest.getValue(LabTest.PLATELETS).value)
         assertEquals(161.0, byTest.getValue(LabTest.PLATELETS).referenceLow)
         assertEquals(190.0, byTest.getValue(LabTest.FERRITIN).value)
-        // Seuil « < 5,0 » : seulement une borne haute ; l'antériorité « 0,4 » n'est pas lue.
+        // Threshold "< 5,0": only an upper bound; the previous result "0,4" is not read.
         val crp = byTest.getValue(LabTest.CRP)
         assertEquals(1.0, crp.value)
         assertEquals(LabQualifier.BELOW, crp.qualifier)
@@ -84,7 +84,7 @@ class LabReportParserTest {
 
     @Test
     fun ignoresAReportWithoutTrackedTests() {
-        // Compte rendu Unilabs de PCR respiratoire : rien à importer.
+        // Unilabs respiratory PCR report: nothing to import.
         val scan = parseLabReport(
             listOf(
                 line(1, 40, 120, 400, 130, "Prélèvement du 05/12/22 à 11H58 au laboratoire"),
@@ -101,7 +101,7 @@ class LabReportParserTest {
     fun convertsUnitsAndSkipsLookAlikes() {
         val scan = parseLabReport(
             listOf(
-                // OCR qui fusionne libellé et résultat sur une seule ligne.
+                // OCR merging label and result on a single line.
                 line(1, 40, 100, 400, 110, "25-OH Vitamine D (D2+D3) 75 nmol/L"),
                 line(1, 40, 120, 400, 130, "Hémoglobine glyquée (HbA1c) 5,6 %"),
                 line(1, 40, 140, 120, 150, "Préalbumine"),
@@ -123,7 +123,7 @@ class LabReportParserTest {
         assertEquals(38.0, byTest.getValue(LabTest.ALBUMIN).value)
         assertEquals(LabQualifier.EXACT, byTest.getValue(LabTest.ALBUMIN).qualifier)
         assertNull(byTest.getValue(LabTest.ALBUMIN).referenceLow)
-        // Les références sont converties comme la valeur : g/L → g/dL.
+        // References are converted like the value: g/L → g/dL.
         val hemoglobin = byTest.getValue(LabTest.HEMOGLOBIN)
         assertEquals(13.5, hemoglobin.value)
         assertEquals(12.0, hemoglobin.referenceLow)

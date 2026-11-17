@@ -1,9 +1,9 @@
 package fr.ibdjournal.app.data
 
-/** Luminosité du thème. [AMOLED] : sombre sur fond noir pur (économise l'écran OLED). */
+/** Theme brightness. [AMOLED]: dark on pure black (saves OLED screen power). */
 enum class ThemeMode { SYSTEM, LIGHT, DARK, AMOLED }
 
-/** Familles de couleurs proposées ; chacune existe en clair et en sombre. */
+/** Offered color families; each exists in light and dark. */
 enum class ThemePalette { SAGE, SOLARIZED, NORD, GRUVBOX, CATPPUCCIN, ROSE_PINE }
 
 data class Appearance(

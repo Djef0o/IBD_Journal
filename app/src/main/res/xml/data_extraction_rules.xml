@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Android 12+. Données de santé : aucune sauvegarde dans le cloud de Google. Seul le transfert
-     direct vers un nouvel appareil (câble ou réseau local) reste possible. Android 11 et moins :
-     allowBackup="false" dans le manifeste. -->
+<!-- Android 12+. Health data: no backup to Google's cloud. Only direct transfer to a new
+     device (cable or local network) remains possible. Android 11 and below:
+     allowBackup="false" in the manifest. -->
 <data-extraction-rules>
     <cloud-backup>
         <exclude domain="root" path="." />

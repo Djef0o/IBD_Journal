@@ -35,7 +35,7 @@ class DiaryRepository @Inject constructor(
     private val stoolDao = database.stoolDao()
     private val productDao = database.productDao()
 
-    // --- Lecture ---
+    // --- Reading ---
 
     fun observeMeals(from: LocalDate, to: LocalDate): Flow<List<Meal>> =
         mealDao.observeBetween(from.toEpochDays(), to.toEpochDays())
@@ -48,7 +48,7 @@ class DiaryRepository @Inject constructor(
     fun observeAllStools(): Flow<List<Stool>> =
         stoolDao.observeAll().map { list -> list.map { it.toStool() } }
 
-    // --- Repas ---
+    // --- Meals ---
 
     suspend fun saveMeal(meal: Meal) = mealDao.upsert(meal.toMealEntity())
 
@@ -57,9 +57,9 @@ class DiaryRepository @Inject constructor(
         mealDao.delete(meal.toMealEntity())
     }
 
-    // --- Photos (copiées dans le stockage interne de l'app) ---
+    // --- Photos (copied into the app's internal storage) ---
 
-    /** Copie une photo choisie dans le stockage interne et renvoie son chemin relatif. */
+    /** Copies a chosen photo into internal storage and returns its relative path. */
     suspend fun importPhoto(uri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
             val dir = File(context.filesDir, "photos").apply { mkdirs() }
@@ -71,21 +71,21 @@ class DiaryRepository @Inject constructor(
         }.getOrNull()
     }
 
-    /** Supprime une photo du stockage interne (chemin relatif). */
+    /** Deletes a photo from internal storage (relative path). */
     suspend fun deletePhoto(relativePath: String) = withContext(Dispatchers.IO) {
         runCatching { File(context.filesDir, relativePath).delete() }
     }
 
-    // --- Selles ---
+    // --- Stools ---
 
-    /** Enregistre (ou remplace) la selle et renvoie son identifiant. */
+    /** Saves (or replaces) the stool and returns its identifier. */
     suspend fun saveStool(stool: Stool): Long = stoolDao.upsert(stool.toStoolEntity())
 
     suspend fun getStool(id: Long): Stool? = stoolDao.get(id)?.toStool()
 
     suspend fun deleteStool(stool: Stool) = stoolDao.deleteById(stool.id)
 
-    // --- Produits Open Food Facts (avec cache local) ---
+    // --- Open Food Facts products (with local cache) ---
 
     suspend fun lookupProduct(barcode: String): ProductLookup {
         productDao.get(barcode)?.let { cached ->

@@ -15,23 +15,23 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 
-/** Étapes d'un examen, dans l'ordre où elles arrivent en général. */
+/** Steps of an exam, in the order they usually occur. */
 enum class ExamStep { ANESTHESIA, DIET, PREP_FIRST, PREP_SECOND, EXAM }
 
-/** Étape datée d'un examen : [at] heure de l'étape (début du régime : le matin). */
+/** Dated step of an exam: [at] time of the step (diet start: the morning). */
 data class ExamStepTime(val step: ExamStep, val at: LocalDateTime)
 
-/** Le régime sans résidu commence ce jour-là, rappel le matin. */
+/** The low-residue diet starts that day, reminder in the morning. */
 val DIET_REMINDER_TIME = LocalTime(8, 0)
 
-/** Rappel d'un rendez-vous (examen, anesthésiste) : avant l'heure, le temps de s'y rendre. */
+/** Reminder for an appointment (exam, anesthesiologist): before the time, leaving time to get there. */
 val APPOINTMENT_REMINDER_LEAD: Duration = 2.hours
 
-/** Premier jour du régime sans résidu, ou null sans régime. */
+/** First day of the low-residue diet, or null with no diet. */
 fun Exam.dietStart(): LocalDate? =
     dietDays.takeIf { it > 0 }?.let { at.date.minus(DatePeriod(days = it)) }
 
-/** Toutes les étapes renseignées, dans l'ordre chronologique. */
+/** All filled-in steps, in chronological order. */
 fun Exam.steps(): List<ExamStepTime> = listOfNotNull(
     anesthesiaAt?.let { ExamStepTime(ExamStep.ANESTHESIA, it) },
     dietStart()?.let { ExamStepTime(ExamStep.DIET, it.atTime(DIET_REMINDER_TIME)) },
@@ -40,19 +40,19 @@ fun Exam.steps(): List<ExamStepTime> = listOfNotNull(
     ExamStepTime(ExamStep.EXAM, at),
 ).sortedBy { it.at }
 
-/** Heure de la notification d'une étape : avant un rendez-vous, à l'heure pour le reste. */
+/** Notification time of a step: before an appointment, on time for the rest. */
 fun ExamStepTime.reminderAt(): LocalDateTime = when (step) {
     ExamStep.ANESTHESIA, ExamStep.EXAM -> at.minusDuration(APPOINTMENT_REMINDER_LEAD)
     ExamStep.DIET, ExamStep.PREP_FIRST, ExamStep.PREP_SECOND -> at
 }
 
-/** La coloscopie se fait sous anesthésie : la consultation est à prévoir. */
+/** A colonoscopy is done under anesthesia: the consultation must be planned. */
 val ExamType.needsAnesthesia: Boolean get() = this == ExamType.COLONOSCOPY
 
-/** Consultation d'anesthésie à prendre (coloscopie sans rendez-vous fixé). */
+/** Anesthesia consultation to schedule (colonoscopy with no fixed appointment). */
 fun Exam.anesthesiaMissing(): Boolean = type.needsAnesthesia && anesthesiaAt == null
 
-/** Arithmétique d'horloge, indépendante des changements d'heure : on reste en heure locale. */
+/** Clock arithmetic, independent of time changes: we stay in local time. */
 @OptIn(ExperimentalTime::class)
 private fun LocalDateTime.minusDuration(duration: Duration): LocalDateTime =
     toInstant(TimeZone.UTC).minus(duration).toLocalDateTime(TimeZone.UTC)

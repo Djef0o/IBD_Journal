@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Réponse déjà donnée dans la notification du soir : fond teinté, lisible en clair et en sombre. -->
+<!-- Answer already given in the evening notification: tinted background, readable in light and dark. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <corners android:radius="10dp" />
     <solid android:color="#5539A08A" />

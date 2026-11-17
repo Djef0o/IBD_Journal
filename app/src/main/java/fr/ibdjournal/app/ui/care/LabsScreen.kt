@@ -40,8 +40,8 @@ import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.labimport.LabReportReader
 
 /**
- * Sous-écran de Soins : tous les résultats d'analyses (par analyse ou par bilan), saisie
- * manuelle et import de comptes rendus.
+ * Care sub-screen: all lab results (by test or by panel), manual entry
+ * and report import.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +51,7 @@ fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
     var editLab by remember { mutableStateOf<LabEditing?>(null) }
     var labDetail by remember { mutableStateOf<LabTest?>(null) }
     val labHistories = remember(labResults) { labHistories(labResults) }
-    // Le dernier résultat d'une analyse supprimé : son détail n'a plus rien à montrer.
+    // The last result of a test deleted: its detail has nothing left to show.
     LaunchedEffect(labHistories, labDetail) {
         val test = labDetail
         if (test != null && test !in labHistories) labDetail = null
@@ -99,7 +99,7 @@ fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
                     onEditResult = { editLab = LabEditing(it, it.test) },
                 )
             }
-            // Lecture de comptes rendus PDF, sur l'appareil, puis vérification.
+            // Reading PDF reports, on the device, then review.
             OutlinedButton(
                 onClick = { reportPicker.launch(arrayOf(LabReportReader.PDF_MIME)) },
                 modifier = Modifier
@@ -114,7 +114,7 @@ fun LabsScreen(onBack: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
         }
     }
 
-    // Le détail s'efface pendant la saisie pour ne pas empiler deux feuilles, puis revient.
+    // The detail hides during entry to avoid stacking two sheets, then comes back.
     labDetail?.let { test ->
         val history = labHistories[test]
         if (history != null && editLab == null) {

@@ -9,9 +9,9 @@ import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.LocalDateTime
 
 /**
- * Titre d'une étape d'examen, pour la notification et l'événement d'agenda : l'examen lui-même
- * (« Coloscopie · Clinique du Parc ») ou l'étape et son examen (« 1re prise de la préparation ·
- * Coloscopie »).
+ * Title of an exam step, for the notification and the calendar event: the exam itself
+ * ("Colonoscopy · Parc Clinic") or the step and its exam ("1st preparation dose ·
+ * Colonoscopy").
  */
 fun examStepTitle(context: Context, exam: Exam, step: ExamStep): String {
     val type = context.getString(exam.type.labelRes)
@@ -22,7 +22,7 @@ fun examStepTitle(context: Context, exam: Exam, step: ExamStep): String {
     }
 }
 
-/** Texte de la notification d'une étape : son heure et ce qu'il faut faire. */
+/** Text of a step's notification: its time and what needs to be done. */
 fun examStepText(context: Context, exam: Exam, step: ExamStep, at: LocalDateTime): String {
     val examWhen = context.getString(R.string.exam_reminder_when, DateFormats.weekdayDayMonthInline(exam.at.date), exam.at.time())
     return when (step) {

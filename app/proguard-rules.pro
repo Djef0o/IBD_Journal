@@ -1,3 +1,3 @@
-# PDFBox-Android : décodeur JPEG 2000 optionnel (bibliothèque absente), non utilisé :
-# on ne lit que le texte des PDF.
+# PDFBox-Android: optional JPEG 2000 decoder (library absent), unused:
+# only the PDF text is read.
 -dontwarn com.gemalto.jp2.JP2Decoder

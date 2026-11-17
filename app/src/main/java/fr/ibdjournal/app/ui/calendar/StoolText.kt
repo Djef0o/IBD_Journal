@@ -5,14 +5,14 @@ import androidx.compose.ui.res.stringResource
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Stool
 
-/** « Selle · Type 4 », ou « Fausse envie ». */
+/** "Stool · Type 4", or "False urge". */
 @Composable
 fun stoolTitle(stool: Stool): String =
     if (stool.falseUrge) stringResource(R.string.false_urge) else stringResource(R.string.stool_title, stool.bristolType)
 
 /**
- * Signe le plus notable d'une selle (sang, glaires, douleur), sinon le commentaire.
- * L'urgence et le réveil nocturne s'ajoutent en suffixe : ils comptent autant pour le suivi.
+ * Most notable sign of a stool (blood, mucus, pain), otherwise the comment.
+ * Urgency and night waking are appended as a suffix: they matter just as much for follow-up.
  */
 @Composable
 fun stoolSummary(stool: Stool): String {

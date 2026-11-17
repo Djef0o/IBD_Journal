@@ -23,19 +23,19 @@ data class NotificationSettings(
     val enabled: Boolean = true,
     val hour: Int = 19,
     val minute: Int = 0,
-    /** Horodatage du dernier rappel réellement affiché (diagnostic). */
+    /** Timestamp of the last reminder actually shown (diagnostics). */
     val lastReminderAt: Long? = null,
 )
 
 data class CalendarSyncSettings(
     val enabled: Boolean = false,
-    /** Agenda choisi ; null = agenda principal du téléphone. */
+    /** Chosen calendar; null = the phone's primary calendar. */
     val calendarId: Long? = null,
 )
 
 /**
- * Réponses à la notification du soir pour le jour [epochDay] : la selle enregistrée ([stoolId],
- * [bristolType]), la douleur et la fatigue. La notification reste affichée tant qu'une manque.
+ * Answers to the evening notification for the day [epochDay]: the recorded stool ([stoolId],
+ * [bristolType]), pain and fatigue. The notification stays displayed as long as one is missing.
  */
 data class DailyCheckIn(
     val epochDay: Long,
@@ -47,7 +47,7 @@ data class DailyCheckIn(
     val complete: Boolean get() = bristolType != null && painLevel != null && fatigueLevel != null
 }
 
-/** Préférences de l'application (Jetpack DataStore). */
+/** Application preferences (Jetpack DataStore). */
 @Singleton
 class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
 
@@ -69,7 +69,7 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val KEY_CHECKIN_FATIGUE = intPreferencesKey("checkin_fatigue")
     private val KEY_CHECKIN_PAIN = intPreferencesKey("checkin_pain")
 
-    /** true si l'utilisateur a déjà vu l'écran de bienvenue. */
+    /** true if the user has already seen the welcome screen. */
     val onboardingDone: Flow<Boolean> = dataStore.data.map { prefs ->
         prefs[KEY_ONBOARDING_DONE] ?: false
     }
@@ -83,7 +83,7 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         )
     }
 
-    /** Valeur inconnue (ancienne version, palette retirée) : on retombe sur le défaut. */
+    /** Unknown value (old version, removed palette): falls back to the default. */
     val appearance: Flow<Appearance> = dataStore.data.map { prefs ->
         Appearance(
             mode = prefs[KEY_THEME_MODE]
@@ -107,7 +107,7 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         dataStore.edit { prefs -> prefs[KEY_ONBOARDING_DONE] = true }
     }
 
-    /** Enregistre qu'un rappel vient d'être affiché (sert au diagnostic dans les réglages). */
+    /** Records that a reminder was just shown (used for diagnostics in settings). */
     suspend fun markReminderShown() {
         dataStore.edit { prefs -> prefs[KEY_LAST_REMINDER] = System.currentTimeMillis() }
     }
@@ -121,8 +121,8 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     }
 
     /**
-     * Rappels de traitement, de commande et de contrôle confiés à l'agenda du téléphone
-     * plutôt qu'aux notifications de l'app.
+     * Treatment, refill and check-up reminders handed over to the phone's calendar
+     * rather than to the app's notifications.
      */
     val calendarSync: Flow<CalendarSyncSettings> = dataStore.data.map { prefs ->
         CalendarSyncSettings(
@@ -139,7 +139,7 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         dataStore.edit { prefs -> prefs[KEY_CALENDAR_ID] = calendarId }
     }
 
-    /** Événements créés par l'app dans l'agenda : clé de l'élément (« dose:12 ») → id d'événement. */
+    /** Events created by the app in the calendar: item key ("dose:12") → event id. */
     val calendarEventIds: Flow<Map<String, Long>> = dataStore.data.map { prefs ->
         prefs[KEY_CALENDAR_EVENTS].orEmpty().mapNotNull { entry ->
             val (key, id) = entry.split('=', limit = 2).takeIf { it.size == 2 } ?: return@mapNotNull null
@@ -155,8 +155,8 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     }
 
     /**
-     * Réponses du jour à la notification du soir. Une réponse d'un autre jour est ignorée :
-     * chaque rappel repart de zéro.
+     * Today's answers to the evening notification. An answer from another day is ignored:
+     * each reminder starts from scratch.
      */
     suspend fun dailyCheckIn(epochDay: Long): DailyCheckIn {
         val prefs = dataStore.data.first()

@@ -17,18 +17,18 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * Chiffrement des sauvegardes par mot de passe (javax.crypto seul, sans dépendance Android).
+ * Password-based backup encryption (javax.crypto only, no Android dependency).
  *
- * Format du fichier, dans l'ordre :
- * - `IBDJENC1` (8 octets ASCII) : signature ;
- * - nombre d'itérations PBKDF2 (int 32 bits big-endian) : lu dans le fichier, donc modifiable plus tard ;
- * - sel aléatoire (16 octets) ;
- * - IV aléatoire (12 octets) ;
- * - texte chiffré AES-256-GCM suivi de l'étiquette d'authentification (128 bits).
+ * File format, in order:
+ * - `IBDJENC1` (8 ASCII bytes): signature;
+ * - PBKDF2 iteration count (32-bit big-endian int): read from the file, so it can be changed later;
+ * - random salt (16 bytes);
+ * - random IV (12 bytes);
+ * - AES-256-GCM ciphertext followed by the authentication tag (128 bits).
  *
- * Clé : PBKDF2WithHmacSHA256(mot de passe, sel, itérations) → 256 bits.
- * L'en-tête entier sert de données associées (AAD) : toute modification est détectée au déchiffrement.
- * Mot de passe oublié = fichier irrécupérable : aucune porte dérobée.
+ * Key: PBKDF2WithHmacSHA256(password, salt, iterations) → 256 bits.
+ * The whole header serves as associated data (AAD): any modification is detected on decryption.
+ * Forgotten password = unrecoverable file: no backdoor.
  */
 object BackupCrypto {
     const val ITERATIONS = 600_000
@@ -41,24 +41,24 @@ object BackupCrypto {
     private const val TAG_BITS = 128
     private const val TRANSFORMATION = "AES/GCM/NoPadding"
 
-    /** Borne d'un en-tête hostile : évite un calcul de clé interminable. */
+    /** Upper bound against a hostile header: avoids an endless key derivation. */
     private const val MAX_ITERATIONS = 10_000_000
 
     private val random = SecureRandom()
 
-    /** Mot de passe faux ou fichier altéré : GCM ne permet pas de distinguer les deux. */
+    /** Wrong password or tampered file: GCM cannot tell the two apart. */
     class WrongPasswordException : Exception("Wrong password or damaged file")
 
-    /** En-tête absent ou incohérent : ce n'est pas une sauvegarde chiffrée lisible. */
+    /** Missing or inconsistent header: this is not a readable encrypted backup. */
     class InvalidBackupException(message: String) : IOException(message)
 
-    /** Vrai si [prefix] commence par la signature d'une sauvegarde chiffrée. */
+    /** True if [prefix] starts with the signature of an encrypted backup. */
     fun hasMagic(prefix: ByteArray): Boolean =
         prefix.size >= MAGIC.size && prefix.copyOf(MAGIC.size).contentEquals(MAGIC)
 
     /**
-     * Écrit l'en-tête dans [output] puis renvoie un flux qui chiffre ce qu'on y écrit.
-     * Fermer le flux renvoyé écrit l'étiquette GCM et ferme [output].
+     * Writes the header to [output] then returns a stream that encrypts what is written to it.
+     * Closing the returned stream writes the GCM tag and closes [output].
      */
     fun encrypt(output: OutputStream, password: CharArray, iterations: Int = ITERATIONS): OutputStream {
         val salt = ByteArray(SALT_BYTES).also(random::nextBytes)
@@ -70,9 +70,9 @@ object BackupCrypto {
     }
 
     /**
-     * Lit une sauvegarde chiffrée complète et renvoie le contenu en clair, vérifié par GCM.
-     * @throws WrongPasswordException mot de passe faux ou fichier modifié/tronqué
-     * @throws InvalidBackupException en-tête absent ou invalide
+     * Reads a complete encrypted backup and returns the plaintext, verified by GCM.
+     * @throws WrongPasswordException wrong password or modified/truncated file
+     * @throws InvalidBackupException missing or invalid header
      */
     fun decrypt(input: InputStream, password: CharArray): ByteArray {
         val data = DataInputStream(input)
@@ -84,7 +84,7 @@ object BackupCrypto {
             val salt = ByteArray(SALT_BYTES).also(data::readFully)
             val iv = ByteArray(IV_BYTES).also(data::readFully)
             val cipher = cipher(Cipher.DECRYPT_MODE, password, iterations, salt, iv, header(iterations, salt, iv))
-            // GCM ne livre le clair qu'après vérification de l'étiquette : lecture complète obligatoire.
+            // GCM only releases the plaintext after verifying the tag: reading it fully is mandatory.
             return cipher.doFinal(data.readBytes())
         } catch (e: EOFException) {
             throw InvalidBackupException("Truncated header")

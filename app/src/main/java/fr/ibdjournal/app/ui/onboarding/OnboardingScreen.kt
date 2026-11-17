@@ -81,13 +81,13 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
-/** Étapes du premier lancement : configuration, puis visite guidée des onglets. */
+/** First-launch steps: setup, then a guided tour of the tabs. */
 private enum class Step { WELCOME, PROFILE, TREATMENTS, TOUR_TODAY, TOUR_HISTORY, TOUR_TRENDS, TOUR_CARE, NOTIFICATIONS }
 
 /**
- * Premier lancement : présentation, profil, traitements, visite des onglets et autorisation
- * des notifications. Chaque étape de saisie peut être passée ; tout reste modifiable ensuite
- * dans l'onglet Profil.
+ * First launch: introduction, profile, treatments, tab tour and notification permission.
+ * Each input step can be skipped; everything stays editable afterwards in the Profile
+ * tab.
  */
 @Composable
 fun OnboardingScreen(
@@ -104,7 +104,7 @@ fun OnboardingScreen(
     val step = Step.entries[stepIndex]
     val isLast = stepIndex == Step.entries.lastIndex
     val profileEmpty = firstName.isBlank() && lastName.isBlank() && birthEpochDay == null && sex == null
-    // « Passer » plutôt que « Suivant » quand l'étape de saisie est restée vide.
+    // "Skip" rather than "Next" when the input step was left empty.
     val skipping = (step == Step.PROFILE && profileEmpty) || (step == Step.TREATMENTS && medications.isEmpty())
 
     BackHandler(enabled = stepIndex > 0) { stepIndex-- }
@@ -305,7 +305,7 @@ private fun ProfileStep(
     }
 }
 
-/** Élément en cours d'édition : null = fermé ; `item == null` = création. */
+/** Item being edited: null = closed; `item == null` = creation. */
 private data class Editing(val item: Medication?)
 
 @Composable

@@ -29,7 +29,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-/** Données affichées : change seulement avec la base, la date ou les réglages. */
+/** Displayed data: changes only with the database, the date or the settings. */
 data class CalendarUiState(
     val selectedDate: LocalDate = today(),
     val mealsByDay: Map<LocalDate, List<Meal>> = emptyMap(),
@@ -38,21 +38,21 @@ data class CalendarUiState(
 )
 
 /**
- * Brouillon de l'éditeur de repas. Séparé de [CalendarUiState] : une frappe dans la
- * description ne recompose que la feuille, sans regrouper à nouveau repas et selles.
+ * Meal editor draft. Separate from [CalendarUiState]: typing in the
+ * description only recomposes the sheet, without regrouping meals and stools.
  */
 data class MealEditorState(
     val date: LocalDate,
     val editingMeal: Meal?,
     val type: MealType,
     val description: String = "",
-    /** Nouvelle photo choisie (URI du sélecteur), pas encore copiée dans l'app. */
+    /** Newly picked photo (picker URI), not yet copied into the app. */
     val newPhotoUri: Uri? = null,
     val removePhoto: Boolean = false,
     val product: Product? = null,
 )
 
-/** Feuille de saisie d'une selle ouverte ; [stool] est null pour un ajout. */
+/** Open stool entry sheet; [stool] is null for an addition. */
 data class StoolEditorState(val stool: Stool?, val initialBristol: Int? = null, val initialFalseUrge: Boolean = false)
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -63,7 +63,7 @@ class CalendarViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    /** Journée ouverte : argument de navigation `day/{date}` (jour epoch), sinon aujourd'hui. */
+    /** Open day: `day/{date}` navigation argument (epoch day), otherwise today. */
     private val selectedDate = MutableStateFlow(
         savedStateHandle.get<String>(ARG_DATE)?.toLongOrNull()?.let { LocalDate.fromEpochDays(it) }
             ?: today()
@@ -79,9 +79,9 @@ class CalendarViewModel @Inject constructor(
     val showScanner: StateFlow<Boolean> = _showScanner.asStateFlow()
 
     /**
-     * Une seule souscription par date : la date et ses données sont émises ensemble,
-     * jamais une nouvelle date avec les données de l'ancienne plage.
-     * La marge de ±7 jours couvre le résumé hebdomadaire de l'accueil.
+     * A single subscription per date: the date and its data are emitted together,
+     * never a new date with the data of the old range.
+     * The ±7 day margin covers the home weekly summary.
      */
     val uiState: StateFlow<CalendarUiState> = selectedDate
         .flatMapLatest { date ->
@@ -112,7 +112,7 @@ class CalendarViewModel @Inject constructor(
         selectedDate.value = today()
     }
 
-    // --- Repas ---
+    // --- Meals ---
 
     fun openMealEditor(type: MealType, meal: Meal?) {
         _mealEditor.value = MealEditorState(
@@ -140,7 +140,7 @@ class CalendarViewModel @Inject constructor(
         _mealEditor.update { it?.copy(newPhotoUri = uri, removePhoto = false) }
     }
 
-    /** Retire la photo affichée : la nouvelle si elle existe, sinon celle déjà enregistrée. */
+    /** Removes the displayed photo: the new one if it exists, otherwise the one already saved. */
     fun onEditorPhotoRemoved() {
         _mealEditor.update { it?.copy(newPhotoUri = null, removePhoto = true) }
     }
@@ -153,8 +153,8 @@ class CalendarViewModel @Inject constructor(
         val editor = _mealEditor.value ?: return
         viewModelScope.launch {
             val existingPath = editor.editingMeal?.photoUri
-            // Copie la photo choisie dans le stockage de l'app : l'URI du sélecteur
-            // perd ses droits d'accès au redémarrage du processus.
+            // Copies the picked photo into the app storage: the picker URI
+            // loses its access rights when the process restarts.
             val importedPath = editor.newPhotoUri?.let { repository.importPhoto(it) }
             val photoPath = when {
                 importedPath != null -> importedPath
@@ -185,7 +185,7 @@ class CalendarViewModel @Inject constructor(
         }
     }
 
-    // --- Selles ---
+    // --- Stools ---
 
     fun openStoolSheet(stool: Stool?, initialBristol: Int? = null, initialFalseUrge: Boolean = false) {
         _stoolEditor.value = StoolEditorState(stool, initialBristol, initialFalseUrge)
@@ -249,7 +249,7 @@ class CalendarViewModel @Inject constructor(
     }
 
     companion object {
-        /** Nom de l'argument de la route `day/{date}`. */
+        /** Name of the `day/{date}` route argument. */
         const val ARG_DATE = "date"
     }
 }

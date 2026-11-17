@@ -12,9 +12,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
- * Replanifie le rappel après les événements qui effacent les alarmes AlarmManager :
- * redémarrage de l'appareil, mise à jour de l'application, changement d'heure ou de fuseau.
- * Sans ce récepteur, le rappel s'arrête silencieusement jusqu'à la prochaine ouverture de l'app.
+ * Reschedules the reminder after events that clear AlarmManager alarms:
+ * device reboot, app update, time or time zone change.
+ * Without this receiver, the reminder silently stops until the app is next opened.
  */
 @AndroidEntryPoint
 class ReminderRescheduleReceiver : BroadcastReceiver() {

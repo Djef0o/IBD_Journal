@@ -10,8 +10,8 @@ import platform.Foundation.NSFileManager
 import platform.Foundation.NSUserDomainMask
 
 /**
- * Base de l'app iOS, dans le dossier Documents. Une installation iOS part de zéro (version 3),
- * d'où l'absence de migrations ici : elles ne concernent que les anciennes versions Android.
+ * iOS app database, in the Documents folder. An iOS install starts from scratch (version 3),
+ * hence no migrations here: they only concern older Android versions.
  */
 @OptIn(ExperimentalForeignApi::class)
 fun createDatabase(): AppDatabase {

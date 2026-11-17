@@ -3,15 +3,15 @@ package fr.ibdjournal.app.data.model
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
-/** Examens endoscopiques suivis dans Soins. */
+/** Endoscopic exams tracked in Care. */
 @Serializable
 enum class ExamType { COLONOSCOPY, RECTOSIGMOIDOSCOPY }
 
 /**
- * Examen programmé et sa préparation : régime sans résidu ([dietDays] jours avant, 0 = aucun),
- * prises de la préparation à boire ([prepFirstAt], [prepSecondAt] pour une prise fractionnée)
- * et, pour la coloscopie sous anesthésie, la consultation d'anesthésie ([anesthesiaAt], null
- * tant qu'elle n'est pas fixée). [remindersEnabled] : rappels de chaque étape.
+ * Scheduled exam and its preparation: low-residue diet ([dietDays] days before, 0 = none),
+ * doses of the drinkable preparation ([prepFirstAt], [prepSecondAt] for a split dose)
+ * and, for colonoscopy under anesthesia, the anesthesia consultation ([anesthesiaAt], null
+ * until it is set). [remindersEnabled]: reminders for each step.
  */
 @Serializable
 data class Exam(

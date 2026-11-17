@@ -27,8 +27,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 /**
- * Profil, traitements, contrôles, résultats d'analyses et prises confirmées ; chaque écriture
- * de traitement ou de contrôle tient les rappels à jour.
+ * Profile, treatments, check-ups, lab results and confirmed doses; each treatment
+ * or check-up write keeps the reminders up to date.
  */
 @Singleton
 class ProfileRepository @Inject constructor(
@@ -73,7 +73,7 @@ class ProfileRepository @Inject constructor(
         checkupDao.deleteById(id)
     }
 
-    // --- Examens (coloscopie, rectosigmoïdoscopie) ---
+    // --- Exams (colonoscopy, rectosigmoidoscopy) ---
 
     val exams: Flow<List<Exam>> = examDao.observeAll().map { list -> list.map { it.toExam() } }
 
@@ -87,7 +87,7 @@ class ProfileRepository @Inject constructor(
         examDao.deleteById(id)
     }
 
-    // --- Résultats d'analyses ---
+    // --- Lab results ---
 
     val labResults: Flow<List<LabResult>> =
         labResultDao.observeAll().map { list -> list.map { it.toLabResult() } }
@@ -98,12 +98,12 @@ class ProfileRepository @Inject constructor(
 
     suspend fun deleteLabResult(id: Long) = labResultDao.deleteById(id)
 
-    // --- Prises confirmées (observance) ---
+    // --- Confirmed doses (adherence) ---
 
     val doseLogs: Flow<List<DoseLog>> =
         doseLogDao.observeAll().map { list -> list.map { it.toDoseLog() } }
 
-    /** Confirme une prise prévue ([status] null : annule la confirmation). */
+    /** Confirms a scheduled dose ([status] null: cancels the confirmation). */
     suspend fun logDose(medicationId: Long, scheduledAt: Long, status: DoseStatus?) {
         if (status == null) {
             doseLogDao.delete(medicationId, scheduledAt)

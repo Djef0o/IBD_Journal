@@ -55,7 +55,7 @@ import fr.ibdjournal.app.ui.formatLabValue
 import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.LocalDate
 
-/** Valeur proposée à l'import, modifiable avant enregistrement. */
+/** Value proposed at import, editable before saving. */
 private data class ImportDraft(
     val detected: DetectedLabValue,
     val valueText: String,
@@ -64,18 +64,18 @@ private data class ImportDraft(
     val test: LabTest get() = detected.test
 }
 
-/** Doublon d'une valeur proposée : déjà enregistrée, ou lue sur un compte rendu précédent de l'import. */
+/** Duplicate of a proposed value: already saved, or read on an earlier import report. */
 private enum class Duplicate { SAVED, IN_IMPORT }
 
-/** Vérification d'un compte rendu : date de prélèvement modifiable et valeurs proposées. */
+/** Review of a report: editable collection date and proposed values. */
 private class DocumentReview(val document: ImportedDocument) {
     var date by mutableStateOf(document.scan.sampleDate ?: today())
     val drafts = mutableStateListOf<ImportDraft>()
 }
 
 /**
- * [test] du compte rendu [index] figure-t-il déjà, à sa date, dans les résultats enregistrés ou
- * sur un compte rendu précédent de l'import (deux bilans du même jour) ?
+ * Is the [test] of report [index] already present, at its date, in the saved results or
+ * on an earlier import report (two panels on the same day)?
  */
 private fun duplicateOf(
     reviews: List<DocumentReview>,
@@ -100,10 +100,10 @@ private fun qualifierSign(qualifier: LabQualifier): String? = when (qualifier) {
 }
 
 /**
- * Vérification obligatoire des valeurs lues sur les comptes rendus : rien n'est enregistré sans
- * validation. Un bloc par document, du prélèvement le plus ancien au plus récent (date inconnue
- * en dernier). Chaque valeur est modifiable et montre la ligne d'où elle vient ; un doublon
- * (même analyse à la même date) est décoché.
+ * Mandatory review of the values read from the reports: nothing is saved without
+ * validation. One block per document, from the oldest collection to the most recent (unknown
+ * date last). Each value is editable and shows the line it comes from; a duplicate
+ * (same test on the same date) is unchecked.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -113,7 +113,7 @@ internal fun LabImportReviewSheet(
     onDismiss: () -> Unit,
     onSave: (List<LabResult>) -> Unit,
 ) {
-    // Ordre figé à l'ouverture : modifier une date ne déplace pas les blocs.
+    // Order frozen on opening: editing a date does not move the blocks.
     val reviews = remember(documents) {
         val sorted = documents
             .sortedWith(compareBy<ImportedDocument, LocalDate?>(nullsLast()) { it.scan.sampleDate })
@@ -131,8 +131,8 @@ internal fun LabImportReviewSheet(
     }
     var pickDateFor by remember { mutableStateOf<Int?>(null) }
 
-    // Une date modifiée change les doublons de ce compte rendu et des suivants : seules les
-    // valeurs dont le statut change sont décochées ou recochées.
+    // An edited date changes the duplicates of this report and the following ones: only the
+    // values whose status changes are unchecked or rechecked.
     fun changeDate(index: Int, date: LocalDate) {
         val following = index until reviews.size
         val before = following.map { k -> reviews[k].drafts.map { duplicateOf(reviews, k, it.test, existing) != null } }
@@ -161,7 +161,7 @@ internal fun LabImportReviewSheet(
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 20.dp),
         )
-        // Liste paresseuse : une quinzaine de comptes rendus font plusieurs centaines de valeurs.
+        // Lazy list: fifteen or so reports make several hundred values.
         LazyColumn(
             modifier = Modifier.weight(1f, fill = false),
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 12.dp),
@@ -235,7 +235,7 @@ internal fun LabImportReviewSheet(
     }
 }
 
-/** Nom du fichier puis date de prélèvement, ou la raison pour laquelle rien n'est proposé. */
+/** File name then collection date, or the reason why nothing is proposed. */
 @Composable
 private fun DocumentHeader(review: DocumentReview, number: Int, divider: Boolean, onPickDate: () -> Unit) {
     val document = review.document
@@ -332,7 +332,7 @@ private fun DraftRow(draft: ImportDraft, duplicate: Duplicate?, onChange: (Impor
                     style = MaterialTheme.typography.bodySmall,
                 )
             }
-            // Ligne lue sur le compte rendu : de quoi vérifier d'un coup d'œil.
+            // Line read from the report: enough to check at a glance.
             Text(
                 text = draft.detected.sourceText,
                 style = MaterialTheme.typography.bodySmall,
@@ -343,7 +343,7 @@ private fun DraftRow(draft: ImportDraft, duplicate: Duplicate?, onChange: (Impor
     }
 }
 
-/** Lecture en cours : texte de chaque PDF, lu sur l'appareil. */
+/** Reading in progress: text of each PDF, read on the device. */
 @Composable
 internal fun LabImportProgressDialog(done: Int, total: Int) {
     AlertDialog(
@@ -353,7 +353,7 @@ internal fun LabImportProgressDialog(done: Int, total: Int) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(Modifier.size(24.dp))
                 Spacer(Modifier.width(16.dp))
-                // Numéro du document en cours de lecture.
+                // Number of the document being read.
                 Text(stringResource(R.string.lab_import_reading_progress, minOf(done + 1, total), total))
             }
         },

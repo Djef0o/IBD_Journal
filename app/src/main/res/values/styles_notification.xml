@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Niveau 0 à 5 touchable dans la notification du soir -->
+    <!-- Level 0 to 5 tappable in the evening notification -->
     <style name="NotificationLevel">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">32dp</item>

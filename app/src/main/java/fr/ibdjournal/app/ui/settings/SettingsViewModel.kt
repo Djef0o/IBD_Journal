@@ -29,15 +29,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Étapes de l'export/import chiffré, affichées en dialogues par l'écran. */
+/** Steps of the encrypted export/import, shown as dialogs by the screen. */
 sealed interface BackupState {
     data object Idle : BackupState
-    /** Choix du mot de passe, avant le sélecteur de fichier. */
+    /** Password choice, before the file picker. */
     data object ExportPassword : BackupState
-    /** Calcul de clé (quelques secondes) puis lecture/écriture. */
+    /** Key derivation (a few seconds) then read/write. */
     data class Working(val exporting: Boolean) : BackupState
     data class ImportPassword(val wrongPassword: Boolean = false) : BackupState
-    /** Ancien export non chiffré : confirmation avant import. */
+    /** Old unencrypted export: confirmation before import. */
     data object ImportPlainConfirm : BackupState
     data class Finished(@StringRes val message: Int) : BackupState
 }
@@ -59,7 +59,7 @@ class SettingsViewModel @Inject constructor(
     private val _backupState = MutableStateFlow<BackupState>(BackupState.Idle)
     val backupState: StateFlow<BackupState> = _backupState.asStateFlow()
 
-    /** Mot de passe choisi, gardé le temps du sélecteur de fichier puis effacé. */
+    /** Chosen password, kept for the duration of the file picker then cleared. */
     private var exportPassword: CharArray? = null
     private var importUri: Uri? = null
 
@@ -73,8 +73,8 @@ class SettingsViewModel @Inject constructor(
 
     fun setReminderEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            // On relit les préférences enregistrées plutôt que le StateFlow : sa valeur
-            // initiale est un défaut et peut ne pas encore refléter le DataStore.
+            // Re-read the saved preferences rather than the StateFlow: its initial
+            // value is a default and may not yet reflect the DataStore.
             val current = appPrefs.notificationSettings.first()
             appPrefs.updateNotificationSettings(enabled, current.hour, current.minute)
             if (enabled) {
@@ -105,13 +105,13 @@ class SettingsViewModel @Inject constructor(
         _backupState.value = BackupState.ExportPassword
     }
 
-    /** Mot de passe validé : l'écran ouvre ensuite le sélecteur de fichier. */
+    /** Password validated: the screen then opens the file picker. */
     fun setExportPassword(password: String) {
         exportPassword = password.toCharArray()
         _backupState.value = BackupState.Idle
     }
 
-    /** Fichier de destination choisi (ou `null` si annulé). */
+    /** Destination file chosen (or `null` if cancelled). */
     fun exportTo(uri: Uri?) {
         val password = exportPassword ?: return
         exportPassword = null
@@ -129,7 +129,7 @@ class SettingsViewModel @Inject constructor(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                // Pas de fichier incomplet laissé derrière soi.
+                // Leave no incomplete file behind.
                 runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
                 BackupState.Finished(R.string.backup_export_failed)
             } finally {
@@ -138,7 +138,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** Fichier à importer choisi (ou `null` si annulé) : on regarde s'il est chiffré. */
+    /** File to import chosen (or `null` if cancelled): check whether it is encrypted. */
     fun importFrom(uri: Uri?) {
         if (uri == null) return
         importUri = uri
@@ -190,7 +190,7 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /** Fermeture d'un dialogue : abandon de l'opération en attente. */
+    /** Dialog dismissed: abandon the pending operation. */
     fun dismissBackup() {
         exportPassword?.fill(' ')
         exportPassword = null

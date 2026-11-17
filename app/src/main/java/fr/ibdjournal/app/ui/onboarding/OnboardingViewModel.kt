@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-/** Premier lancement : le profil et les traitements saisis sont enregistrés au fil des étapes. */
+/** First launch: the profile and treatments entered are saved as the steps progress. */
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
     private val repository: ProfileRepository,

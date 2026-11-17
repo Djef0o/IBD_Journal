@@ -73,7 +73,7 @@ class CalendarSettingsViewModel @Inject constructor(
     private val _permission = MutableStateFlow(phoneCalendar.hasPermission())
     val permission: StateFlow<Boolean> = _permission.asStateFlow()
 
-    /** À chaque retour sur l'écran : l'autorisation et les agendas ont pu changer. */
+    /** On every return to the screen: the permission and calendars may have changed. */
     fun refresh() {
         _permission.value = phoneCalendar.hasPermission()
         viewModelScope.launch(Dispatchers.IO) { _calendars.value = phoneCalendar.writableCalendars() }
@@ -92,8 +92,8 @@ class CalendarSettingsViewModel @Inject constructor(
 }
 
 /**
- * Réglage « rappels dans l'agenda du téléphone » : prises, commandes et contrôles deviennent
- * des événements d'agenda au lieu de notifications de l'app.
+ * "Reminders in the phone's calendar" setting: doses, orders and checkups become
+ * calendar events instead of app notifications.
  */
 @Composable
 fun CalendarSection(modifier: Modifier = Modifier) {
@@ -174,7 +174,7 @@ fun CalendarSection(modifier: Modifier = Modifier) {
                 Switch(
                     checked = settings.enabled,
                     onCheckedChange = { enabled ->
-                        // Activation : prévenir d'abord que les noms de traitements et d'examens quittent l'app.
+                        // Enabling: first warn that treatment and exam names leave the app.
                         if (enabled) confirmingPrivacy = true else viewModel.setEnabled(false)
                     },
                 )

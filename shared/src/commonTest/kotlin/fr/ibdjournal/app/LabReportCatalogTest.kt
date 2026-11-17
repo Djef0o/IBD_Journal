@@ -12,9 +12,9 @@ import kotlin.test.assertTrue
 import kotlinx.datetime.LocalDate
 
 /**
- * Rangées d'un compte rendu Cerballiance complet réel (pdftotext -bbox), sans les lignes
- * d'identité : formule leucocytaire en % puis en valeur absolue, unités converties
- * (créatinine et bilirubine en mg/L → µmol/L), références « 30 à 300 », « > 60 », « < 50 ».
+ * Rows of a real, complete Cerballiance report (pdftotext -bbox), without the identity
+ * lines: white-cell differential in % then absolute value, converted units
+ * (creatinine and bilirubin in mg/L → µmol/L), references "30 à 300", "> 60", "< 50".
  */
 class LabReportCatalogTest {
 
@@ -64,7 +64,7 @@ class LabReportCatalogTest {
         line(2, 247, 365, 257, 374, "75"),
         line(2, 300, 366, 347, 374, "ml/mn/1,73m2"),
         line(2, 357, 366, 372, 374, "> 60"),
-        // Graphique d'évolution du DFG, plus bas : libellé répété sans valeur sur sa rangée.
+        // DFG evolution chart, further down: label repeated with no value on its row.
         line(2, 84, 385, 168, 393, "Débit de filtration calculé:"),
         line(2, 53, 581, 113, 590, "POTASSIUM"),
         line(2, 247, 581, 260, 590, "4,3"),
@@ -112,10 +112,10 @@ class LabReportCatalogTest {
         assertEquals(11, byTest.size, byTest.keys.toString())
         byTest.check(LabTest.HEMATOCRIT, 49.4, 39.0, 49.0)
         byTest.check(LabTest.MCV, 91.0, 78.0, 97.0)
-        // Valeur absolue, pas le pourcentage imprimé avant.
+        // Absolute value, not the percentage printed before.
         byTest.check(LabTest.NEUTROPHILS, 2.84, 1.78, 6.95)
         byTest.check(LabTest.EOSINOPHILS, 0.12, 0.05, 0.63)
-        // mg/L → µmol/L, références converties de même (le labo imprime 99,0 et 63,6 – 104,3).
+        // mg/L → µmol/L, references converted the same way (the lab prints 99,0 and 63,6 – 104,3).
         byTest.check(LabTest.CREATININE, 99.0, 63.65, 104.31)
         byTest.check(LabTest.EGFR, 75.0, 60.0, null)
         byTest.check(LabTest.POTASSIUM, 4.3, 3.4, 4.5)
@@ -127,9 +127,9 @@ class LabReportCatalogTest {
 
     @Test
     fun survivesTheUnitsTheOcrDrops() {
-        // Lectures OCR réelles de l'émulateur : point de la date lu comme une virgule, « % »
-        // perdu devant la valeur absolue, unité du DFG mal lue (« mI/mn ») dont le « 1,73 »
-        // ne doit pas passer pour le résultat.
+        // Real OCR readings from the emulator: date dot read as a comma, "%"
+        // lost before the absolute value, DFG unit misread ("mI/mn") whose "1,73"
+        // must not be mistaken for the result.
         val scan = parseLabReport(
             listOf(
                 line(1, 31, 137, 155, 146, "Prélevé le 19,05.2023 à 07:40"),
@@ -155,13 +155,13 @@ class LabReportCatalogTest {
         assertEquals(LocalDate(2023, 5, 19), scan.sampleDate)
         byTest.check(LabTest.NEUTROPHILS, 2.92, 1.78, 6.95)
         assertClose(74.0, byTest[LabTest.EGFR]?.value)
-        // « Soit 0,07 » fusionnés et référence « 0,00 -0, 10 » coupée par une espace.
+        // "Soit 0,07" merged and reference "0,00 -0, 10" split by a space.
         byTest.check(LabTest.BASOPHILS, 0.07, 0.0, 0.1)
     }
 
     @Test
     fun neverTakesAReferenceForALostResult() {
-        // L'OCR a perdu le résultat : ni la référence ni l'antériorité ne doivent le remplacer.
+        // OCR lost the result: neither the reference nor the previous result must replace it.
         val scan = parseLabReport(
             listOf(
                 line(1, 53, 100, 120, 109, "FER SERIQUE"),
@@ -173,12 +173,12 @@ class LabReportCatalogTest {
                 line(1, 357, 121, 372, 129, "> 60"),
                 line(1, 53, 140, 130, 149, "Bilirubine totale"),
                 line(1, 357, 141, 372, 149, "< 24"),
-                // Unité illisible elle aussi : l'antériorité « 318 » reste écartée.
+                // Unit unreadable too: the previous result "318" stays discarded.
                 line(1, 53, 200, 160, 209, "CAPACITE TOTALE DE FIXATION"),
                 line(1, 300, 201, 320, 209, "pg/dL"),
                 line(1, 357, 201, 392, 209, "280 - 450"),
                 line(1, 465, 201, 479, 209, "318"),
-                // Unité perdue mais résultat lu : il reste le premier nombre.
+                // Unit lost but result read: it remains the first number.
                 line(1, 53, 160, 110, 169, "Hémoglobine"),
                 line(1, 247, 160, 265, 169, "16,1"),
                 line(1, 357, 161, 392, 169, "13,4 - 16,7"),

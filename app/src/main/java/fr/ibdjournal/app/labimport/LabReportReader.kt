@@ -15,9 +15,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 /**
- * Lit le texte d'un compte rendu PDF avec sa position, sur l'appareil et sans reconnaissance de
- * caractères : les comptes rendus des laboratoires contiennent leur texte, lu ici tel quel
- * (PDFBox). Un PDF sans texte (document scanné) n'est pas lisible : [NoTextLayerException].
+ * Reads the text of a PDF report with its position, on the device and without character
+ * recognition: lab reports contain their text, read here as is
+ * (PDFBox). A PDF without text (scanned document) is not readable: [NoTextLayerException].
  */
 @Singleton
 class LabReportReader @Inject constructor(
@@ -38,7 +38,7 @@ class LabReportReader @Inject constructor(
         lines
     }
 
-    /** Nom du fichier fourni par le sélecteur de documents ; null s'il est inconnu. */
+    /** File name provided by the document picker; null if unknown. */
     suspend fun displayName(uri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
             context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
@@ -50,18 +50,18 @@ class LabReportReader @Inject constructor(
     companion object {
         const val PDF_MIME = "application/pdf"
 
-        /** Les résultats sont en tête ; au-delà, ce sont mentions légales et commentaires. */
+        /** Results come first; beyond that, it is legal notices and comments. */
         private const val MAX_PAGES = 8
     }
 }
 
-/** PDF sans texte exploitable : document scanné ou protégé. */
+/** PDF without usable text: scanned or protected document. */
 class NoTextLayerException : Exception()
 
 /**
- * Regroupe les caractères d'une page en morceaux de ligne, comme les colonnes d'un tableau :
- * même ligne de base, et un écart horizontal de plus de [COLUMN_GAP] largeurs de caractère
- * ouvre un nouveau morceau (libellé, résultat, unité, références, antériorité).
+ * Groups a page's characters into line chunks, like table columns:
+ * same baseline, and a horizontal gap of more than [COLUMN_GAP] character widths
+ * starts a new chunk (label, result, unit, references, previous value).
  */
 private class PositionedTextStripper(private val page: Int) : PDFTextStripper() {
     private val glyphs = mutableListOf<TextPosition>()
@@ -74,8 +74,8 @@ private class PositionedTextStripper(private val page: Int) : PDFTextStripper() 
 
     fun linesOf(document: PDDocument): List<TextLine> {
         getText(document)
-        // Rangées : caractères dont la ligne de base est à moins de BASELINE_TOLERANCE de la
-        // première de la rangée (des seuils fixes couperaient une ligne à cheval sur deux).
+        // Rows: characters whose baseline is within BASELINE_TOLERANCE of the
+        // row's first one (fixed thresholds would split a line straddling two).
         val rows = mutableListOf<MutableList<TextPosition>>()
         for (glyph in glyphs.filter { it.unicode.isNotBlank() }.sortedBy { it.yDirAdj }) {
             val row = rows.lastOrNull()?.takeIf { glyph.yDirAdj - it.first().yDirAdj <= BASELINE_TOLERANCE }
@@ -107,7 +107,7 @@ private class PositionedTextStripper(private val page: Int) : PDFTextStripper() 
         return result
     }
 
-    /** Texte du morceau, avec une espace là où l'écart entre deux caractères marque un mot. */
+    /** Text of the chunk, with a space where the gap between two characters marks a word. */
     private fun List<TextPosition>.toTextLine(): TextLine {
         val text = buildString {
             this@toTextLine.forEachIndexed { index, glyph ->
@@ -130,12 +130,12 @@ private class PositionedTextStripper(private val page: Int) : PDFTextStripper() 
         )
     }
 
-    /** Largeur de référence d'un caractère : la moitié de la taille de police, à défaut sa largeur. */
+    /** Reference width of a character: half the font size, otherwise its width. */
     private fun charWidth(glyph: TextPosition): Float =
         (glyph.fontSizeInPt * 0.5f).takeIf { it > 0f } ?: glyph.widthDirAdj.coerceAtLeast(1f)
 
     private companion object {
-        /** Lignes de base distantes de moins de 2 points : même ligne. */
+        /** Baselines less than 2 points apart: same line. */
         const val BASELINE_TOLERANCE = 2f
         const val WORD_GAP = 0.3f
         const val COLUMN_GAP = 2.0f

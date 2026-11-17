@@ -121,7 +121,7 @@ fun SettingsContent(
     val context = LocalContext.current
     var showTimePicker by remember { mutableStateOf(false) }
 
-    // Sur Android 12+, sans « alarmes et rappels exacts » le rappel peut arriver en retard.
+    // On Android 12+, without "alarms and exact reminders" the reminder may arrive late.
     var exactAlarmsAllowed by remember { mutableStateOf(canScheduleExactAlarms(context)) }
     var batteryExempt by remember { mutableStateOf(isBatteryExempt(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -434,7 +434,7 @@ private fun canScheduleExactAlarms(context: Context): Boolean {
     return context.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() ?: true
 }
 
-/** Ouvre l'écran système « Alarmes et rappels » ; certains fabricants n'exposent pas l'écran dédié. */
+/** Opens the system "Alarms and reminders" screen; some manufacturers don't expose the dedicated screen. */
 private fun openExactAlarmSettings(context: Context) {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) return
     val packageUri = Uri.parse("package:${context.packageName}")
@@ -449,7 +449,7 @@ private fun openExactAlarmSettings(context: Context) {
 
 private const val MIN_PASSWORD_LENGTH = 8
 
-/** Export toujours chiffré par mot de passe ; import des sauvegardes chiffrées et des anciens JSON en clair. */
+/** Export is always password-encrypted; import handles encrypted backups and old plain JSON. */
 @Composable
 private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.backupState.collectAsStateWithLifecycle()
@@ -480,7 +480,7 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
         headlineContent = { Text(stringResource(R.string.import_data)) },
         supportingContent = { Text(stringResource(R.string.backup_import_desc)) },
         leadingContent = { Icon(Icons.Outlined.Upload, contentDescription = null) },
-        // Tout type de fichier : les fichiers .ibdj n'ont pas de type MIME reconnu.
+        // Any file type: .ibdj files have no recognized MIME type.
         modifier = Modifier.clickable { importLauncher.launch(arrayOf("*/*")) },
         colors = settingsRowColors(),
     )
@@ -613,7 +613,7 @@ private fun ImportPasswordDialog(wrongPassword: Boolean, onConfirm: (String) -> 
     )
 }
 
-/** Champ de mot de passe masqué, avec bouton afficher/masquer. */
+/** Masked password field, with a show/hide button. */
 @Composable
 private fun PasswordField(
     value: String,

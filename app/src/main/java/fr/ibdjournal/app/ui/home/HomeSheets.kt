@@ -41,8 +41,8 @@ import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 
 /**
- * Saisie rapide d'une selle : les 8 types Bristol ou une fausse envie, un bouton.
- * « Plus de détails » bascule vers la feuille complète (sang, glaires, douleur, commentaire).
+ * Quick stool entry: the 8 Bristol types or a false urge, one button.
+ * "More details" switches to the full sheet (blood, mucus, pain, comment).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -102,7 +102,7 @@ fun QuickStoolSheet(
                 if (row == 0) Spacer(Modifier.height(8.dp))
             }
 
-            // Fausse envie : pas de selle, mais un passage aux toilettes à noter (poussées).
+            // False urge: no stool, but a toilet visit to note (flares).
             Spacer(Modifier.height(8.dp))
             QuickFalseUrgeTile(
                 selected = selected == FALSE_URGE_CHOICE,
@@ -136,7 +136,7 @@ fun QuickStoolSheet(
     }
 }
 
-/** Choix « fausse envie » de la saisie rapide : hors des 8 types de Bristol. */
+/** "False urge" choice of quick entry: outside the 8 Bristol types. */
 private const val FALSE_URGE_CHOICE = -1
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -211,7 +211,7 @@ private fun QuickTypeTile(
     }
 }
 
-/** Choix du moment du repas avant d'ouvrir l'éditeur complet. */
+/** Choice of meal time before opening the full editor. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealTypeSheet(

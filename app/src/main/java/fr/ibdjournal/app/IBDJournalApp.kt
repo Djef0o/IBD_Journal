@@ -32,17 +32,17 @@ class IBDJournalApp : Application(), Configuration.Provider {
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    // WorkManager : seulement pour annuler les travaux des anciennes versions (ancien rappel,
-    // sauvegarde Google Drive retirée). Initialisation à la demande (voir le manifeste).
+    // WorkManager: only to cancel work from older versions (old reminder,
+    // removed Google Drive backup). On-demand initialization (see the manifest).
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder().build()
 
     override fun onCreate() {
         super.onCreate()
 
-        // Replanifie à chaque démarrage du processus : couvre aussi le cas où l'appareil a
-        // été redémarré ou l'application forcée à s'arrêter (les alarmes sont alors perdues).
-        // Cela supprime aussi l'ancien rappel WorkManager qui notifiait à l'ancien horaire.
+        // Reschedules on every process start: also covers the case where the device was
+        // rebooted or the app was force-stopped (alarms are then lost).
+        // This also removes the old WorkManager reminder that notified at the old time.
         applicationScope.launch {
             notificationHelper.rescheduleFromPreferences(appPrefs)
         }
@@ -51,7 +51,7 @@ class IBDJournalApp : Application(), Configuration.Provider {
         }
         applicationScope.launch { removeLegacyCloudBackup() }
 
-        // ImageLoader par défaut pour Coil 3 : chargement local + réseau (Open Food Facts).
+        // Default ImageLoader for Coil 3: local + network loading (Open Food Facts).
         SingletonImageLoader.setSafe { context ->
             ImageLoader.Builder(context)
                 .components { add(OkHttpNetworkFetcherFactory()) }
@@ -61,9 +61,9 @@ class IBDJournalApp : Application(), Configuration.Provider {
     }
 
     /**
-     * Les versions précédentes pouvaient sauvegarder sur Google Drive. Toutes les données restent
-     * désormais sur l'appareil : on annule la sauvegarde automatique encore planifiée et on efface
-     * l'état de connexion conservé localement (compte, dernière sauvegarde).
+     * Previous versions could back up to Google Drive. All data now stays on the device:
+     * we cancel the automatic backup that is still scheduled and clear the locally kept
+     * sign-in state (account, last backup).
      */
     private fun removeLegacyCloudBackup() {
         runCatching { WorkManager.getInstance(this).cancelUniqueWork(LEGACY_CLOUD_BACKUP_WORK) }

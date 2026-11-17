@@ -3,15 +3,15 @@ package fr.ibdjournal.app.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /**
- * Couleurs de l'échelle de Bristol, reprises de l'ancienne vue jour :
- * le vert signale les selles normales (types 3–4), l'orange les selles
- * molles/liquides (5–7), le marron les selles dures (1–2) et le rouge
- * le type 0. Des teintes volontairement plus claires que l'ancien
- * marron #3E2723, illisible sur fond sombre.
+ * Bristol scale colors, carried over from the old day view:
+ * green marks normal stools (types 3–4), orange the soft/liquid
+ * stools (5–7), brown the hard stools (1–2) and red
+ * type 0. Deliberately lighter shades than the old
+ * brown #3E2723, which was unreadable on a dark background.
  */
 fun bristolColor(type: Int): Color = when (type) {
-    0 -> Color(0xFFD32F2F)   // rouge : très dur
-    1, 2 -> Color(0xFF8D6E63) // marron : dur
-    3, 4 -> Color(0xFF43A047) // vert : normal
-    else -> Color(0xFFEF6C00) // orange : mou / liquide
+    0 -> Color(0xFFD32F2F)   // red: very hard
+    1, 2 -> Color(0xFF8D6E63) // brown: hard
+    3, 4 -> Color(0xFF43A047) // green: normal
+    else -> Color(0xFFEF6C00) // orange: soft / liquid
 }

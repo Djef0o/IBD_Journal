@@ -17,15 +17,15 @@ import java.util.TimeZone
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Agenda du téléphone dans lequel l'app peut écrire. */
+/** Phone calendar the app can write to. */
 data class WritableCalendar(val id: Long, val name: String, val account: String, val primary: Boolean)
 
-/** Événement à écrire : la planification (module partagé) plus les textes localisés. */
+/** Event to write: the schedule (shared module) plus the localized texts. */
 data class CalendarEvent(val spec: CalendarEventSpec, val title: String, val description: String)
 
 /**
- * Accès au fournisseur d'agenda d'Android (CalendarContract). Toutes les opérations
- * supposent l'autorisation d'agenda : sans elle, elles ne font rien et renvoient null/false.
+ * Access to Android's calendar provider (CalendarContract). All operations
+ * assume calendar permission: without it, they do nothing and return null/false.
  */
 @Singleton
 class PhoneCalendar @Inject constructor(
@@ -64,8 +64,8 @@ class PhoneCalendar @Inject constructor(
     }
 
     /**
-     * Met à jour l'événement [eventId] s'il existe encore, sinon en crée un nouveau dans
-     * [calendarId] avec une alerte à l'heure de l'événement. Renvoie l'id de l'événement.
+     * Updates the event [eventId] if it still exists, otherwise creates a new one in
+     * [calendarId] with an alert at the event time. Returns the event id.
      */
     fun upsert(calendarId: Long, eventId: Long?, event: CalendarEvent): Long? {
         if (!hasPermission()) return null
@@ -101,7 +101,7 @@ class PhoneCalendar @Inject constructor(
         put(Events.EVENT_TIMEZONE, TimeZone.getDefault().id)
         put(Events.HAS_ALARM, 1)
         val rule = rrule()
-        // Le fournisseur exige DURATION pour une série et DTEND pour un événement unique.
+        // The provider requires DURATION for a series and DTEND for a single event.
         if (rule == null) {
             put(Events.DTEND, start + EVENT_DURATION_MILLIS)
             putNull(Events.DURATION)
@@ -114,8 +114,8 @@ class PhoneCalendar @Inject constructor(
     }
 
     /**
-     * Règle de répétition RFC 5545. Écart connu : pour un rappel mensuel le 29, 30 ou 31,
-     * l'agenda saute les mois trop courts, là où les notifications de l'app tombent le dernier jour.
+     * RFC 5545 recurrence rule. Known gap: for a monthly reminder on the 29th, 30th or 31st,
+     * the calendar skips months that are too short, whereas the app's notifications fall on the last day.
      */
     private fun CalendarEvent.rrule(): String? {
         val freq = when (spec.repeatUnit) {

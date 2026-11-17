@@ -25,21 +25,21 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
 
 /**
- * Programme le rappel quotidien avec AlarmManager.setExactAndAllowWhileIdle et affiche la
- * notification interactive du soir : type de selle (Bristol 0 à 7) et fatigue (0 à 5).
+ * Schedules the daily reminder with AlarmManager.setExactAndAllowWhileIdle and shows the
+ * interactive evening notification: stool type (Bristol 0 to 7) and fatigue (0 to 5).
  *
- * Volontairement pas de setAlarmClock : il affiche une icône de réveil dans la barre
- * d'état et se présente comme « prochaine alarme » au système, ce qui n'est pas le rôle
- * d'un rappel. La fiabilité repose sur :
- * - une alarme exacte autorisée en Doze (permission « alarmes exactes ») ;
- * - l'exemption d'optimisation de batterie, proposée dans les réglages, pour que les
- *   surcouches (Honor, Xiaomi, Samsung…) ne gèlent pas l'app ;
- * - la replanification au démarrage, à la mise à jour et au changement d'heure
- *   ([ReminderRescheduleReceiver]) ainsi qu'à chaque déclenchement.
+ * Deliberately no setAlarmClock: it shows an alarm icon in the status bar and presents
+ * itself to the system as the "next alarm", which is not the role of a reminder.
+ * Reliability relies on:
+ * - an exact alarm allowed in Doze (the "exact alarms" permission);
+ * - the battery optimization exemption, offered in the settings, so that vendor
+ *   overlays (Honor, Xiaomi, Samsung…) do not freeze the app;
+ * - rescheduling at boot, on update and on time change
+ *   ([ReminderRescheduleReceiver]) as well as on every trigger.
  *
- * Une seule alarme « quotidienne » existe à la fois : [scheduleDailyReminder] annule
- * systématiquement l'occurrence précédente avant d'en poser une nouvelle. C'est ce qui
- * garantit qu'un changement d'heure dans l'application remplace bien l'ancien horaire.
+ * Only one "daily" alarm exists at a time: [scheduleDailyReminder] always cancels
+ * the previous occurrence before setting a new one. This guarantees that changing the
+ * time in the app properly replaces the old schedule.
  */
 @Singleton
 class NotificationHelper @Inject constructor(
@@ -51,16 +51,16 @@ class NotificationHelper @Inject constructor(
         get() = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
     /**
-     * Depuis Android 12, l'autorisation « alarmes exactes » peut être refusée ou révoquée
-     * par l'utilisateur. Sans elle, le rappel reste programmé mais peut être retardé par
-     * le mode Doze : l'heure n'est alors plus garantie.
+     * Since Android 12, the "exact alarms" permission can be denied or revoked by the
+     * user. Without it, the reminder stays scheduled but may be delayed by Doze mode:
+     * the time is then no longer guaranteed.
      */
     fun canScheduleExactAlarms(): Boolean =
         Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
 
     fun scheduleDailyReminder(hour: Int, minute: Int) {
-        // Même PendingIntent (même action + même requestCode) : le recréer avec
-        // FLAG_UPDATE_CURRENT remplace l'occurrence en attente au lieu d'en ajouter une.
+        // Same PendingIntent (same action + same requestCode): recreating it with
+        // FLAG_UPDATE_CURRENT replaces the pending occurrence instead of adding one.
         val pendingIntent = alarmPendingIntent(hour, minute)
         alarmManager.cancel(pendingIntent)
 
@@ -68,8 +68,8 @@ class NotificationHelper @Inject constructor(
     }
 
     /**
-     * Pose une alarme de rappel : exacte et autorisée en Doze si possible, sinon inexacte.
-     * Partagée par le rappel quotidien et les rappels de traitements et de contrôles.
+     * Sets a reminder alarm: exact and allowed in Doze if possible, otherwise inexact.
+     * Shared by the daily reminder and the treatment and check-up reminders.
      */
     fun setReminderAlarm(triggerAtMillis: Long, pendingIntent: PendingIntent) {
         if (canScheduleExactAlarms()) {
@@ -81,11 +81,11 @@ class NotificationHelper @Inject constructor(
                 )
                 return
             } catch (_: SecurityException) {
-                // Autorisation révoquée entre le test et l'appel.
+                // Permission revoked between the check and the call.
             }
         }
 
-        // Sans alarmes exactes : le système peut décaler le rappel de quelques minutes.
+        // Without exact alarms: the system may shift the reminder by a few minutes.
         alarmManager.setAndAllowWhileIdle(
             AlarmManager.RTC_WAKEUP,
             triggerAtMillis,
@@ -103,10 +103,10 @@ class NotificationHelper @Inject constructor(
     }
 
     /**
-     * Les versions précédentes (WorkManager) laissaient un travail périodique unique nommé
-     * « daily_reminder » dans la base de WorkManager. Cette base survit aux mises à jour de
-     * l'application : sans cette annulation, l'ancien horaire continue de notifier chaque
-     * jour en parallèle de la nouvelle alarme.
+     * Previous versions (WorkManager) left a unique periodic work named
+     * "daily_reminder" in the WorkManager database. This database survives app
+     * updates: without this cancellation, the old schedule keeps notifying every
+     * day alongside the new alarm.
      */
     fun cancelLegacyWorkManagerReminder() {
         runCatching {
@@ -114,9 +114,9 @@ class NotificationHelper @Inject constructor(
         }
     }
 
-    /** Replanifie (ou annule) le rappel à partir des préférences enregistrées. */
+    /** Reschedules (or cancels) the reminder from the saved preferences. */
     suspend fun rescheduleFromPreferences(prefs: AppPrefs) {
-        // Migration : s'assure qu'aucun ancien rappel WorkManager ne subsiste.
+        // Migration: make sure no old WorkManager reminder remains.
         cancelLegacyWorkManagerReminder()
         val settings = prefs.notificationSettings.first()
         if (settings.enabled) {
@@ -126,7 +126,7 @@ class NotificationHelper @Inject constructor(
         }
     }
 
-    // Prochaine occurrence de HH:MM (demain si l'heure est déjà passée aujourd'hui).
+    // Next occurrence of HH:MM (tomorrow if the time has already passed today).
     private fun nextOccurrenceMillis(hour: Int, minute: Int): Long {
         val zone = ZoneId.systemDefault()
         val now = LocalDateTime.now(zone)
@@ -164,7 +164,7 @@ class NotificationHelper @Inject constructor(
         private const val STOOL_REQUEST_BASE = 100
         private const val LEVEL_REQUEST_BASE = 200
 
-        /** Nom du travail périodique WorkManager de l'ancienne implémentation. */
+        /** Name of the periodic WorkManager work of the old implementation. */
         private const val LEGACY_WORK_NAME = "daily_reminder"
 
         private val BRISTOL_ITEMS = intArrayOf(
@@ -177,7 +177,7 @@ class NotificationHelper @Inject constructor(
         )
     }
 
-    /** Nouveau rappel du soir : les réponses repartent de zéro pour aujourd'hui. */
+    /** New evening reminder: answers start from zero for today. */
     suspend fun startDailyCheckIn() {
         val checkIn = DailyCheckIn(today().toEpochDays())
         appPrefs.saveDailyCheckIn(checkIn)
@@ -185,8 +185,8 @@ class NotificationHelper @Inject constructor(
     }
 
     /**
-     * Affiche la notification avec les réponses déjà données, ou la retire quand la selle, la
-     * douleur et la fatigue sont toutes renseignées.
+     * Shows the notification with the answers already given, or removes it when stool,
+     * pain and fatigue are all filled in.
      */
     fun showDailyCheckIn(checkIn: DailyCheckIn) {
         val manager = NotificationManagerCompat.from(context)
@@ -220,7 +220,7 @@ class NotificationHelper @Inject constructor(
             .setCustomContentView(collapsed)
             .setCustomBigContentView(expanded)
             .setContentIntent(contentIntent)
-            // Reste affichée tant qu'une réponse manque ; les mises à jour ne resonnent pas.
+            // Stays displayed while an answer is missing; updates do not ring again.
             .setAutoCancel(false)
             .setOnlyAlertOnce(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -230,8 +230,8 @@ class NotificationHelper @Inject constructor(
     }
 
     /**
-     * [onlyFirstPending] : vue repliée, réduite à la première question sans réponse
-     * (selle, puis douleur, puis fatigue) ; sinon toutes les questions.
+     * [onlyFirstPending]: collapsed view, reduced to the first unanswered question
+     * (stool, then pain, then fatigue); otherwise all questions.
      */
     private fun checkInViews(checkIn: DailyCheckIn, onlyFirstPending: Boolean): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.notification_stool_reminder)

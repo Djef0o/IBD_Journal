@@ -6,9 +6,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 /**
- * Lignes de réglages sans fond propre : par défaut un ListItem se peint en `surface`,
- * qui diffère du `background` de l'écran dans la plupart des palettes et faisait
- * apparaître chaque ligne comme un bandeau d'une autre couleur.
+ * Settings rows with no background of their own: by default a ListItem paints itself in `surface`,
+ * which differs from the screen `background` in most palettes and made
+ * each row look like a banner of a different color.
  */
 @Composable
 fun settingsRowColors(): ListItemColors = ListItemDefaults.colors(containerColor = Color.Transparent)

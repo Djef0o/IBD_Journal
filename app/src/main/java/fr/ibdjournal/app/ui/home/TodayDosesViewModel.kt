@@ -16,22 +16,22 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
- * Prises prévues aujourd'hui, avec leur statut. Permet de confirmer depuis l'accueil,
- * y compris en mode calendrier où aucune notification de l'app n'est envoyée.
+ * Doses scheduled for today, with their status. Lets the user confirm from the home screen,
+ * including in calendar mode where the app sends no notification.
  */
 @HiltViewModel
 class TodayDosesViewModel @Inject constructor(
     private val profileRepository: ProfileRepository,
 ) : ViewModel() {
 
-    // today() est relu à chaque émission : la liste suit le changement de jour au prochain log.
+    // today() is re-read on every emission: the list follows the day change on the next log.
     val doses: StateFlow<List<DoseDue>> = combine(
         profileRepository.medications,
         profileRepository.doseLogs,
     ) { medications, logs -> dosesOn(today(), medications, logs) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Re-toucher le statut déjà choisi l'annule (null). */
+    /** Tapping the already-chosen status again clears it (null). */
     fun toggle(dose: DoseDue, status: DoseStatus) {
         viewModelScope.launch {
             profileRepository.logDose(

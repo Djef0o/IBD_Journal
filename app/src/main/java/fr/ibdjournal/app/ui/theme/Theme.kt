@@ -15,7 +15,7 @@ import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.data.ThemeMode
 import fr.ibdjournal.app.data.ThemePalette
 
-/** true si l'apparence choisie s'affiche en sombre (AMOLED compris). */
+/** true if the chosen appearance is displayed dark (AMOLED included). */
 @Composable
 fun Appearance.isDark(): Boolean = when (mode) {
     ThemeMode.SYSTEM -> isSystemInDarkTheme()
@@ -24,9 +24,9 @@ fun Appearance.isDark(): Boolean = when (mode) {
 }
 
 /**
- * Thème de l'application : palette et luminosité choisies dans les réglages.
- * Pas de couleurs dynamiques Material You : l'apparence reste celle choisie,
- * identique d'un téléphone à l'autre.
+ * App theme: palette and brightness chosen in settings.
+ * No Material You dynamic colors: the appearance stays the one chosen,
+ * identical from one phone to another.
  */
 @Composable
 fun IBDJournalTheme(

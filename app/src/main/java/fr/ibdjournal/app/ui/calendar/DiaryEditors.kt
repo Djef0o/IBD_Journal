@@ -6,9 +6,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.ui.scanner.ScannerScreen
 
 /**
- * Feuilles d'édition (repas, selle) et scanner partagés par l'accueil et la journée.
- * Composable distinct : la saisie dans l'éditeur ne recompose que cette portée,
- * pas l'écran qui l'héberge.
+ * Edit sheets (meal, stool) and scanner shared by the home and the day screens.
+ * Separate composable: typing in the editor only recomposes this scope,
+ * not the screen that hosts it.
  */
 @Composable
 fun DiaryEditors(viewModel: CalendarViewModel) {

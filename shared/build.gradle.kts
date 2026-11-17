@@ -1,5 +1,5 @@
-// Cœur multiplateforme de l'app : modèles, base Room, calculs. Android l'utilise dès maintenant ;
-// les cibles iOS préparent la future app iPhone (compilées ici, liées sur macOS).
+// Multiplatform core of the app: models, Room database, calculations. Android uses it right now;
+// the iOS targets prepare the future iPhone app (compiled here, linked on macOS).
 plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kotlin.multiplatform.library)
@@ -34,7 +34,7 @@ kotlin {
     }
 }
 
-// Room génère son code pour chaque cible.
+// Room generates its code for each target.
 dependencies {
     add("kspAndroid", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)

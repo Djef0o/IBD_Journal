@@ -6,12 +6,12 @@ import retrofit2.http.GET
 import retrofit2.http.Path
 import retrofit2.http.Query
 
-/** Client de l'API Open Food Facts (v2). */
+/** Open Food Facts API (v2) client. */
 interface OpenFoodFactsApi {
 
     /**
-     * Recherche d'un produit par code-barres.
-     * Voir https://openfoodfacts.github.io/openfoodfacts-server/api/ref/#get-/api/v2/product/-barcode-
+     * Looks up a product by barcode.
+     * See https://openfoodfacts.github.io/openfoodfacts-server/api/ref/#get-/api/v2/product/-barcode-
      */
     @GET("api/v2/product/{barcode}.json")
     suspend fun getProduct(

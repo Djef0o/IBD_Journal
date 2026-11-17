@@ -23,52 +23,52 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
 
-/** Au-delà, les barres deviendraient illisibles sur une page A4 : « Tout » se limite à 90 jours. */
+/** Beyond this, bars would become unreadable on an A4 page: "All" is limited to 90 days. */
 const val REPORT_CHART_MAX_DAYS = 90
 
-/** Nombre de bilans (dates d'analyses) repris dans le tableau du rapport. */
+/** Number of lab panels (analysis dates) included in the report table. */
 const val REPORT_LAB_PANELS = 4
 
-/** Traitement et observance sur la période du rapport. */
+/** Treatment and adherence over the report period. */
 data class TreatmentReport(val medication: Medication, val adherence: Adherence)
 
-/** Contrôle à venir, à sa prochaine échéance. */
+/** Upcoming check-up, at its next due date. */
 data class UpcomingCheckup(val checkup: Checkup, val at: LocalDateTime)
 
-/** Résultat d'une cellule du tableau des bilans ; [status] null dans les valeurs du laboratoire ou sans elles. */
+/** Result of a lab table cell; [status] null within the laboratory's values or without them. */
 data class LabCell(val result: LabResult, val status: LabStatus?)
 
 /**
- * Ligne du tableau des bilans : une cellule par date de [LabPanels.dates] (null sans dosage ce
- * jour-là) ; [reference] : valeurs du laboratoire du résultat le plus récent de la ligne, null sans elles.
+ * Lab table row: one cell per date of [LabPanels.dates] (null without a measurement that
+ * day); [reference]: laboratory values of the row's most recent result, null without them.
  */
 data class LabPanelRow(val test: LabTest, val cells: List<LabCell?>, val reference: ReferenceRange?)
 
 /**
- * Derniers bilans, du plus récent au plus ancien : seules figurent les analyses dosées au moins
- * une fois. [notes] : résultats de ces bilans portant une note, dans l'ordre du tableau.
+ * Latest lab panels, from most recent to oldest: only analyses measured at least
+ * once appear. [notes]: results from these panels carrying a note, in table order.
  */
 data class LabPanels(val dates: List<LocalDate>, val rows: List<LabPanelRow>, val notes: List<LabResult>)
 
-/** Tout ce que contient le rapport, déjà calculé : le rendu PDF ne fait que mettre en page. */
+/** Everything the report contains, already computed: PDF rendering only does the layout. */
 data class ReportData(
     val profile: Profile,
     val period: AnalysisPeriod,
-    /** Premier jour de la période (premier jour noté pour « Tout »). */
+    /** First day of the period (first day with an entry for "All"). */
     val from: LocalDate,
     val to: LocalDate,
     val generatedAt: LocalDateTime,
     val summary: AnalysisSummary,
-    /** Premier jour du graphique quotidien, qui se termine à [to]. */
+    /** First day of the daily chart, which ends at [to]. */
     val chartFrom: LocalDate,
     val treatments: List<TreatmentReport>,
-    /** Derniers bilans jusqu'à [to], quelle que soit la période : les analyses sont espacées. */
+    /** Latest panels up to [to], whatever the period: analyses are spaced out. */
     val labPanels: LabPanels,
-    /** Contrôles à venir, du plus proche au plus lointain. */
+    /** Upcoming check-ups, from nearest to furthest. */
     val upcomingCheckups: List<UpcomingCheckup>,
 )
 
-/** Assemble le rapport de [period] se terminant le jour de [now], à partir des données brutes. */
+/** Builds the report for [period] ending on the day of [now], from the raw data. */
 fun reportData(
     period: AnalysisPeriod,
     now: LocalDateTime,
@@ -84,7 +84,7 @@ fun reportData(
     val summary = analyze(stools, meals, today, period)
     val from = today.minus(summary.periodDays - 1, DateTimeUnit.DAY)
     val chartDays = summary.periodDays.coerceAtMost(REPORT_CHART_MAX_DAYS)
-    // Sans borne (« Tout »), analyses et observance remontent au-delà de la première selle notée.
+    // Without a bound ("All"), analyses and adherence go back beyond the first logged stool.
     val periodStart = period.startFrom(today)
     return ReportData(
         profile = profile,
@@ -107,10 +107,10 @@ fun reportData(
     )
 }
 
-/** Tableau des [REPORT_LAB_PANELS] dernières dates d'analyses, lignes dans l'ordre de [LabTest]. */
+/** Table of the last [REPORT_LAB_PANELS] analysis dates, rows in [LabTest] order. */
 private fun labPanels(results: List<LabResult>): LabPanels {
     val dates = results.map { it.date }.distinct().sortedDescending().take(REPORT_LAB_PANELS)
-    // Deux saisies du même dosage le même jour : la dernière enregistrée l'emporte.
+    // Two entries of the same measurement on the same day: the last one saved wins.
     val byTestAndDate = results
         .filter { it.date in dates }
         .groupBy { it.test to it.date }

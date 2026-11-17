@@ -23,7 +23,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 
-/** État du scan d'un code-barres. */
+/** Barcode scan state. */
 sealed interface ScanState {
     data object Waiting : ScanState
     data object Scanning : ScanState
@@ -43,9 +43,9 @@ class ScannerViewModel @Inject constructor(
     private var lookupJob: Job? = null
 
     /**
-     * Ce ViewModel vit aussi longtemps que l'écran hôte (accueil, journée), pas que le
-     * scanner : on repart d'un état vierge à chaque fermeture, sinon le produit du scan
-     * précédent réapparaît à l'ouverture suivante.
+     * This ViewModel lives as long as the host screen (home, day), not the
+     * scanner: we start from a blank state on each close, otherwise the previous
+     * scan's product reappears on the next open.
      */
     fun reset() {
         lookupJob?.cancel()
@@ -54,10 +54,10 @@ class ScannerViewModel @Inject constructor(
         _state.value = ScanState.Waiting
     }
 
-    /** Appelé par l'analyseur d'images à chaque code-barres détecté (plusieurs fois par seconde). */
+    /** Called by the image analyzer for each detected barcode (several times per second). */
     fun onBarcodeDetected(barcode: String) {
-        // Le même code reste dans le cadre pendant que le résultat s'affiche :
-        // inutile de relancer la recherche (et de faire clignoter l'état) à chaque image.
+        // The same code stays in frame while the result is displayed:
+        // no need to relaunch the lookup (and flicker the state) on every frame.
         val shown = when (val current = _state.value) {
             is ScanState.Found -> current.product.barcode
             is ScanState.NotFound -> current.barcode

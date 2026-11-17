@@ -20,8 +20,8 @@ import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.Symptom
 
 /*
- * Libellés Android des énumérations du module partagé, qui ne connaît pas les ressources
- * de la plateforme.
+ * Android labels for the shared module's enumerations, which does not know the
+ * platform resources.
  */
 
 @get:StringRes
@@ -95,7 +95,7 @@ private val SupportiveMedication.labelRes: Int
         SupportiveMedication.LOPERAMIDE -> R.string.med_loperamide
     }
 
-/** DCI telle quelle, ou nom traduit d'un traitement d'appoint. */
+/** INN as is, or translated name of an adjunct treatment. */
 @Composable
 fun StandardMedication.displayName(): String =
     inn ?: stringResource(requireNotNull(supportive).labelRes)
@@ -160,7 +160,7 @@ val LabTest.labelRes: Int
         LabTest.PSA -> R.string.lab_psa
     }
 
-/** Libellé de la famille d'analyses (en-tête de groupe). */
+/** Label of the analysis family (group header). */
 @get:StringRes
 val LabCategory.labelRes: Int
     get() = when (this) {
@@ -174,7 +174,7 @@ val LabCategory.labelRes: Int
         LabCategory.OTHER -> R.string.lab_category_other
     }
 
-/** Libellé court du sélecteur de période (« 30 jours »). */
+/** Short label of the period selector ("30 days"). */
 @get:StringRes
 val AnalysisPeriod.chipRes: Int
     get() = when (this) {
@@ -183,7 +183,7 @@ val AnalysisPeriod.chipRes: Int
         AnalysisPeriod.ALL -> R.string.analysis_period_all_short
     }
 
-/** Libellé complet de la période (« 30 derniers jours »). */
+/** Full label of the period ("last 30 days"). */
 @get:StringRes
 val AnalysisPeriod.labelRes: Int
     get() = when (this) {

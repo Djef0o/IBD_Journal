@@ -97,24 +97,24 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDate
 
-/** Saisie en cours : [result] null = nouveau résultat, [test] = analyse présélectionnée. */
+/** Entry in progress: [result] null = new result, [test] = preselected test. */
 internal data class LabEditing(val result: LabResult?, val test: LabTest)
 
-/** Plus récent d'abord ; à date égale, le dernier saisi. */
+/** Most recent first; on equal dates, the last entered. */
 internal val newestFirst: Comparator<LabResult> =
     compareByDescending<LabResult> { it.date }.thenByDescending { it.id }
 
-/** Historique par analyse, du plus récent au plus ancien, dans l'ordre de l'énumération. */
+/** History per test, from most recent to oldest, in enum order. */
 internal fun labHistories(results: List<LabResult>): Map<LabTest, List<LabResult>> =
     results.groupBy { it.test }
         .mapValues { (_, history) -> history.sortedWith(newestFirst) }
         .toSortedMap()
 
-/** Accepte la virgule comme le point, quel que soit le clavier ; null si pas un nombre positif. */
+/** Accepts the comma as well as the dot, whatever the keyboard; null if not a positive number. */
 internal fun parseLabValue(text: String): Double? =
     text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it > 0 }
 
-/** Couleur d'un résultat : accent du thème, erreur hors des valeurs du laboratoire. */
+/** Color of a result: theme accent, error outside the lab's reference values. */
 @Composable
 @ReadOnlyComposable
 private fun labStatusColor(status: LabStatus?): Color =
@@ -127,7 +127,7 @@ private val LabStatus.labelRes: Int
         LabStatus.ABOVE -> R.string.lab_status_above
     }
 
-/** Pastille « En dessous » / « Au-dessus » des valeurs du laboratoire. */
+/** "Below" / "Above" chip for the lab's reference values. */
 @Composable
 private fun LabStatusLabel(status: LabStatus) {
     val color = labStatusColor(status)
@@ -144,8 +144,8 @@ private fun LabStatusLabel(status: LabStatus) {
 }
 
 /**
- * Abscisse relative (0..1) proportionnelle au temps écoulé ; un point seul est centré,
- * des dates toutes égales sont réparties. [points] dans l'ordre chronologique.
+ * Relative x-position (0..1) proportional to elapsed time; a single point is centered,
+ * all-equal dates are spread out. [points] in chronological order.
  */
 private fun timeFraction(points: List<LabResult>, index: Int): Float {
     if (points.size == 1) return 0.5f
@@ -155,7 +155,7 @@ private fun timeFraction(points: List<LabResult>, index: Int): Float {
     else (points[index].date.toEpochDays() - first).toFloat() / span
 }
 
-// --- Section du suivi : par analyse ou par bilan ---
+// --- Follow-up section: by test or by panel ---
 
 private enum class LabView(@StringRes val labelRes: Int) {
     BY_TEST(R.string.lab_view_by_test),
@@ -163,8 +163,8 @@ private enum class LabView(@StringRes val labelRes: Int) {
 }
 
 /**
- * Résultats du suivi, au choix par analyse (dernière valeur et tendance) ou en tableau des
- * bilans. [histories] du plus récent au plus ancien, dans l'ordre de l'énumération.
+ * Follow-up results, either by test (latest value and trend) or as a table of
+ * panels. [histories] from most recent to oldest, in enum order.
  */
 @Composable
 internal fun LabResultsViews(
@@ -194,12 +194,12 @@ internal fun LabResultsViews(
     }
 }
 
-/** Nombre de résultats tracés dans la petite courbe de chaque analyse. */
+/** Number of results plotted in each test's small chart. */
 private const val SPARKLINE_POINTS = 8
 
 /**
- * Analyses hors des valeurs du laboratoire d'abord, puis les autres rangées par catégorie,
- * dans l'ordre de l'énumération ; un groupe vide est omis.
+ * Tests outside the lab's reference values first, then the others grouped by category,
+ * in enum order; an empty group is omitted.
  */
 @Composable
 private fun LabTestList(
@@ -224,9 +224,9 @@ private fun LabTestList(
 }
 
 /**
- * Dernière valeur d'une analyse, son statut, et la courbe de ses [SPARKLINE_POINTS] derniers
- * résultats : les bilans espacés de plusieurs mois gardent une tendance lisible.
- * [history] du plus récent au plus ancien.
+ * Latest value of a test, its status, and the curve of its last [SPARKLINE_POINTS]
+ * results: panels spaced several months apart keep a readable trend.
+ * [history] from most recent to oldest.
  */
 @Composable
 private fun LabTestRow(
@@ -264,7 +264,7 @@ private fun LabTestRow(
     )
 }
 
-/** Mini-courbe décorative ; le dernier point est marqué. [points] dans l'ordre chronologique. */
+/** Decorative mini-curve; the last point is marked. [points] in chronological order. */
 @Composable
 private fun LabSparkline(points: List<LabResult>, color: Color, modifier: Modifier) {
     Canvas(modifier) {
@@ -291,7 +291,7 @@ private fun LabSparkline(points: List<LabResult>, color: Color, modifier: Modifi
     }
 }
 
-// --- Tableau des bilans ---
+// --- Panel table ---
 
 private val TABLE_NAME_WIDTH = 110.dp
 private val TABLE_CELL_WIDTH = 72.dp
@@ -300,21 +300,21 @@ private val TABLE_ROW_HEIGHT = 60.dp
 private val TABLE_CATEGORY_HEIGHT = 32.dp
 
 /**
- * Une ligne par analyse, regroupées sous une ligne de catégorie ; une colonne par date de
- * prélèvement (plus récente à gauche). La colonne des noms reste fixe ; les dates défilent
- * ensemble horizontalement.
+ * One row per test, grouped under a category row; one column per collection date
+ * (most recent on the left). The names column stays fixed; the dates scroll
+ * together horizontally.
  */
 @Composable
 private fun LabPanelTable(
     histories: Map<LabTest, List<LabResult>>,
     onEditResult: (LabResult) -> Unit,
 ) {
-    // Catégories dans l'ordre de l'énumération, analyses aussi (clés déjà triées).
+    // Categories in enum order, tests too (keys already sorted).
     val groups = remember(histories) { histories.keys.groupBy { it.category }.toSortedMap() }
     val dates = remember(histories) {
         histories.values.flatten().map { it.date }.distinct().sortedDescending()
     }
-    // Un résultat par analyse et par date : le dernier saisi (historiques déjà triés).
+    // One result per test and per date: the last entered (histories already sorted).
     val cells = remember(histories) {
         histories.mapValues { (_, history) -> history.distinctBy { it.date }.associateBy { it.date } }
     }
@@ -337,7 +337,7 @@ private fun LabPanelTable(
             }
             groups.forEach { (category, tests) ->
                 Box(Modifier.height(TABLE_CATEGORY_HEIGHT), contentAlignment = Alignment.BottomStart) {
-                    // Peut déborder sur la partie défilante, vide sur cette ligne.
+                    // May overflow into the scrolling part, empty on this row.
                     Text(
                         stringResource(category.labelRes),
                         style = headerStyle,
@@ -393,7 +393,7 @@ private fun LabPanelTable(
     }
 }
 
-/** Valeur sans unité ; hors des valeurs du laboratoire sur fond teinté ; « – » sans résultat. */
+/** Value without unit; outside the lab's reference values on a tinted background; "–" without a result. */
 @Composable
 private fun LabTableCell(result: LabResult?, onClick: (LabResult) -> Unit) {
     Box(
@@ -431,7 +431,7 @@ private fun LabTableCell(result: LabResult?, onClick: (LabResult) -> Unit) {
     }
 }
 
-// --- Saisie ---
+// --- Entry ---
 
 private val LabQualifier.symbol: String
     get() = when (this) {
@@ -449,8 +449,8 @@ private val LabQualifier.descriptionRes: Int
     }
 
 /**
- * Choix de l'analyse : menu déroulant groupé par catégorie, nom et unité ; une quarantaine
- * d'analyses ne tient plus en rangée de puces.
+ * Test choice: dropdown menu grouped by category, name and unit; about forty
+ * tests no longer fit in a row of chips.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -516,7 +516,7 @@ internal fun LabResultEditorSheet(
     var valueText by remember { mutableStateOf(initial?.let { formatLabValue(it.value, grouping = false) }.orEmpty()) }
     var date by remember { mutableStateOf(initial?.date ?: today()) }
     var note by remember { mutableStateOf(initial?.note.orEmpty()) }
-    // Valeurs du laboratoire imprimées sur le compte rendu, facultatives.
+    // Lab reference values printed on the report, optional.
     var lowText by remember { mutableStateOf(initial?.referenceLow?.let { formatLabValue(it, grouping = false) }.orEmpty()) }
     var highText by remember { mutableStateOf(initial?.referenceHigh?.let { formatLabValue(it, grouping = false) }.orEmpty()) }
     var pickDate by remember { mutableStateOf(false) }
@@ -535,7 +535,7 @@ internal fun LabResultEditorSheet(
             style = MaterialTheme.typography.headlineSmall,
             fontWeight = FontWeight.Bold,
         )
-        // Les valeurs du laboratoire valent pour l'analyse d'origine seulement.
+        // The lab's reference values apply to the original test only.
         LabTestPicker(test = test, onSelect = {
             if (it != test) {
                 test = it
@@ -543,7 +543,7 @@ internal fun LabResultEditorSheet(
                 highText = ""
             }
         })
-        // Résultat exact, ou seulement borné par le seuil de mesure du laboratoire.
+        // Exact result, or only bounded by the lab's measurement threshold.
         SingleChoiceSegmentedButtonRow(Modifier.width(180.dp)) {
             LabQualifier.entries.forEachIndexed { index, option ->
                 val description = stringResource(option.descriptionRes)
@@ -662,11 +662,11 @@ internal fun LabResultEditorSheet(
     }
 }
 
-/** Borne du laboratoire : zéro admis (« 0 – 5 ») ; null si pas un nombre positif ou nul. */
+/** Lab bound: zero allowed ("0 – 5"); null if not a positive or zero number. */
 private fun parseLabBound(text: String): Double? =
     text.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() && it >= 0 }
 
-/** Champ d'une borne du laboratoire, dans l'unité de l'analyse. */
+/** Lab bound field, in the test's unit. */
 @Composable
 private fun LabBoundField(
     text: String,
@@ -689,16 +689,16 @@ private fun LabBoundField(
     )
 }
 
-// --- Détail d'une analyse ---
+// --- Test detail ---
 
-/** Fenêtre de la courbe ; [months] null = tout l'historique. */
+/** Chart window; [months] null = whole history. */
 private enum class LabPeriod(val months: Int?, @StringRes val labelRes: Int) {
     SIX_MONTHS(6, R.string.lab_period_6_months),
     YEAR(12, R.string.lab_period_1_year),
     ALL(null, R.string.lab_period_all),
 }
 
-/** Courbe puis liste des résultats d'une analyse ; [history] du plus récent au plus ancien. */
+/** Chart then list of a test's results; [history] from most recent to oldest. */
 @Composable
 internal fun LabResultDetailSheet(
     test: LabTest,
@@ -707,7 +707,7 @@ internal fun LabResultDetailSheet(
     onAdd: () -> Unit,
     onEdit: (LabResult) -> Unit,
 ) {
-    // Les valeurs du laboratoire du dernier compte rendu tracent la bande ; aucune sans elles.
+    // The lab's reference values from the latest report draw the band; none without them.
     val reference = history.first().reference()
     val byPeriod = remember(history) {
         val today = today()
@@ -719,7 +719,7 @@ internal fun LabResultDetailSheet(
         }
     }
     var period by rememberSaveable { mutableStateOf(LabPeriod.YEAR) }
-    // Aucun point dans la fenêtre choisie : tout l'historique.
+    // No point in the chosen window: whole history.
     val shown = if (byPeriod.getValue(period).isEmpty()) LabPeriod.ALL else period
 
     LabSheet(onDismiss = onDismiss) {
@@ -773,10 +773,10 @@ internal fun LabResultDetailSheet(
 }
 
 /**
- * Courbe des valeurs, abscisses proportionnelles au temps écoulé, sur la bande des valeurs
- * du laboratoire s'il y en a. L'axe vertical englobe valeurs et bornes ; sans borne basse
- * (CRP), il part de zéro. Points pleins, en couleur d'erreur hors des valeurs du laboratoire,
- * creux pour un seuil (« < 1 »). [points] dans l'ordre chronologique, non vide.
+ * Value chart, x-positions proportional to elapsed time, over the band of the lab's
+ * reference values if any. The vertical axis spans values and bounds; without a lower bound
+ * (CRP), it starts at zero. Filled points, in error color outside the lab's reference values,
+ * hollow for a threshold ("< 1"). [points] in chronological order, non-empty.
  */
 @Composable
 private fun LabChart(test: LabTest, points: List<LabResult>, reference: ReferenceRange?) {
@@ -824,13 +824,13 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
                     if (max == min) size.height / 2
                     else pad + height * ((max - value) / (max - min)).toFloat()
 
-                // Bande des valeurs du laboratoire ; une borne absente la prolonge jusqu'au bord.
+                // Band of the lab's reference values; a missing bound extends it to the edge.
                 if (low != null || high != null) {
                     val top = high?.let { y(it) } ?: 0f
                     val bottom = low?.let { y(it) } ?: size.height
                     drawRect(bandColor, topLeft = Offset(0f, top), size = Size(size.width, bottom - top))
                 }
-                // Repères du minimum et du maximum, en pointillés discrets.
+                // Minimum and maximum markers, in subtle dotted lines.
                 val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))
                 listOf(y(max), y(min)).distinct().forEach { lineY ->
                     drawLine(
@@ -882,7 +882,7 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
     }
 }
 
-/** Feuille modale défilante, sur le modèle des éditeurs du profil. */
+/** Scrollable modal sheet, modeled on the profile editors. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun LabSheet(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {

@@ -3,14 +3,14 @@ package fr.ibdjournal.app.data.model
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
-/** Familles d'analyses, dans l'ordre d'affichage. */
+/** Lab test families, in display order. */
 @Serializable
 enum class LabCategory { INFLAMMATION, BLOOD_COUNT, IRON, KIDNEY, LIVER, METABOLIC, NUTRITION, OTHER }
 
 /**
- * Analyses reconnues, avec l'unité de saisie : celle des comptes rendus français les plus
- * fréquents (les autres unités sont converties à l'import). Noms traduits côté plateforme.
- * L'ordre de l'énumération est l'ordre d'affichage ; la base stocke le nom, pas le rang.
+ * Recognized lab tests, with the entry unit: that of the most common French lab reports
+ * (other units are converted on import). Names translated on the platform side.
+ * The enum order is the display order; the database stores the name, not the rank.
  */
 @Serializable
 enum class LabTest(val unit: String, val category: LabCategory) {
@@ -67,9 +67,9 @@ enum class LabTest(val unit: String, val category: LabCategory) {
 }
 
 /**
- * Résultat d'analyse. [qualifier] : résultat donné comme seuil (« < 1,0 » : sous le seuil de
- * mesure). [referenceLow]/[referenceHigh] : valeurs de référence du laboratoire, lues sur le
- * compte rendu ou saisies ; null si le compte rendu n'en donne pas (l'app n'en fournit pas).
+ * Lab result. [qualifier]: result given as a threshold ("< 1,0": below the measurement
+ * threshold). [referenceLow]/[referenceHigh]: the lab's reference values, read from the
+ * report or entered; null if the report gives none (the app does not supply any).
  */
 @Serializable
 data class LabResult(
@@ -83,7 +83,7 @@ data class LabResult(
     val referenceHigh: Double? = null,
 )
 
-/** Résultat exact, ou seulement borné : « < 1,0 » ([BELOW]), « > 300 » ([ABOVE]). */
+/** Exact result, or only bounded: "< 1,0" ([BELOW]), "> 300" ([ABOVE]). */
 @Serializable
 enum class LabQualifier { EXACT, BELOW, ABOVE }
 
@@ -91,8 +91,8 @@ enum class LabQualifier { EXACT, BELOW, ABOVE }
 enum class DoseStatus { TAKEN, MISSED }
 
 /**
- * Prise prévue confirmée (prise ou oubliée). [scheduledAt] : horodatage local de l'occurrence
- * prévue, en millisecondes ; une seule entrée par traitement et par occurrence.
+ * Confirmed scheduled dose (taken or missed). [scheduledAt]: local timestamp of the scheduled
+ * occurrence, in milliseconds; a single entry per treatment and per occurrence.
  */
 @Serializable
 data class DoseLog(

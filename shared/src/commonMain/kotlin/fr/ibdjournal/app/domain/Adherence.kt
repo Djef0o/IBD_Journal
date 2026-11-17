@@ -13,7 +13,7 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.monthsUntil
 import kotlinx.datetime.plus
 
-/** Vrai si le planning prévoit une prise ce jour-là (mois comptés depuis le début, comme les rappels). */
+/** True if the schedule has a dose on that day (months counted from the start, like reminders). */
 fun ReminderSchedule.occursOn(date: LocalDate): Boolean {
     if (date < startDate) return false
     val every = repeatEvery.coerceAtLeast(1)
@@ -22,7 +22,7 @@ fun ReminderSchedule.occursOn(date: LocalDate): Boolean {
         RepeatUnit.DAY -> startDate.daysUntil(date) % every == 0
         RepeatUnit.WEEK -> startDate.daysUntil(date) % (7 * every) == 0
         RepeatUnit.MONTH -> {
-            // Le 28 février n'est qu'à « 0 mois » du 31 janvier : on teste aussi le mois suivant.
+            // February 28 is only "0 months" after January 31: also test the following month.
             val months = startDate.monthsUntil(date)
             listOf(months, months + 1).any { m ->
                 m % every == 0 && startDate.plus(m, DateTimeUnit.MONTH) == date
@@ -31,7 +31,7 @@ fun ReminderSchedule.occursOn(date: LocalDate): Boolean {
     }
 }
 
-/** Occurrences prévues entre [from] et [to] inclus, dans l'ordre. */
+/** Scheduled occurrences between [from] and [to] inclusive, in order. */
 fun ReminderSchedule.occurrencesBetween(from: LocalDate, to: LocalDate): List<LocalDateTime> {
     if (to < from) return emptyList()
     return generateSequence(from) { it.plus(1, DateTimeUnit.DAY) }
@@ -41,13 +41,13 @@ fun ReminderSchedule.occurrencesBetween(from: LocalDate, to: LocalDate): List<Lo
         .toList()
 }
 
-/** Prise prévue un jour donné, avec sa confirmation éventuelle. */
+/** Dose scheduled on a given day, with its confirmation if any. */
 data class DoseDue(val medication: Medication, val at: LocalDateTime, val status: DoseStatus?) {
-    /** Clé de l'occurrence dans [DoseLog.scheduledAt]. */
+    /** Key of the occurrence in [DoseLog.scheduledAt]. */
     val scheduledAt: Long get() = at.toEpochMillis()
 }
 
-/** Prises prévues le [date] pour tous les traitements, par heure. */
+/** Doses scheduled on [date] for all medications, by time. */
 fun dosesOn(date: LocalDate, medications: List<Medication>, logs: List<DoseLog>): List<DoseDue> {
     val statuses = logs.associateBy({ it.medicationId to it.scheduledAt }, { it.status })
     return medications
@@ -60,12 +60,12 @@ fun dosesOn(date: LocalDate, medications: List<Medication>, logs: List<DoseLog>)
 }
 
 /**
- * Observance d'un traitement : prises prévues depuis [from] jusqu'à [until] inclus, et parmi
- * elles celles confirmées prises ou oubliées. Les prises sans réponse ne comptent ni pour
- * l'une ni pour l'autre.
+ * Adherence for a medication: doses scheduled from [from] through [until] inclusive, and among
+ * them those confirmed taken or missed. Doses without an answer count for neither
+ * one nor the other.
  */
 data class Adherence(val expected: Int, val taken: Int, val missed: Int) {
-    /** Part des prises prévues confirmées prises, ou null sans prise prévue. */
+    /** Share of scheduled doses confirmed taken, or null with no scheduled dose. */
     val takenRate: Double? get() = if (expected == 0) null else taken.toDouble() / expected
 }
 

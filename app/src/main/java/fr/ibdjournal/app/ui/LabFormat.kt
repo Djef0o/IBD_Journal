@@ -6,14 +6,14 @@ import fr.ibdjournal.app.domain.ReferenceRange
 import java.text.NumberFormat
 import java.util.Locale
 
-/** Jusqu'à deux décimales, sans zéros inutiles : « 12 », « 0,5 », « 13,25 ». */
+/** Up to two decimals, without useless zeros: "12", "0,5", "13,25". */
 fun formatLabValue(value: Double, grouping: Boolean = true): String =
     NumberFormat.getNumberInstance(Locale.getDefault()).apply {
         maximumFractionDigits = 2
         isGroupingUsed = grouping
     }.format(value)
 
-/** « < 1 mg/L », « 12,5 mg/L » ; sans unité pour les cellules de tableau. */
+/** "< 1 mg/L", "12,5 mg/L"; without unit for table cells. */
 fun LabResult.displayValue(withUnit: Boolean = true): String {
     val prefix = when (qualifier) {
         LabQualifier.EXACT -> ""
@@ -24,7 +24,7 @@ fun LabResult.displayValue(withUnit: Boolean = true): String {
     return if (withUnit) "$number ${test.unit}" else number
 }
 
-/** « 13,4 – 16,7 », « < 5 », « > 30 ». */
+/** "13,4 – 16,7", "< 5", "> 30". */
 fun ReferenceRange.display(): String {
     val low = low
     val high = high

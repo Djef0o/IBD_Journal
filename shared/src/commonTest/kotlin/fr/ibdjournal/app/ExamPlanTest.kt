@@ -18,7 +18,7 @@ class ExamPlanTest {
 
     private val colonoscopy = Exam(type = ExamType.COLONOSCOPY, at = LocalDateTime(2026, 12, 4, 9, 30))
 
-    /** Préparation saisie par l'utilisateur, d'après les consignes de son médecin. */
+    /** Preparation entered by the user, following their doctor's instructions. */
     private val prepared = colonoscopy.copy(
         dietDays = 3,
         prepFirstAt = LocalDateTime(2026, 12, 3, 19, 0),
@@ -27,7 +27,7 @@ class ExamPlanTest {
 
     @Test
     fun aNewExamHasOnlyItsOwnStep() {
-        // Aucune préparation proposée par l'app : seul l'examen est daté.
+        // No preparation suggested by the app: only the exam is dated.
         assertEquals(listOf(ExamStep.EXAM), colonoscopy.steps().map { it.step })
     }
 

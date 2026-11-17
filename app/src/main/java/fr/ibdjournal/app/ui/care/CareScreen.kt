@@ -85,7 +85,7 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.atTime
 
-/** Fenêtre de l'observance affichée sous chaque traitement, aujourd'hui compris. */
+/** Adherence window shown under each treatment, today included. */
 private const val ADHERENCE_DAYS = 30
 
 @Composable
@@ -112,7 +112,7 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
     )
 }
 
-/** Élément en cours d'édition : null = fermé ; `item == null` = création. */
+/** Item being edited: null = closed; `item == null` = creation. */
 private data class Editing<T>(val item: T?)
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -140,14 +140,14 @@ fun CareContent(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted -> notificationsGranted = granted }
-    // Demande l'autorisation au moment où l'utilisateur active un rappel.
+    // Asks for permission when the user enables a reminder.
     val requestPermissionIfNeeded = { notifies: Boolean ->
         if (notifies && !notificationsGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
     }
     val current = now()
-    // À venir : la plus proche d'abord ; passés ensuite, du plus récent au plus ancien.
+    // Upcoming: nearest first; past ones after, from most recent to oldest.
     val upcomingExams = exams.filter { it.at >= current }.sortedBy { it.at }
     val pastExams = exams.filter { it.at < current }.sortedByDescending { it.at }
     val anyReminder = medications.any { it.schedule.enabled || it.refillAlert } ||
@@ -268,8 +268,8 @@ fun CareContent(
 }
 
 /**
- * Résumé des résultats d'analyses : dernier bilan et analyses hors des valeurs du laboratoire ;
- * le détail est dans le sous-écran [LabsScreen].
+ * Lab results summary: latest panel and tests outside the lab's reference values;
+ * the detail is in the [LabsScreen] sub-screen.
  */
 @Composable
 private fun LabSummaryCard(labResults: List<LabResult>, onOpen: () -> Unit) {
@@ -312,11 +312,11 @@ private fun LabSummaryCard(labResults: List<LabResult>, onOpen: () -> Unit) {
     }
 }
 
-/** « Observance 30 j : 26/28 prises (93 %) », ou null tant qu'aucune prise n'a été confirmée. */
+/** "Adherence 30 d: 26/28 doses (93 %)", or null while no dose has been confirmed. */
 @Composable
 private fun adherenceStatus(medication: Medication, logs: List<DoseLog>): String? {
     val result = adherence(medication, logs, today().minus(ADHERENCE_DAYS - 1, DateTimeUnit.DAY), now())
-    // Sans aucune réponse, « 0 % » laisserait croire à des oublis.
+    // Without any answer, "0 %" would suggest missed doses.
     if (result.expected == 0 || result.taken + result.missed == 0) return null
     val percent = (result.taken * 100.0 / result.expected).roundToInt()
     return pluralStringResource(
@@ -411,8 +411,8 @@ private fun ScheduledRow(
 }
 
 /**
- * Examen : date, prochaine étape de la préparation et, avant l'examen, le rendez-vous
- * d'anesthésie à prendre. Un examen passé est grisé.
+ * Exam: date, next preparation step and, before the exam, the anesthesia
+ * appointment to book. A past exam is greyed out.
  */
 @Composable
 private fun ExamRow(exam: Exam, upcoming: Boolean, onClick: () -> Unit) {
@@ -423,7 +423,7 @@ private fun ExamRow(exam: Exam, upcoming: Boolean, onClick: () -> Unit) {
         stringResource(
             R.string.exam_next_step,
             stringResource(it.step.labelRes),
-            // Le régime commence un jour donné : l'heure du rappel n'apporte rien.
+            // The diet starts on a given day: the reminder time adds nothing.
             if (it.step == ExamStep.DIET) DateFormats.weekdayDayMonth(it.at.date) else dateTimeLabel(it.at),
         )
     }

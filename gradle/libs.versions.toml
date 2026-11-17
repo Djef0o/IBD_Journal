@@ -11,7 +11,7 @@ coreKtx = "1.19.0"
 datastore = "1.2.1"
 camerax = "1.6.2"
 zxing = "3.5.3"
-# Lecture des comptes rendus d'analyses : texte du PDF, sans OCR ni envoi (Apache-2.0)
+# Reading lab reports: PDF text, no OCR and nothing sent out (Apache-2.0)
 pdfboxAndroid = "2.0.27.0"
 retrofit = "3.0.0"
 okhttp = "5.5.0"
@@ -22,7 +22,7 @@ hiltNavCompose = "1.4.0"
 navigation = "2.8.8"
 work = "2.10.0"
 appcompat = "1.7.1"
-# Module shared (Kotlin Multiplatform) : dates communes Android/iOS, SQLite embarqué pour iOS
+# Shared module (Kotlin Multiplatform): dates common to Android/iOS, embedded SQLite for iOS
 kotlinxDatetime = "0.7.1"
 sqlite = "2.6.2"
 

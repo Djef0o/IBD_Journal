@@ -11,8 +11,8 @@ import kotlinx.datetime.until
 import kotlinx.serialization.Serializable
 
 /**
- * Identité de l'utilisateur (Réglages → Profil). [sex] : mention d'identité du rapport PDF ;
- * null = non renseigné. L'app n'en tire aucune interprétation.
+ * User identity (Settings → Profile). [sex]: identity mention on the PDF report;
+ * null = not provided. The app draws no interpretation from it.
  */
 @Serializable
 data class Profile(
@@ -29,9 +29,9 @@ enum class Sex { FEMALE, MALE }
 enum class RepeatUnit { ONCE, DAY, WEEK, MONTH }
 
 /**
- * Planification d'un rappel : première occurrence le [startDate] à [hour]:[minute], puis
- * toutes les [repeatEvery] unités de [repeatUnit] ([RepeatUnit.ONCE] : une seule fois).
- * [enabled] ne commande que la notification ; la date reste utile sans rappel.
+ * Reminder scheduling: first occurrence on [startDate] at [hour]:[minute], then
+ * every [repeatEvery] units of [repeatUnit] ([RepeatUnit.ONCE]: only once).
+ * [enabled] only controls the notification; the date stays useful without a reminder.
  */
 @Serializable
 data class ReminderSchedule(
@@ -43,9 +43,9 @@ data class ReminderSchedule(
     val repeatUnit: RepeatUnit = RepeatUnit.DAY,
 ) {
     /**
-     * Première occurrence strictement postérieure à [after], ou null si la série est terminée.
-     * Les mois sont comptés depuis [startDate] (et non d'occurrence en occurrence) : un rappel
-     * le 31 tombe le 30 avril puis revient au 31 mai, sans dériver.
+     * First occurrence strictly after [after], or null if the series is over.
+     * Months are counted from [startDate] (not from occurrence to occurrence): a reminder
+     * on the 31st falls on April 30 then returns to May 31, without drifting.
      */
     fun nextOccurrence(after: LocalDateTime): LocalDateTime? {
         val first = startDate.atTime(hour, minute)
@@ -57,7 +57,7 @@ data class ReminderSchedule(
             RepeatUnit.MONTH -> DateTimeUnit.MONTH
         }
         val step = repeatEvery.coerceAtLeast(1).toLong()
-        // Point de départ juste avant `after`, puis on avance d'un pas au plus deux fois.
+        // Starting point just before `after`, then advance by one step at most twice.
         var index = startDate.until(after.date, unit) / step
         while (true) {
             val candidate = startDate.plus(index * step, unit).atTime(hour, minute)
@@ -67,21 +67,21 @@ data class ReminderSchedule(
     }
 }
 
-/** Avance de l'alerte « pensez à commander », en jours. */
+/** Lead time of the "remember to reorder" alert, in days. */
 const val REFILL_LEAD_DAYS = 7
 
-/** Référence de l'alerte de commande, déduite de la fréquence des prises. */
+/** Reference of the reorder alert, derived from the dose frequency. */
 enum class RefillBasis {
-    /** Prises espacées de plus de [REFILL_LEAD_DAYS] jours (injections…) : avant chaque prise. */
+    /** Doses spaced more than [REFILL_LEAD_DAYS] days apart (injections…): before each dose. */
     BEFORE_DOSE,
 
-    /** Prises rapprochées (quotidiennes…) : avant la date de fin du stock saisie. */
+    /** Frequent doses (daily…): before the entered stock end date. */
     STOCK_END,
 }
 
 /**
- * Traitement suivi, issu de la liste standard ou saisi librement. [refillAlert] active
- * l'alerte de commande ; [stockEndDate] n'est utilisée qu'en mode [RefillBasis.STOCK_END].
+ * Tracked treatment, from the standard list or freely entered. [refillAlert] enables
+ * the reorder alert; [stockEndDate] is only used in [RefillBasis.STOCK_END] mode.
  */
 @Serializable
 data class Medication(
@@ -104,8 +104,8 @@ data class Medication(
         }
 
     /**
-     * Prochaine alerte de commande strictement après [after], à l'heure de prise, ou null.
-     * Avant une prise : la prise doit tomber plus de [REFILL_LEAD_DAYS] jours après [after].
+     * Next reorder alert strictly after [after], at the dose time, or null.
+     * Before a dose: the dose must fall more than [REFILL_LEAD_DAYS] days after [after].
      */
     fun nextRefillAlert(after: LocalDateTime): LocalDateTime? {
         if (!refillAlert) return null
@@ -124,7 +124,7 @@ data class Medication(
 @Serializable
 enum class CheckupType { BLOOD_TEST, STOOL_TEST }
 
-/** Contrôle médical programmé : prise de sang ou test des selles (calprotectine…). */
+/** Scheduled medical checkup: blood test or stool test (calprotectin…). */
 @Serializable
 data class Checkup(
     val id: Long = 0,

@@ -54,7 +54,7 @@ import fr.ibdjournal.app.ui.theme.colorSchemeFor
 import fr.ibdjournal.app.ui.theme.isDark
 import java.util.Locale
 
-/** Langues traduites (dossiers values-xx) ; l'anglais est aussi la langue par défaut. */
+/** Translated languages (values-xx folders); English is also the default language. */
 private val SupportedLanguages = listOf("fr", "en", "es", "de", "it", "pt")
 
 @get:StringRes
@@ -139,7 +139,7 @@ fun AppearanceSection(
     }
 }
 
-/** Aperçu d'une palette dans la luminosité courante : fond, accent principal, accent repas. */
+/** Preview of a palette in the current brightness: background, main accent, meal accent. */
 @Composable
 private fun PaletteSwatch(
     palette: ThemePalette,
@@ -201,8 +201,8 @@ private fun PaletteSwatch(
 }
 
 /**
- * Choix de la langue de l'app, indépendant de celle du téléphone. AppCompat la mémorise
- * et recrée l'écran ; sur Android 13+ elle apparaît aussi dans les réglages système.
+ * App language choice, independent of the phone's. AppCompat remembers it
+ * and recreates the screen; on Android 13+ it also appears in system settings.
  */
 @Composable
 fun LanguageSection() {
@@ -271,7 +271,7 @@ private fun LanguageOption(label: String, selected: Boolean, onClick: () -> Unit
     }
 }
 
-/** Nom de la langue dans cette langue même (« Deutsch », « Español ») : reconnaissable par tous. */
+/** Language name in that language itself ("Deutsch", "Español"): recognizable by everyone. */
 private fun languageName(tag: String): String {
     val locale = Locale.forLanguageTag(tag)
     return locale.getDisplayName(locale).replaceFirstChar { it.titlecase(locale) }

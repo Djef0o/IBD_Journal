@@ -6,7 +6,7 @@ import androidx.room.useReaderConnection
 import androidx.room.useWriterConnection
 import fr.ibdjournal.app.data.model.BackupData
 
-/** Instantané cohérent de toutes les données à sauvegarder (lecture dans une transaction). */
+/** Consistent snapshot of all the data to back up (read in a transaction). */
 suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connection ->
     connection.deferredTransaction {
         BackupData(
@@ -23,9 +23,9 @@ suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connectio
 }
 
 /**
- * Remplace le journal par [backup], en une transaction. Les sections absentes des
- * sauvegardes antérieures (profil, traitements, contrôles, résultats, prises, examens) sont conservées.
- * Les identifiants des traitements sont conservés : les prises confirmées y restent liées.
+ * Replaces the journal with [backup], in one transaction. Sections missing from earlier
+ * backups (profile, treatments, checkups, results, doses, exams) are kept.
+ * Treatment ids are kept: confirmed doses stay linked to them.
  */
 suspend fun AppDatabase.restore(backup: BackupData) {
     useWriterConnection { connection ->

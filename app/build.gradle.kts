@@ -20,7 +20,7 @@ android {
     namespace = "fr.ibdjournal.app"
     compileSdk = 37
 
-    // F-Droid refuse le bloc de métadonnées de dépendances signé par Google.
+    // F-Droid rejects the dependency metadata block signed by Google.
     dependenciesInfo {
         includeInApk = false
         includeInBundle = false
@@ -47,7 +47,7 @@ android {
 
     buildTypes {
         release {
-            // R8 : supprime le code inutilisé (material-icons-extended surtout) et optimise.
+            // R8: removes unused code (mainly material-icons-extended) and optimizes.
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -63,8 +63,8 @@ android {
         compose = true
     }
 
-    // Déclare au système les langues de l'app (choix de langue par application, Android 13+),
-    // à partir des dossiers values-xx présents. Langue des ressources par défaut : res/resources.properties.
+    // Declares the app's languages to the system (per-app language choice, Android 13+),
+    // from the values-xx folders present. Default resource language: res/resources.properties.
     androidResources {
         generateLocaleConfig = true
     }
@@ -109,7 +109,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.navigation.compose)
 
-    // Cœur multiplateforme : modèles, base Room (entités, DAO), calculs ; expose Room et kotlinx-datetime.
+    // Multiplatform core: models, Room database (entities, DAOs), computations; exposes Room and kotlinx-datetime.
     implementation(project(":shared"))
 
     // Persistence
@@ -129,7 +129,7 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.zxing.core)
-    // Import des comptes rendus d'analyses : texte du PDF lu sur l'appareil, sans OCR ni envoi.
+    // Lab report import: PDF text read on the device, no OCR and nothing sent out.
     implementation(libs.pdfbox.android)
 
     // Image loading

@@ -37,7 +37,7 @@ class CareViewModel @Inject constructor(
     val labResults: StateFlow<List<LabResult>> = repository.labResults
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    /** Prises confirmées, pour l'observance affichée sous chaque traitement. */
+    /** Confirmed doses, for the adherence shown under each treatment. */
     val doseLogs: StateFlow<List<DoseLog>> = repository.doseLogs
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -57,7 +57,7 @@ class CareViewModel @Inject constructor(
         viewModelScope.launch { repository.deleteCheckup(checkup.id) }
     }
 
-    /** Coloscopies et rectosigmoïdoscopies, la plus proche d'abord. */
+    /** Colonoscopies and sigmoidoscopies, nearest first. */
     val exams: StateFlow<List<Exam>> = repository.exams
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -77,14 +77,14 @@ class CareViewModel @Inject constructor(
         viewModelScope.launch { repository.deleteLabResult(result.id) }
     }
 
-    // --- Import d'un compte rendu ---
+    // --- Report import ---
 
     private val _labImport = MutableStateFlow<LabImportState>(LabImportState.Idle)
     val labImport: StateFlow<LabImportState> = _labImport.asStateFlow()
 
     /**
-     * Lit les comptes rendus un par un sur l'appareil puis propose les valeurs trouvées à la
-     * vérification. Un document illisible reste dans la liste, signalé, sans valeur.
+     * Reads the reports one by one on the device, then offers the values found for
+     * review. An unreadable document stays in the list, flagged, without values.
      */
     fun importLabReports(uris: List<Uri>) {
         if (uris.isEmpty()) return
@@ -106,7 +106,7 @@ class CareViewModel @Inject constructor(
         }
     }
 
-    /** Enregistre les valeurs validées par l'utilisateur. */
+    /** Saves the values validated by the user. */
     fun saveImportedResults(results: List<LabResult>) {
         _labImport.value = LabImportState.Idle
         viewModelScope.launch { results.forEach { repository.saveLabResult(it) } }
@@ -117,12 +117,12 @@ class CareViewModel @Inject constructor(
     }
 }
 
-/** Compte rendu lu à l'import ; [failed] : illisible, [scan] alors vide. */
+/** Report read at import; [failed]: unreadable, [scan] then empty. */
 data class ImportedDocument(val name: String?, val scan: LabReportScan, val failed: Boolean = false)
 
 sealed interface LabImportState {
     data object Idle : LabImportState
-    /** [done] documents lus sur [total]. */
+    /** [done] documents read out of [total]. */
     data class Reading(val done: Int, val total: Int) : LabImportState
     data class Review(val documents: List<ImportedDocument>) : LabImportState
 }

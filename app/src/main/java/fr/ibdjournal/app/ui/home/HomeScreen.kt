@@ -69,7 +69,7 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
-/** Tableau de bord : résumé du jour, actions rapides, fil du jour et rappel. */
+/** Dashboard: day summary, quick actions, day feed and reminder. */
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit,
@@ -564,7 +564,7 @@ private fun WeekCard(stools: List<Stool>, meals: List<Meal>, average: Double?) {
             )
             Spacer(Modifier.height(12.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                // Les journées sans selle (type 0) et les fausses envies ne sont pas des selles.
+                // Days without a stool (type 0) and false urges are not stools.
                 val realCount = stools.count { it.isRealStool }
                 Stat(
                     value = realCount.toString(),
@@ -631,7 +631,7 @@ private fun ReminderCard(hour: Int, minute: Int) {
     }
 }
 
-/** Prises du jour : confirmation rapide, re-toucher le statut actif l'annule. */
+/** Today's doses: quick confirmation, tapping the active status again cancels it. */
 @Composable
 private fun DosesCard(doses: List<DoseDue>, onDose: (DoseDue, DoseStatus) -> Unit) {
     Surface(

@@ -63,12 +63,12 @@ import fr.ibdjournal.app.ui.calendar.ScannedProductCard
 import java.util.concurrent.Executors
 
 /**
- * Scanner plein écran : CameraX + ZXing, puis recherche du produit
- * sur Open Food Facts.
+ * Full-screen scanner: CameraX + ZXing, then product lookup
+ * on Open Food Facts.
  *
- * Affiché dans un [Dialog] : la feuille d'édition du repas est elle-même une fenêtre
- * au-dessus de l'activité. Dessiné dans l'écran, le scanner passerait dessous, et
- * toucher la caméra fermerait la feuille (et son brouillon) via son voile.
+ * Shown in a [Dialog]: the meal edit sheet is itself a window
+ * above the activity. Drawn inside the screen, the scanner would end up beneath it, and
+ * tapping the camera would close the sheet (and its draft) via its scrim.
  */
 @Composable
 fun ScannerScreen(
@@ -116,7 +116,7 @@ fun ScannerContent(
     Box(modifier.fillMaxSize().background(Color.Black)) {
         cameraPreview(onBarcodeDetected)
 
-        // Barre supérieure.
+        // Top bar.
         Row(
             modifier = Modifier
                 .statusBarsPadding()
@@ -141,7 +141,7 @@ fun ScannerContent(
             Spacer(Modifier.size(48.dp))
         }
 
-        // Cadre de scan.
+        // Scan frame.
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -149,7 +149,7 @@ fun ScannerContent(
                 .border(2.dp, Color.White, RoundedCornerShape(16.dp)),
         )
 
-        // Indication.
+        // Hint.
         Text(
             text = stringResource(R.string.scan_hint),
             style = MaterialTheme.typography.bodyMedium,
@@ -161,7 +161,7 @@ fun ScannerContent(
                 .padding(horizontal = 32.dp),
         )
 
-        // Résultat.
+        // Result.
         when (val scanState = state) {
             ScanState.Waiting -> Unit
 
@@ -263,7 +263,7 @@ private fun ResultCard(modifier: Modifier = Modifier, content: @Composable () ->
     }
 }
 
-/** Aperçu caméra CameraX branché sur l'analyse ZXing des codes-barres. */
+/** CameraX camera preview wired to ZXing barcode analysis. */
 @Composable
 private fun CameraPreview(
     onBarcodeDetected: (String) -> Unit,
@@ -311,11 +311,11 @@ private fun CameraPreview(
     val currentOnBarcodeDetected by rememberUpdatedState(onBarcodeDetected)
     val previewView = remember { PreviewView(context) }
 
-    // La caméra est liée au cycle de vie de l'activité, pas à ce composable : sans
-    // unbindAll() à la sortie, elle resterait allumée (et l'analyse active) après
-    // la fermeture du scanner, jusqu'à l'arrêt de l'activité.
+    // The camera is bound to the activity lifecycle, not to this composable: without
+    // unbindAll() on exit, it would stay on (and analysis active) after
+    // the scanner closes, until the activity stops.
     DisposableEffect(lifecycleOwner) {
-        // Analyse hors du thread principal ; le résultat est renvoyé sur le main.
+        // Analysis off the main thread; the result is posted back to main.
         val mainExecutor = ContextCompat.getMainExecutor(context)
         val analysisExecutor = Executors.newSingleThreadExecutor()
         val providerFuture = ProcessCameraProvider.getInstance(context)

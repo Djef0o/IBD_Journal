@@ -12,12 +12,12 @@ enum class MedicationCategory {
 
 enum class Indication { CROHN, UC }
 
-/** Traitements d'appoint dont le nom se traduit (contrairement aux DCI). */
+/** Supportive treatments whose name is translated (unlike INNs). */
 enum class SupportiveMedication { IRON, VITAMIN_D, VITAMIN_B12, FOLIC_ACID, CALCIUM, LOPERAMIDE }
 
 /**
- * Médicament de la liste standard : une DCI ([inn], identique d'une langue à l'autre) ou un
- * traitement d'appoint ([supportive]) dont le libellé est traduit par la plateforme.
+ * Medication from the standard list: an INN ([inn], identical across languages) or a
+ * supportive treatment ([supportive]) whose label is translated by the platform.
  */
 class StandardMedication private constructor(
     val category: MedicationCategory,
@@ -34,7 +34,7 @@ class StandardMedication private constructor(
     }
 }
 
-/** Traitements usuels de la maladie de Crohn et de la rectocolite hémorragique. */
+/** Usual treatments for Crohn's disease and ulcerative colitis. */
 object StandardMedications {
 
     private val BOTH = setOf(Indication.CROHN, Indication.UC)

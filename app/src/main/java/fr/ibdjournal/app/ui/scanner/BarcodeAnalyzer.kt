@@ -12,8 +12,8 @@ import com.google.zxing.ReaderException
 import com.google.zxing.common.HybridBinarizer
 
 /**
- * Analyse CameraX des codes-barres alimentaires avec ZXing (plan Y du YUV_420_888).
- * [onBarcode] est appelé depuis le thread d'analyse.
+ * CameraX analysis of food barcodes with ZXing (Y plane of YUV_420_888).
+ * [onBarcode] is called from the analysis thread.
  */
 class BarcodeAnalyzer(private val onBarcode: (String) -> Unit) : ImageAnalysis.Analyzer {
 
@@ -37,14 +37,14 @@ class BarcodeAnalyzer(private val onBarcode: (String) -> Unit) : ImageAnalysis.A
             val width = crop.width()
             val height = crop.height()
             val luma = extractLuma(proxy, crop.left, crop.top, width, height)
-            // Code lu tel quel puis pivoté de 90° (téléphone tenu en portrait).
+            // Code read as-is, then rotated by 90° (phone held in portrait).
             val text = decode(luma, width, height)
                 ?: decode(rotate90(luma, width, height), height, width)
             if (text != null) onBarcode(text)
         }
     }
 
-    /** Copie la zone recadrée du plan Y en tenant compte du rowStride/pixelStride. */
+    /** Copies the cropped area of the Y plane, accounting for rowStride/pixelStride. */
     private fun extractLuma(proxy: ImageProxy, left: Int, top: Int, width: Int, height: Int): ByteArray {
         val plane = proxy.planes[0]
         val buffer = plane.buffer
@@ -63,7 +63,7 @@ class BarcodeAnalyzer(private val onBarcode: (String) -> Unit) : ImageAnalysis.A
         return out
     }
 
-    /** Rotation horaire de 90° : l'image résultante fait height × width. */
+    /** 90° clockwise rotation: the resulting image is height × width. */
     private fun rotate90(src: ByteArray, width: Int, height: Int): ByteArray {
         val out = ByteArray(src.size)
         for (y in 0 until height) {

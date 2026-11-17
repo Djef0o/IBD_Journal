@@ -5,17 +5,17 @@ import kotlin.time.ExperimentalTime
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.Serializable
 
-/** Horodatage courant en millisecondes, disponible sur toutes les plateformes. */
+/** Current timestamp in milliseconds, available on all platforms. */
 @OptIn(ExperimentalTime::class)
 fun nowEpochMillis(): Long = Clock.System.now().toEpochMilliseconds()
 
-/** Les trois moments de repas suivis chaque jour. Libellés : côté plateforme. */
+/** The three meal times tracked each day. Labels: platform side. */
 @Serializable
 enum class MealType { BREAKFAST, LUNCH, DINNER }
 
 /**
- * Un repas enregistré pour un jour donné. Les dates sont sérialisées en ISO (« 2026-11-15 »),
- * comme avant le passage à kotlinx-datetime : les sauvegardes existantes restent lisibles.
+ * A meal recorded for a given day. Dates are serialized as ISO ("2026-11-15"),
+ * as before the move to kotlinx-datetime: existing backups remain readable.
  */
 @Serializable
 data class Meal(
@@ -28,31 +28,31 @@ data class Meal(
 )
 
 /**
- * Une selle du jour avec détails médicaux (échelle de Bristol, sang, etc.). [urgency] : besoin
- * impérieux ; [nocturnal] : selle qui a réveillé la nuit (critères des scores d'activité).
- * [falseUrge] : fausse envie (ténesme), passage aux toilettes sans selle, parfois avec sang
- * ou glaires ; enregistrée avec [bristolType] 0, elle n'est pas comptée comme une selle.
+ * A stool of the day with medical details (Bristol scale, blood, etc.). [urgency]: urgent
+ * need; [nocturnal]: stool that woke from sleep (criteria of activity scores).
+ * [falseUrge]: false urge (tenesmus), trip to the toilet without stool, sometimes with blood
+ * or mucus; recorded with [bristolType] 0, it is not counted as a stool.
  */
 @Serializable
 data class Stool(
     val id: Long = 0,
     val date: LocalDate,
-    val bristolType: Int = 4, // 1 à 7
-    val bloodLevel: Int = 0, // 0 à 5
-    val mucusLevel: Int = 0, // 0 à 5
-    val painLevel: Int = 0, // 0 à 5
-    val fatigueLevel: Int = 0, // 0 à 5
+    val bristolType: Int = 4, // 1 to 7
+    val bloodLevel: Int = 0, // 0 to 5
+    val mucusLevel: Int = 0, // 0 to 5
+    val painLevel: Int = 0, // 0 to 5
+    val fatigueLevel: Int = 0, // 0 to 5
     val comment: String = "",
     val createdAt: Long = nowEpochMillis(),
     val urgency: Boolean = false,
     val nocturnal: Boolean = false,
     val falseUrge: Boolean = false,
 ) {
-    /** Vraie selle : ni journée sans selle (type 0) ni fausse envie. */
+    /** Real stool: neither a stool-free day (type 0) nor a false urge. */
     val isRealStool: Boolean get() = bristolType > 0
 }
 
-/** Produit alimentaire (issu d'Open Food Facts ou du cache local). */
+/** Food product (from Open Food Facts or the local cache). */
 @Serializable
 data class Product(
     val barcode: String,
@@ -64,8 +64,8 @@ data class Product(
 )
 
 /**
- * Objet racine pour l'export/import JSON. Les sections absentes (null) des sauvegardes
- * antérieures laissent les données actuelles intactes à l'import.
+ * Root object for JSON export/import. Sections missing (null) from earlier backups
+ * leave the current data untouched on import.
  */
 @Serializable
 data class BackupData(
@@ -79,7 +79,7 @@ data class BackupData(
     val exams: List<Exam>? = null,
 )
 
-/** Résultat d'une recherche de produit par code-barres. */
+/** Result of a product lookup by barcode. */
 sealed interface ProductLookup {
     data class Found(val product: Product) : ProductLookup
     data class NotFound(val barcode: String) : ProductLookup

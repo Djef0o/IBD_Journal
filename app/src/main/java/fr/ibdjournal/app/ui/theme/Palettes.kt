@@ -9,13 +9,13 @@ import androidx.compose.ui.graphics.luminance
 import fr.ibdjournal.app.data.ThemePalette
 
 /**
- * Jeu de couleurs minimal d'une variante (claire ou sombre). Le reste du [ColorScheme]
- * (conteneurs, surfaces étagées, contours) en est dérivé par [toColorScheme], ce qui
- * garde toutes les palettes cohérentes entre elles.
+ * Minimal color set of one variant (light or dark). The rest of the [ColorScheme]
+ * (containers, tonal surfaces, outlines) is derived from it by [toColorScheme], which
+ * keeps all palettes consistent with each other.
  *
- * Les valeurs reprennent les teintes publiées de chaque thème. En clair, certains
- * accents sont légèrement assombris : utilisés comme couleur de texte sur fond pâle,
- * les originaux manquent de contraste.
+ * The values follow each theme's published shades. In light mode, some
+ * accents are slightly darkened: used as text color on a pale background,
+ * the originals lack contrast.
  */
 private class Tones(
     val background: Color,
@@ -26,7 +26,7 @@ private class Tones(
     val outline: Color,
     val primary: Color,
     val secondary: Color,
-    /** Accent des repas (chaud, orangé dans chaque palette). */
+    /** Meal accent (warm, orange-ish in every palette). */
     val tertiary: Color,
     val error: Color,
 )
@@ -41,8 +41,8 @@ private val Solarized = PaletteTones(
         onSurface = Color(0xFF073642), // base02
         onSurfaceVariant = Color(0xFF657B83), // base00
         outline = Color(0xFF93A1A1), // base1
-        primary = Color(0xFF1E7F78), // cyan assombri
-        secondary = Color(0xFF1E6FA8), // blue assombri
+        primary = Color(0xFF1E7F78), // cyan darkened
+        secondary = Color(0xFF1E6FA8), // blue darkened
         tertiary = Color(0xFFCB4B16), // orange
         error = Color(0xFFDC322F), // red
     ),
@@ -53,9 +53,9 @@ private val Solarized = PaletteTones(
         onSurface = Color(0xFFEEE8D5), // base2
         onSurfaceVariant = Color(0xFF93A1A1), // base1
         outline = Color(0xFF586E75), // base01
-        primary = Color(0xFF39A89F), // cyan éclairci (4,5:1)
+        primary = Color(0xFF39A89F), // cyan lightened (4.5:1)
         secondary = Color(0xFF268BD2), // blue
-        tertiary = Color(0xFFDB815C), // orange éclairci (4,5:1)
+        tertiary = Color(0xFFDB815C), // orange lightened (4.5:1)
         error = Color(0xFFDC322F), // red
     ),
 )
@@ -68,9 +68,9 @@ private val Nord = PaletteTones(
         onSurface = Color(0xFF2E3440), // nord0
         onSurfaceVariant = Color(0xFF4C566A), // nord3
         outline = Color(0xFF8F9BB0),
-        primary = Color(0xFF56759D), // nord10 assombri (4,5:1)
-        secondary = Color(0xFF4F7F7E), // nord7 assombri
-        tertiary = Color(0xFFA6604B), // nord12 assombri (4,5:1)
+        primary = Color(0xFF56759D), // nord10 darkened (4.5:1)
+        secondary = Color(0xFF4F7F7E), // nord7 darkened
+        tertiary = Color(0xFFA6604B), // nord12 darkened (4.5:1)
         error = Color(0xFFBF616A), // nord11
     ),
     dark = Tones(
@@ -82,7 +82,7 @@ private val Nord = PaletteTones(
         outline = Color(0xFF4C566A), // nord3
         primary = Color(0xFF88C0D0), // nord8
         secondary = Color(0xFF81A1C1), // nord9
-        tertiary = Color(0xFFDAA08E), // nord12 éclairci (4,5:1)
+        tertiary = Color(0xFFDAA08E), // nord12 lightened (4.5:1)
         error = Color(0xFFBF616A), // nord11
     ),
 )
@@ -124,7 +124,7 @@ private val Catppuccin = PaletteTones(
         outline = Color(0xFF9CA0B0), // overlay0
         primary = Color(0xFF8839EF), // mauve
         secondary = Color(0xFF1E66F5), // blue
-        tertiary = Color(0xFFBC4A08), // peach assombri (4,5:1)
+        tertiary = Color(0xFFBC4A08), // peach darkened (4.5:1)
         error = Color(0xFFD20F39), // red
     ),
     dark = Tones( // Mocha
@@ -151,7 +151,7 @@ private val RosePine = PaletteTones(
         outline = Color(0xFF9893A5), // muted
         primary = Color(0xFF286983), // pine
         secondary = Color(0xFF907AA9), // iris
-        tertiary = Color(0xFF9D6819), // gold assombri (4,5:1)
+        tertiary = Color(0xFF9D6819), // gold darkened (4.5:1)
         error = Color(0xFFB4637A), // love
     ),
     dark = Tones( // Main
@@ -169,8 +169,8 @@ private val RosePine = PaletteTones(
 )
 
 /**
- * Palette de marque « Sauge » : vert d'eau apaisant pour le médical, un orange chaud
- * réservé aux repas. Réglée à la main, elle n'est pas dérivée de [Tones].
+ * "Sage" brand palette: a soothing sea green for the medical side, a warm orange
+ * reserved for meals. Tuned by hand, it is not derived from [Tones].
  */
 private val SageLight = lightColorScheme(
     primary = Color(0xFF0B6E63),
@@ -243,7 +243,7 @@ private val SageDark = darkColorScheme(
 )
 
 private fun Tones.toColorScheme(dark: Boolean): ColorScheme {
-    // Texte posé sur un accent : sombre sur accent clair, blanc sur accent foncé.
+    // Text on an accent: dark on a light accent, white on a dark accent.
     fun on(accent: Color) = if (accent.luminance() > 0.35f) {
         if (dark) background else onSurface
     } else {
@@ -253,7 +253,7 @@ private fun Tones.toColorScheme(dark: Boolean): ColorScheme {
         if (dark) lerp(background, accent, 0.28f) else lerp(surface, accent, 0.18f)
     fun onContainer(accent: Color) =
         if (dark) lerp(accent, Color.White, 0.45f) else lerp(accent, Color.Black, 0.45f)
-    // Surfaces étagées : on glisse du fond vers la couleur du texte.
+    // Tonal surfaces: we slide from the background toward the text color.
     fun step(fraction: Float) = lerp(background, onSurface, fraction)
 
     val common = if (dark) {
@@ -311,8 +311,8 @@ private fun Tones.toColorScheme(dark: Boolean): ColorScheme {
 }
 
 /**
- * Variante AMOLED : fond et cartes en noir pur (pixels éteints), surfaces élevées à
- * peine teintées pour garder la hiérarchie ; les cartes restent lisibles par leur contour.
+ * AMOLED variant: background and cards in pure black (pixels off), elevated surfaces barely
+ * tinted to keep the hierarchy; cards stay readable thanks to their outline.
  */
 private fun ColorScheme.toAmoled(): ColorScheme = copy(
     background = Color.Black,
@@ -340,7 +340,7 @@ private val ThemePalette.tones: PaletteTones?
 
 private val schemeCache = HashMap<Triple<ThemePalette, Boolean, Boolean>, ColorScheme>()
 
-/** Jeu de couleurs complet d'une palette ; [amoled] n'a d'effet qu'avec [dark]. */
+/** Full color set of a palette; [amoled] only has an effect with [dark]. */
 fun colorSchemeFor(palette: ThemePalette, dark: Boolean, amoled: Boolean = false): ColorScheme =
     schemeCache.getOrPut(Triple(palette, dark, amoled && dark)) {
         val base = palette.tones

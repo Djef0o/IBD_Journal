@@ -8,8 +8,8 @@ import kotlinx.datetime.daysUntil
 import kotlinx.datetime.minus
 
 /**
- * Période analysée par l'écran Tendances (tuiles et symptômes). [days] null = tout
- * l'historique, sans période de comparaison. Libellés : côté plateforme.
+ * Period analyzed by the Trends screen (tiles and symptoms). [days] null = the whole
+ * history, with no comparison period. Labels: platform side.
  */
 enum class AnalysisPeriod(val days: Int?) {
     LAST_30(30),
@@ -17,15 +17,15 @@ enum class AnalysisPeriod(val days: Int?) {
     ALL(null),
 }
 
-/** Bristol 6–7 : selles liquides, critère des scores cliniques (Mayo, Harvey-Bradshaw). */
+/** Bristol 6–7: liquid stools, criterion of clinical scores (Mayo, Harvey-Bradshaw). */
 private const val LIQUID_MIN_TYPE = 6
 
-/** Seuil « fort » pour les échelles 0–5 de douleur et de fatigue. */
+/** "Strong" threshold for the 0–5 pain and fatigue scales. */
 private const val STRONG_LEVEL = 3
 
 /**
- * Symptômes comptés en jours touchés plutôt qu'en moyenne : trois jours de sang sur trente
- * restent visibles, là où une moyenne par selle les diluait jusqu'à ~0.
+ * Symptoms counted in affected days rather than as an average: three days of blood out of thirty
+ * stay visible, where a per-stool average diluted them down to ~0.
  */
 enum class Symptom(val isPresent: (Stool) -> Boolean) {
     BLOOD({ it.bloodLevel > 0 }),
@@ -37,31 +37,31 @@ enum class Symptom(val isPresent: (Stool) -> Boolean) {
     FALSE_URGE({ it.falseUrge }),
 }
 
-/** [previousDays] vaut null sans période de comparaison ou si rien n'y a été noté. */
+/** [previousDays] is null without a comparison period or if nothing was logged in it. */
 data class SymptomDays(val symptom: Symptom, val days: Int, val previousDays: Int?)
 
 data class AnalysisSummary(
     val period: AnalysisPeriod = AnalysisPeriod.LAST_30,
-    /** Nombre de jours couverts par la période (dénominateur des barres de symptômes). */
+    /** Number of days covered by the period (denominator of the symptom bars). */
     val periodDays: Int = 30,
-    /** Selles de la période (tuiles). */
+    /** Stools of the period (tiles). */
     val stools: List<Stool> = emptyList(),
-    /** Repas de la période. */
+    /** Meals of the period. */
     val meals: List<Meal> = emptyList(),
-    /** Toutes les selles enregistrées (graphique par jour, défilable). */
+    /** All recorded stools (per-day chart, scrollable). */
     val stoolHistory: List<Stool> = emptyList(),
     val symptomDays: List<SymptomDays> = emptyList(),
-    /** Selles liquides par jour noté sur la période ; null sans aucun jour noté. */
+    /** Liquid stools per logged day over the period; null with no logged day. */
     val liquidPerDay: Double? = null,
 ) {
-    /** Selles réelles : sans les journées sans selle (type 0) ni les fausses envies. */
+    /** Real stools: excluding no-stool days (type 0) and false urges. */
     val realStools: List<Stool> get() = stools.filter { it.isRealStool }
 
-    /** Bristol moyen des selles réelles, ou null sans selle. */
+    /** Average Bristol of real stools, or null with no stool. */
     val averageBristol: Double? get() = realStools.map { it.bristolType }.average().takeIf { !it.isNaN() }
 }
 
-/** Premier jour de [period] se terminant à [today], ou null pour « tout l'historique ». */
+/** First day of [period] ending at [today], or null for "the whole history". */
 fun AnalysisPeriod.startFrom(today: LocalDate): LocalDate? =
     days?.let { today.minus(DatePeriod(days = it - 1)) }
 
@@ -76,7 +76,7 @@ fun analyze(
         ?: today
     val periodDays = start.daysUntil(today) + 1
     val current = history.filter { it.date in start..today }
-    // Période de comparaison : même durée, juste avant.
+    // Comparison period: same length, right before.
     val previous = period.days?.let { days ->
         val previousStart = start.minus(DatePeriod(days = days))
         history.filter { it.date >= previousStart && it.date < start }

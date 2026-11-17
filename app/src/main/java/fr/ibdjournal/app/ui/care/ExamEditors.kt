@@ -49,14 +49,14 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.plus
 
-/** Borne du sélecteur de jours de régime. */
+/** Bound of the diet-days picker. */
 private const val MAX_DIET_DAYS = 7
 
-/** Nouvel examen : dans deux semaines, le matin. */
+/** New exam: in two weeks, in the morning. */
 private const val NEW_EXAM_DAYS_AHEAD = 14
 private val NEW_EXAM_TIME = LocalTime(9, 0)
 
-/** « Jeudi 4 décembre à 09:30 ». */
+/** "Thursday, December 4 at 09:30". */
 @Composable
 internal fun dateTimeLabel(at: LocalDateTime): String = stringResource(
     R.string.date_at,
@@ -143,7 +143,7 @@ fun ExamEditorSheet(
     }
 }
 
-/** Régime sans résidu et prises de la préparation, telles que prescrites par le médecin. */
+/** Low-residue diet and preparation doses, as prescribed by the doctor. */
 @Composable
 private fun PreparationEditor(exam: Exam, onChange: (Exam) -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -182,7 +182,7 @@ private fun PreparationEditor(exam: Exam, onChange: (Exam) -> Unit) {
             initial = exam.at,
             onChange = { onChange(exam.copy(prepFirstAt = it)) },
         )
-        // Seconde prise facultative, une fois la première notée.
+        // Optional second dose, once the first is noted.
         if (exam.prepFirstAt != null || exam.prepSecondAt != null) {
             OptionalDateTimeField(
                 label = stringResource(R.string.exam_step_prep_second),
@@ -194,7 +194,7 @@ private fun PreparationEditor(exam: Exam, onChange: (Exam) -> Unit) {
     }
 }
 
-/** Consultation d'anesthésie (coloscopie). */
+/** Anesthesia consultation (colonoscopy). */
 @Composable
 private fun AnesthesiaEditor(exam: Exam, onChange: (LocalDateTime?) -> Unit) {
     OptionalDateTimeField(
@@ -205,7 +205,7 @@ private fun AnesthesiaEditor(exam: Exam, onChange: (LocalDateTime?) -> Unit) {
     )
 }
 
-/** Date et heure obligatoires. */
+/** Required date and time. */
 @Composable
 private fun DateTimeField(label: String, value: LocalDateTime, onChange: (LocalDateTime) -> Unit) {
     var pick by remember { mutableStateOf(false) }
@@ -217,7 +217,7 @@ private fun DateTimeField(label: String, value: LocalDateTime, onChange: (LocalD
     }
 }
 
-/** Date et heure facultatives : « Pas encore fixée » tant qu'elles ne sont pas ajoutées. */
+/** Optional date and time: "Not set yet" until they are added. */
 @Composable
 private fun OptionalDateTimeField(
     label: String,
@@ -246,7 +246,7 @@ private fun OptionalDateTimeField(
     }
 }
 
-/** Choix de la date puis de l'heure ; sans heure validée, la date garde l'heure d'avant. */
+/** Pick the date then the time; without a confirmed time, the date keeps the previous time. */
 @Composable
 private fun DateTimePicker(initial: LocalDateTime, onDismiss: () -> Unit, onPick: (LocalDateTime) -> Unit) {
     var date by remember { mutableStateOf<LocalDate?>(null) }
@@ -263,7 +263,7 @@ private fun DateTimePicker(initial: LocalDateTime, onDismiss: () -> Unit, onPick
             hour = initial.hour,
             minute = initial.minute,
             onDismiss = {
-                // Annulé : on garde la date choisie ; validé : onPick a déjà tout appliqué.
+                // Cancelled: keep the chosen date; confirmed: onPick has already applied everything.
                 date?.let { onPick(it.atTime(initial.time)) }
                 onDismiss()
             },

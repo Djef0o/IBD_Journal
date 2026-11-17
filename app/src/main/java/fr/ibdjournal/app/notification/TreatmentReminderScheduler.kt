@@ -37,17 +37,17 @@ import fr.ibdjournal.app.calendar.CalendarSync
 import fr.ibdjournal.app.data.AppPrefs
 
 /**
- * Rappels de prise de traitement, de commande, de contrôles (prise de sang, test des selles)
- * et des étapes d'examen (coloscopie, rectosigmoïdoscopie).
+ * Reminders for taking treatments, reordering, check-ups (blood test, stool test)
+ * and exam steps (colonoscopy, rectosigmoidoscopy).
  *
- * Deux modes, choisis dans les réglages :
- * - notifications de l'app : une alarme par rappel, identifiée par l'URI de son intent
- *   (`ibdjournal://reminder/medication/12`) ; seule la prochaine occurrence est posée, la
- *   suivante est calculée au déclenchement ([onAlarm]), au démarrage et aux changements
- *   d'heure ([rescheduleAll]) ;
- * - agenda du téléphone ([CalendarSync]) : un événement par rappel, sans alarme de l'app.
- *   Si l'autorisation d'agenda est retirée, l'app reprend ses notifications au démarrage
- *   suivant plutôt que de laisser les rappels se perdre.
+ * Two modes, chosen in the settings:
+ * - app notifications: one alarm per reminder, identified by the URI of its intent
+ *   (`ibdjournal://reminder/medication/12`); only the next occurrence is set, the
+ *   following one is computed when it fires ([onAlarm]), at startup and on time
+ *   changes ([rescheduleAll]);
+ * - phone calendar ([CalendarSync]): one event per reminder, no app alarm.
+ *   If the calendar permission is removed, the app resumes its notifications at the
+ *   next startup rather than letting reminders get lost.
  */
 @Singleton
 class TreatmentReminderScheduler @Inject constructor(
@@ -64,7 +64,7 @@ class TreatmentReminderScheduler @Inject constructor(
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
     }
 
-    /** Rappel de chaque étape d'examen. */
+    /** Reminder for each exam step. */
     private val EXAM_KINDS = mapOf(
         ExamStep.ANESTHESIA to Kind.EXAM_ANESTHESIA,
         ExamStep.DIET to Kind.EXAM_DIET,
@@ -73,7 +73,7 @@ class TreatmentReminderScheduler @Inject constructor(
         ExamStep.EXAM to Kind.EXAM,
     )
 
-    /** Rappel de prise et alerte de commande : deux rappels distincts par traitement. */
+    /** Intake reminder and reorder alert: two distinct reminders per treatment. */
     suspend fun schedule(medication: Medication, after: LocalDateTime = now()) {
         if (calendarSync.isActive()) {
             cancelAlarms(Kind.MEDICATION, medication.id)
@@ -106,8 +106,8 @@ class TreatmentReminderScheduler @Inject constructor(
     }
 
     /**
-     * Une alarme par étape d'examen (rendez-vous d'anesthésie, début du régime, prises de la
-     * préparation, examen) ; seules les étapes encore à venir sont posées.
+     * One alarm per exam step (anesthesia appointment, start of the diet, bowel prep
+     * doses, exam); only steps still to come are set.
      */
     suspend fun schedule(exam: Exam, after: LocalDateTime = now()) {
         if (calendarSync.isActive()) {
@@ -144,8 +144,8 @@ class TreatmentReminderScheduler @Inject constructor(
     }
 
     /**
-     * Bascule entre agenda et notifications. En quittant l'agenda, les événements créés
-     * par l'app sont supprimés : les rappels ne doivent pas arriver en double.
+     * Switches between calendar and notifications. When leaving the calendar, the events
+     * created by the app are deleted: reminders must not arrive twice.
      */
     suspend fun setCalendarMode(enabled: Boolean) {
         prefs.setCalendarSyncEnabled(enabled)
@@ -153,21 +153,21 @@ class TreatmentReminderScheduler @Inject constructor(
         rescheduleAll()
     }
 
-    /** Changement d'agenda : les événements sont recréés dans le nouvel agenda. */
+    /** Calendar change: events are recreated in the new calendar. */
     suspend fun setCalendar(calendarId: Long) {
         calendarSync.removeAll()
         prefs.setCalendarId(calendarId)
         rescheduleAll()
     }
 
-    /** Déclenchement d'une alarme : notifie puis pose l'occurrence suivante. */
+    /** Alarm fired: notifies, then sets the next occurrence. */
     suspend fun onAlarm(intent: Intent) {
-        // Alarme posée avant le passage à l'agenda : l'agenda prévient déjà.
+        // Alarm set before switching to the calendar: the calendar already notifies.
         if (calendarSync.isActive()) return
         val segments = intent.data?.pathSegments ?: return
         val kind = Kind.entries.firstOrNull { it.path == segments.getOrNull(0) } ?: return
         val id = segments.getOrNull(1)?.toLongOrNull() ?: return
-        // Repère : l'occurrence prévue, pour ne jamais la reprogrammer si l'alarme sonne en avance.
+        // Marker: the scheduled occurrence, to never reschedule it if the alarm rings early.
         val firedAt = localDateTimeAt(
             maxOf(System.currentTimeMillis(), intent.getLongExtra(EXTRA_TRIGGER_AT, 0L))
         )
@@ -177,8 +177,8 @@ class TreatmentReminderScheduler @Inject constructor(
                 val medication = database.medicationDao().get(id)?.toMedication() ?: return
                 if (!medication.schedule.enabled) return
                 schedule(kind, id, medication.schedule.nextOccurrence(firedAt))
-                // Clé de la prise : l'occurrence prévue exacte (celle de la carte « Traitements du
-                // jour »), pas l'instant réel du déclenchement, décalé de quelques millisecondes.
+                // Intake key: the exact scheduled occurrence (that of the "Today's treatments"
+                // card), not the actual trigger instant, off by a few milliseconds.
                 val planned = medication.schedule.occurrencesBetween(firedAt.date, firedAt.date)
                     .lastOrNull { it <= firedAt } ?: firedAt
                 showMedication(medication, planned.toEpochMillis())
@@ -196,8 +196,8 @@ class TreatmentReminderScheduler @Inject constructor(
                 showCheckup(checkup)
             }
             else -> {
-                // Étape d'examen : rappel unique, rien à reprogrammer. L'examen a pu changer
-                // depuis la pose de l'alarme : on ne notifie que l'étape encore prévue.
+                // Exam step: one-off reminder, nothing to reschedule. The exam may have changed
+                // since the alarm was set: only notify for the step still planned.
                 val step = EXAM_KINDS.entries.firstOrNull { it.value == kind }?.key ?: return
                 val exam = database.examDao().get(id)?.toExam()?.takeIf { it.remindersEnabled } ?: return
                 val stepTime = exam.steps().firstOrNull { it.step == step } ?: return
@@ -256,7 +256,7 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
-    /** URI propre à la prise et au statut : sans elle, les PendingIntent se remplaceraient. */
+    /** URI specific to the intake and status: without it, the PendingIntents would replace each other. */
     private fun doseAction(medicationId: Long, scheduledAt: Long, action: String, labelRes: Int): NotificationCompat.Action {
         val intent = Intent(context, NotificationReceiver::class.java).apply {
             this.action = action
@@ -274,7 +274,7 @@ class TreatmentReminderScheduler @Inject constructor(
         return NotificationCompat.Action.Builder(0, context.getString(labelRes), pendingIntent).build()
     }
 
-    /** Retire la notification de prise une fois la réponse donnée. */
+    /** Removes the intake notification once the answer is given. */
     fun cancelMedicationNotification(medicationId: Long) {
         NotificationManagerCompat.from(context).cancel(Kind.MEDICATION.path, medicationId.toInt())
     }
@@ -301,7 +301,7 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
-    /** « Pensez à commander » : avant la prochaine prise ou avant la fin du stock. */
+    /** "Remember to reorder": before the next intake or before the stock runs out. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
             RefillBasis.BEFORE_DOSE -> medication.schedule.nextOccurrence(after)?.let { dose ->
@@ -360,7 +360,7 @@ class TreatmentReminderScheduler @Inject constructor(
         try {
             manager.notify(kind.path, id.toInt(), notification)
         } catch (_: SecurityException) {
-            // Permission de notification retirée entre le test et l'envoi.
+            // Notification permission removed between the check and the send.
         }
     }
 

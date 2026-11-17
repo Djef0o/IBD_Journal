@@ -77,10 +77,10 @@ import kotlinx.datetime.plus
 
 private const val MAX_REPEAT_EVERY = 99
 
-/** Le DatePicker travaille en millisecondes UTC à minuit : jour epoch × durée d'un jour. */
+/** The DatePicker works in UTC milliseconds at midnight: epoch day × length of a day. */
 private const val MILLIS_PER_DAY = 86_400_000L
 
-// --- Traitement ---
+// --- Treatment ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -105,7 +105,7 @@ fun MedicationEditorSheet(
         refillAlert = refillAlert,
         stockEndDate = stockEndDate,
     )
-    // En mode « fin du stock », l'alerte n'a pas de sens sans la date.
+    // In "end of stock" mode, the alert makes no sense without the date.
     val refillIncomplete = refillAlert && draft.refillBasis == RefillBasis.STOCK_END && stockEndDate == null
 
     EditorSheet(
@@ -164,8 +164,8 @@ fun MedicationEditorSheet(
 }
 
 /**
- * Alerte « pensez à commander ». Le mode dépend de la fréquence : avant chaque prise pour un
- * traitement espacé, avant la date de fin du stock pour un traitement quotidien.
+ * "Remember to reorder" alert. The mode depends on the frequency: before each dose for a
+ * spaced-out treatment, before the stock end date for a daily treatment.
  */
 @Composable
 private fun RefillEditor(
@@ -225,7 +225,7 @@ private fun RefillHint(text: String) {
     )
 }
 
-/** « Commande : alerte le lundi 23 novembre à 08:00 », ou null sans alerte à venir. */
+/** "Order: alert on Monday, November 23 at 08:00", or null without an upcoming alert. */
 @Composable
 fun refillStatus(medication: Medication): String? {
     val next = medication.nextRefillAlert(now()) ?: return null
@@ -239,7 +239,7 @@ fun refillStatus(medication: Medication): String? {
     )
 }
 
-/** Liste standard filtrable ; « Autre » garde le texte saisi tel quel. */
+/** Filterable standard list; "Other" keeps the entered text as is. */
 @Composable
 private fun MedicationPickerDialog(
     initialQuery: String,
@@ -316,7 +316,7 @@ private fun MedicationPickerDialog(
     )
 }
 
-// --- Contrôle (prise de sang, selles) ---
+// --- Monitoring (blood test, stools) ---
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -364,7 +364,7 @@ fun CheckupEditorSheet(
     }
 }
 
-// --- Éléments communs ---
+// --- Shared elements ---
 
 private fun defaultSchedule(unit: RepeatUnit) = ReminderSchedule(startDate = today(), repeatUnit = unit)
 
@@ -411,7 +411,7 @@ internal fun EditorSheet(
     }
 }
 
-/** Libellé, valeur et action, aligné sur les champs de saisie (sans le retrait d'un ListItem). */
+/** Label, value and action, aligned with the input fields (without a ListItem's inset). */
 @Composable
 internal fun FieldRow(label: String, value: String, trailing: @Composable () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -428,7 +428,7 @@ internal fun FieldRow(label: String, value: String, trailing: @Composable () -> 
     }
 }
 
-/** Date, heure, périodicité et activation de la notification. */
+/** Date, time, recurrence and notification toggle. */
 @Composable
 private fun ScheduleEditor(
     schedule: ReminderSchedule,
@@ -506,7 +506,7 @@ private fun ScheduleEditor(
     }
 }
 
-/** « Tous les jours », « Toutes les 2 semaines », « Une fois ». */
+/** "Every day", "Every 2 weeks", "Once". */
 @Composable
 fun repeatSummary(schedule: ReminderSchedule): String {
     val n = schedule.repeatEvery
@@ -519,8 +519,8 @@ fun repeatSummary(schedule: ReminderSchedule): String {
 }
 
 /**
- * Ligne d'état : périodicité et prochaine échéance (l'icône de cloche indique si elle sera
- * notifiée). Une échéance unique passée affiche simplement sa date.
+ * Status line: recurrence and next due date (the bell icon shows whether it will be
+ * notified). A past one-time due date simply shows its date.
  */
 @Composable
 fun scheduleStatus(schedule: ReminderSchedule): String {
@@ -541,7 +541,7 @@ fun scheduleStatus(schedule: ReminderSchedule): String {
     return "$repeat · $date"
 }
 
-/** Le DatePicker travaille en millisecondes UTC à minuit. */
+/** The DatePicker works in UTC milliseconds at midnight. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DatePickerDialogFor(

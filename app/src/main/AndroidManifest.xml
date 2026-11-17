@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
-    <!-- Option des réglages : rappels de traitement et de contrôle écrits dans l'agenda du téléphone. -->
+    <!-- Settings option: treatment and check-up reminders written to the phone's calendar. -->
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
 
@@ -26,7 +26,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.IBDJournal">
 
-        <!-- Pas d'initialisation de WorkManager au démarrage : à la demande via Configuration.Provider -->
+        <!-- No WorkManager initialization at startup: on demand via Configuration.Provider -->
         <provider
             android:name="androidx.startup.InitializationProvider"
             android:authorities="${applicationId}.androidx-startup"
@@ -37,7 +37,7 @@
                 tools:node="remove" />
         </provider>
 
-        <!-- Partage du rapport PDF (cache/reports) : lecture accordée à l'app choisie, au cas par cas. -->
+        <!-- PDF report sharing (cache/reports): read access granted to the chosen app, case by case. -->
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -59,12 +59,12 @@
             </intent-filter>
         </activity>
 
-        <!-- Tous les intents sont explicites : inutile d'exposer le récepteur aux autres apps. -->
+        <!-- All intents are explicit: no need to expose the receiver to other apps. -->
         <receiver
             android:name=".notification.NotificationReceiver"
             android:exported="false" />
 
-        <!-- Replanifie le rappel après redémarrage, mise à jour ou changement d'heure/fuseau. -->
+        <!-- Reschedules the reminder after reboot, update, or time/timezone change. -->
         <receiver
             android:name=".notification.ReminderRescheduleReceiver"
             android:exported="false">
@@ -76,7 +76,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Avant Android 13 : AppCompat mémorise lui-même la langue choisie dans l'app. -->
+        <!-- Before Android 13: AppCompat itself remembers the language chosen in the app. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
             android:enabled="false"

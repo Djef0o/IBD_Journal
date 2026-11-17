@@ -233,7 +233,7 @@
 
     </LinearLayout>
 
-    <!-- Douleur du jour, de 0 (aucune) à 5 (très vive) : question et échelle sur une ligne -->
+    <!-- Pain today, from 0 (none) to 5 (very severe): question and scale on one line -->
     <LinearLayout
         android:id="@+id/pain_header"
         android:layout_width="match_parent"
@@ -276,7 +276,7 @@
         <TextView android:id="@+id/pain_5" style="@style/NotificationLevel" android:text="5" />
     </LinearLayout>
 
-    <!-- Fatigue du jour, de 0 (en forme) à 5 (épuisé) -->
+    <!-- Fatigue today, from 0 (energetic) to 5 (exhausted) -->
     <LinearLayout
         android:id="@+id/fatigue_header"
         android:layout_width="match_parent"

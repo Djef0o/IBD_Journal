@@ -48,14 +48,14 @@ data class StoolEntity(
     val fatigueLevel: Int,
     val comment: String = "",
     val createdAt: Long = nowEpochMillis(),
-    /** Ajoutées en version 5 : défaut SQL identique à celui de la migration 4 → 5. */
+    /** Added in version 5: SQL default identical to that of migration 4 → 5. */
     @ColumnInfo(defaultValue = "0") val urgency: Boolean = false,
     @ColumnInfo(defaultValue = "0") val nocturnal: Boolean = false,
-    /** Ajoutée en version 8. */
+    /** Added in version 8. */
     @ColumnInfo(defaultValue = "0") val falseUrge: Boolean = false,
 )
 
-/** Cache des produits Open Food Facts, par code-barres. */
+/** Open Food Facts product cache, by barcode. */
 @Entity(tableName = "products")
 data class ProductEntity(
     @PrimaryKey val barcode: String,
@@ -68,8 +68,8 @@ data class ProductEntity(
 )
 
 /**
- * Repas avec la fiche produit complète du cache Open Food Facts. Le repas ne stocke
- * que code-barres et nom ; image, marque et Nutri-Score viennent de `products`.
+ * Meal with the full product sheet from the Open Food Facts cache. The meal only stores
+ * barcode and name; image, brand and Nutri-Score come from `products`.
  */
 data class MealWithProduct(
     @Embedded val meal: MealEntity,
@@ -77,7 +77,7 @@ data class MealWithProduct(
     val product: ProductEntity?,
 )
 
-// --- Mappeurs entité <-> modèle de domaine ---
+// --- Mappers entity <-> domain model ---
 
 fun MealWithProduct.toMeal(): Meal {
     val base = meal.toMeal()
@@ -142,7 +142,7 @@ fun Stool.toStoolEntity() = StoolEntity(
     falseUrge = falseUrge,
 )
 
-/** Résultats d'analyses (version 5 ; seuil et valeurs de référence en version 6). */
+/** Lab results (version 5; threshold and reference values in version 6). */
 @Entity(tableName = "lab_results", indices = [Index("test", "dateEpochDay")])
 data class LabResultEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -150,13 +150,13 @@ data class LabResultEntity(
     val value: Double,
     val dateEpochDay: Long,
     val note: String,
-    /** null = résultat exact : colonne nullable, ajoutée sans valeur par défaut. */
+    /** null = exact result: nullable column, added without a default value. */
     val qualifier: LabQualifier? = null,
     val referenceLow: Double? = null,
     val referenceHigh: Double? = null,
 )
 
-/** Prises confirmées ou oubliées (version 5) : une ligne par traitement et par occurrence. */
+/** Confirmed or missed doses (version 5): one row per treatment and per occurrence. */
 @Entity(
     tableName = "dose_logs",
     indices = [Index(value = ["medicationId", "scheduledAt"], unique = true)],
@@ -225,14 +225,14 @@ fun Product.toProductEntity() = ProductEntity(
     ingredients = ingredients,
 )
 
-/** Une seule ligne (id = [ProfileEntity.SINGLE_ID]) : l'app ne gère qu'un profil. */
+/** A single row (id = [ProfileEntity.SINGLE_ID]): the app only handles one profile. */
 @Entity(tableName = "profile")
 data class ProfileEntity(
     @PrimaryKey val id: Int = SINGLE_ID,
     val firstName: String,
     val lastName: String,
     val birthDateEpochDay: Long?,
-    /** Ajouté en version 6. */
+    /** Added in version 6. */
     val sex: Sex? = null,
 ) {
     companion object {
@@ -240,7 +240,7 @@ data class ProfileEntity(
     }
 }
 
-/** Colonnes de planification partagées par traitements et contrôles. */
+/** Scheduling columns shared by treatments and checkups. */
 data class ScheduleColumns(
     val reminderEnabled: Boolean,
     val startDateEpochDay: Long,
@@ -257,7 +257,7 @@ data class MedicationEntity(
     val dosage: String,
     @Embedded val schedule: ScheduleColumns,
     val createdAt: Long = nowEpochMillis(),
-    /** Ajoutées en version 4 : défaut SQL identique à celui de la migration 3 → 4. */
+    /** Added in version 4: SQL default identical to that of migration 3 → 4. */
     @ColumnInfo(defaultValue = "0") val refillAlert: Boolean = false,
     val stockEndEpochDay: Long? = null,
 )

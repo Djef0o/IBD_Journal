@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/** Récepteur déclenché par l'alarme précise ou par l'interaction avec la notification. */
+/** Receiver triggered by the exact alarm or by interaction with the notification. */
 @AndroidEntryPoint
 class NotificationReceiver : BroadcastReceiver() {
 
@@ -54,14 +54,14 @@ class NotificationReceiver : BroadcastReceiver() {
                     TreatmentReminderScheduler.ACTION_DOSE_MISSED -> logDose(intent, DoseStatus.MISSED)
                 }
             } catch (_: Throwable) {
-                // Ne jamais laisser une erreur (base, préférences…) casser la chaîne du rappel.
+                // Never let an error (database, preferences…) break the reminder chain.
             } finally {
                 pendingResult.finish()
             }
         }
     }
 
-    /** Réponse « Pris » / « Oublié » depuis la notification : on journalise puis on la retire. */
+    /** "Taken" / "Forgotten" answer from the notification: it is logged, then removed. */
     private suspend fun logDose(intent: Intent, status: DoseStatus) {
         val medicationId = intent.getLongExtra(TreatmentReminderScheduler.EXTRA_MEDICATION_ID, -1L)
         val scheduledAt = intent.getLongExtra(TreatmentReminderScheduler.EXTRA_SCHEDULED_AT, -1L)
@@ -71,8 +71,8 @@ class NotificationReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Type de selle choisi dans la notification : une seule selle par rappel, corrigée si
-     * l'utilisateur change d'avis, avec la douleur et la fatigue déjà données.
+     * Stool type chosen in the notification: a single stool per reminder, corrected if
+     * the user changes their mind, along with the pain and fatigue already given.
      */
     private suspend fun recordStool(context: Context, intent: Intent) {
         val bristolType = intent.getIntExtra(EXTRA_BRISTOL_TYPE, 4)
@@ -97,7 +97,7 @@ class NotificationReceiver : BroadcastReceiver() {
         )
     }
 
-    /** Douleur ou fatigue choisie dans la notification : portée par la selle du rappel, ou en attente d'elle. */
+    /** Pain or fatigue chosen in the notification: carried by the reminder's stool, or waiting for it. */
     private suspend fun recordLevel(context: Context, intent: Intent) {
         val scale = intent.getStringExtra(EXTRA_SCALE)
             ?.let { name -> CheckInScale.entries.firstOrNull { it.name == name } } ?: return
@@ -124,9 +124,9 @@ class NotificationReceiver : BroadcastReceiver() {
             return
         }
 
-        // On replanifie AVANT d'afficher : si l'affichage échoue, le rappel de demain
-        // reste programmé. On utilise l'heure enregistrée (source de vérité) et non les
-        // extras de l'alarme, qui peuvent dater d'un ancien horaire.
+        // Reschedule BEFORE displaying: if display fails, tomorrow's reminder
+        // stays scheduled. Use the saved time (source of truth) and not the
+        // alarm extras, which may date from an old schedule.
         val hour = settings?.hour
             ?: intent.getIntExtra(NotificationHelper.EXTRA_HOUR, DEFAULT_HOUR)
         val minute = settings?.minute

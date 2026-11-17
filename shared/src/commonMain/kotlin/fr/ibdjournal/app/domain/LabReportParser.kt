@@ -7,9 +7,9 @@ import kotlin.math.round
 import kotlinx.datetime.LocalDate
 
 /**
- * Ligne de texte lue sur un compte rendu PDF, avec sa position sur la page.
- * Les comptes rendus sont des tableaux : libellé, résultat, unité, valeurs de référence et
- * antériorités sont des lignes distinctes alignées horizontalement.
+ * Line of text read from a PDF report, with its position on the page.
+ * Reports are tables: label, result, unit, reference values and
+ * previous results are separate lines aligned horizontally.
  */
 data class TextLine(
     val text: String,
@@ -21,10 +21,10 @@ data class TextLine(
 )
 
 /**
- * Valeur repérée, convertie dans l'unité de l'app ([LabTest.unit]). [qualifier] : résultat
- * donné comme seuil (« <1,0 »). [unitFound] : unité lue sur le compte rendu, null si absente
- * (l'unité de l'app est alors supposée). [referenceLow]/[referenceHigh] : valeurs de référence
- * du laboratoire, converties comme la valeur ; null si absentes.
+ * Detected value, converted to the app's unit ([LabTest.unit]). [qualifier]: result
+ * given as a threshold ("<1,0"). [unitFound]: unit read on the report, null if absent
+ * (the app's unit is then assumed). [referenceLow]/[referenceHigh]: laboratory reference
+ * values, converted like the value; null if absent.
  */
 data class DetectedLabValue(
     val test: LabTest,
@@ -39,20 +39,20 @@ data class DetectedLabValue(
 data class LabReportScan(val sampleDate: LocalDate?, val values: List<DetectedLabValue>)
 
 /**
- * Repère sur un compte rendu de laboratoire les analyses du catalogue [LabTest].
+ * Finds the analyses of the [LabTest] catalog on a laboratory report.
  *
- * Règles, établies sur des comptes rendus réels :
- * - une analyse est reconnue seulement si son libellé **commence** une ligne du tableau, ce qui
- *   écarte les commentaires (« … si la ferritine est normale … ») et les faux amis
- *   (« Préalbumine », « Hémoglobine glyquée », « Créatinine urinaire ») ;
- * - le résultat est le premier nombre à droite du libellé dont l'unité convient à l'analyse
- *   (la formule leucocytaire donne le % avant la valeur absolue) ; les valeurs de référence
- *   et les antériorités sont imprimées après ;
- * - l'unité lue est convertie dans celle de l'app ; une unité inconnue écarte la valeur
- *   plutôt que d'enregistrer un chiffre faux ;
- * - la date retenue est celle du prélèvement, pas celle d'édition.
+ * Rules, established on real reports:
+ * - an analysis is recognized only if its label **starts** a table line, which
+ *   rules out comments ("… si la ferritine est normale …") and false friends
+ *   ("Préalbumine", "Hémoglobine glyquée", "Créatinine urinaire");
+ * - the result is the first number to the right of the label whose unit suits the analysis
+ *   (the white-cell differential gives the % before the absolute value); reference values
+ *   and previous results are printed after;
+ * - the unit read is converted to the app's; an unknown unit discards the value
+ *   rather than recording a wrong figure;
+ * - the date used is the sampling date, not the issue date.
  *
- * Le résultat est une proposition : l'utilisateur la vérifie avant tout enregistrement.
+ * The result is a suggestion: the user checks it before any save.
  */
 fun parseLabReport(lines: List<TextLine>): LabReportScan {
     val rows = lines.groupBy { it.page }.entries.sortedBy { it.key }.flatMap { pageRows(it.value) }
@@ -62,15 +62,15 @@ fun parseLabReport(lines: List<TextLine>): LabReportScan {
         val (test, labelLength) = LABELS.firstNotNullOfOrNull { matcher ->
             matcher.match(label)?.let { matcher.test to it }
         } ?: continue
-        if (test in found) continue // première occurrence : les pages suivantes répètent parfois les antériorités
+        if (test in found) continue // first occurrence: later pages sometimes repeat the previous results
         detectValue(test, row, labelLength)?.let { found[test] = it }
     }
     return LabReportScan(sampleDate = sampleDate(rows), values = found.values.toList())
 }
 
-// --- Rangées ---
+// --- Rows ---
 
-/** Regroupe les lignes alignées horizontalement, de haut en bas puis de gauche à droite. */
+/** Groups horizontally aligned lines, top to bottom then left to right. */
 private fun pageRows(lines: List<TextLine>): List<List<TextLine>> {
     val rows = mutableListOf<MutableList<TextLine>>()
     for (line in lines.sortedBy { (it.top + it.bottom) / 2 }) {
@@ -85,12 +85,12 @@ private fun pageRows(lines: List<TextLine>): List<List<TextLine>> {
     return rows.map { row -> row.sortedBy { it.left } }
 }
 
-// --- Libellés ---
+// --- Labels ---
 
 private class LabelMatcher(val test: LabTest, val prefixes: List<String>, val excluded: List<String> = emptyList()) {
     /**
-     * Longueur du libellé reconnu en tête de [normalizedLabel], ou null. Les espaces sont
-     * ignorés : l'OCR colle souvent des mots (« Protéine Créactive » sur un compte rendu réel).
+     * Length of the label recognized at the start of [normalizedLabel], or null. Spaces are
+     * ignored: OCR often glues words together ("Protéine Créactive" on a real report).
      */
     fun match(normalizedLabel: String): Int? {
         if (excluded.any { it in normalizedLabel }) return null
@@ -101,7 +101,7 @@ private class LabelMatcher(val test: LabTest, val prefixes: List<String>, val ex
         return null
     }
 
-    /** Position qui suit [compactPrefix] dans [text] en sautant les espaces, ou null. */
+    /** Position following [compactPrefix] in [text], skipping spaces, or null. */
     private fun endOfPrefix(text: String, compactPrefix: String): Int? {
         var matched = 0
         var index = 0
@@ -115,12 +115,12 @@ private class LabelMatcher(val test: LabTest, val prefixes: List<String>, val ex
     }
 }
 
-/** Dosages urinaires homonymes des dosages sanguins (« Créatinine urinaire »). */
+/** Urine assays with the same name as blood assays ("Créatinine urinaire"). */
 private val URINE = listOf("urin")
 
 /**
- * Libellés reconnus, par analyse. L'ordre compte : le premier qui correspond l'emporte
- * (« cholestérol HDL » avant « cholestérol » seul).
+ * Recognized labels, per analysis. Order matters: the first match wins
+ * ("cholestérol HDL" before plain "cholestérol").
  */
 private val LABELS = listOf(
     LabelMatcher(LabTest.CRP, listOf("proteine c reactive", "proteine c-reactive", "crp", "c reactive protein", "c-reactive protein")),
@@ -175,7 +175,7 @@ private val LABELS = listOf(
     LabelMatcher(LabTest.PSA, listOf("psa total", "psa", "antigene prostatique")),
 )
 
-/** Minuscules sans accents, espaces simplifiés : les libellés varient d'un laboratoire à l'autre. */
+/** Lowercase without accents, simplified spaces: labels vary from one laboratory to another. */
 private fun normalize(text: String): String = buildString {
     for (char in text.trim().lowercase()) append(ACCENTS[char] ?: char)
 }.replace(Regex("\\s+"), " ")
@@ -187,27 +187,27 @@ private val ACCENTS = mapOf(
     'ù' to 'u', 'û' to 'u', 'ü' to 'u', 'ç' to 'c',
 )
 
-// --- Valeurs et unités ---
+// --- Values and units ---
 
 /**
- * Nombre éventuellement précédé d'un seuil (« <1,0 », « > 300 »), virgule ou point décimal.
- * Il ne doit pas coller à une lettre : « D2+D3 » ou « 25-OH » ne sont pas des résultats, ni
- * être un morceau de nombre (« 1 » de « 1,73m2 »).
+ * Number possibly preceded by a threshold ("<1,0", "> 300"), comma or dot decimal.
+ * It must not stick to a letter: "D2+D3" or "25-OH" are not results, nor
+ * be a piece of a number ("1" of "1,73m2").
  */
 private val NUMBER = Regex("""(?<![A-Za-zÀ-ÿ0-9.,])([<>≤≥]=?)?\s*(\d+(?:[.,]\d+)?)(?![A-Za-zÀ-ÿ0-9]|[.,]\d)""")
 
 private fun detectValue(test: LabTest, row: List<TextLine>, labelLength: Int): DetectedLabValue? {
-    // Texte à droite du libellé : les colonnes suivantes, ou la fin de la ligne si l'OCR a
-    // fusionné libellé et résultat (« Hémoglobine 16,1 g/dL »).
+    // Text to the right of the label: the following columns, or the rest of the line if OCR
+    // merged label and result ("Hémoglobine 16,1 g/dL").
     val afterLabel = if (row.size > 1) {
         row.drop(1).joinToString("  ") { it.text }
     } else {
         row.first().text.trim().drop(labelLength)
     }
 
-    // Le nombre retenu est le premier suivi d'une unité valable pour l'analyse : la formule
-    // leucocytaire imprime le pourcentage avant la valeur absolue (« 46,6 % soit 2,84 Giga/L »)
-    // et l'OCR perd parfois le « % ».
+    // The number chosen is the first followed by a unit valid for the analysis: the
+    // white-cell differential prints the percentage before the absolute value ("46,6 % soit 2,84 Giga/L")
+    // and OCR sometimes loses the "%".
     val candidates = NUMBER.findAll(afterLabel).mapNotNull { match ->
         val number = match.groupValues[2].replace(',', '.').toDoubleOrNull() ?: return@mapNotNull null
         val rest = afterLabel.substring(match.range.last + 1)
@@ -243,17 +243,17 @@ private fun detectValue(test: LabTest, row: List<TextLine>, labelLength: Int): D
 }
 
 /**
- * Résultat dont l'OCR a perdu l'unité : seulement un nombre de la colonne des résultats, donc
- * imprimé avant l'unité et avant les références (« 70-180 », « > 60 ») quand elles sont lues,
- * et pas une antériorité (« 105 Le 17.08.2024 »). Sinon on ne propose rien : une référence
- * ou une antériorité prise pour le résultat serait une valeur fausse.
+ * Result whose unit OCR lost: only a number from the results column, hence
+ * printed before the unit and before the references ("70-180", "> 60") when they are read,
+ * and not a previous result ("105 Le 17.08.2024"). Otherwise nothing is suggested: a reference
+ * or previous result mistaken for the result would be a wrong value.
  */
 private fun unitlessResult(test: LabTest, text: String, candidates: List<Candidate>): Candidate? {
     val unitStart = ANY_UNIT.findAll(text).firstOrNull { conversionFactor(test, it.value) != null }?.range?.first
     val referenceStart = listOfNotNull(INTERVAL.find(text), THRESHOLD.find(text)).minOfOrNull { it.range.first }
     val columnEnd = listOfNotNull(unitStart, referenceStart).minOrNull() ?: text.length
     return candidates.firstOrNull { candidate ->
-        // Position du premier chiffre : la correspondance commence aux espaces qui le précèdent.
+        // Position of the first digit: the match starts at the spaces preceding it.
         val digitStart = candidate.match.range.first + candidate.match.value.indexOf(candidate.match.groupValues[2])
         candidate.factor == null &&
             digitStart < columnEnd &&
@@ -261,10 +261,10 @@ private fun unitlessResult(test: LabTest, text: String, candidates: List<Candida
     }
 }
 
-/** Antériorité : valeur suivie de la date du bilan précédent. */
+/** Previous result: value followed by the date of the previous panel. */
 private val PREVIOUS_RESULT = Regex("""^\s*le\s+\d""", RegexOption.IGNORE_CASE)
 
-/** Nombre lu sur la rangée ; [factor] null = pas d'unité imprimée juste après. */
+/** Number read on the row; [factor] null = no unit printed right after. */
 private class Candidate(
     val match: MatchResult,
     val number: Double,
@@ -274,8 +274,8 @@ private class Candidate(
 )
 
 /**
- * Première référence imprimée après le résultat : intervalle « 13,4 - 16,7 » ou seuil « < 5,0 ».
- * Les antériorités viennent ensuite, sans tiret ni signe : elles ne sont pas confondues.
+ * First reference printed after the result: interval "13,4 - 16,7" or threshold "< 5,0".
+ * Previous results come next, without dash or sign: they are not mistaken for it.
  */
 private fun referenceRange(text: String, factor: Double): Pair<Double?, Double?>? {
     val interval = INTERVAL.find(text)
@@ -296,24 +296,24 @@ private fun referenceRange(text: String, factor: Double): Pair<Double?, Double?>
     }
 }
 
-/** Nombre d'une référence ; l'OCR insère parfois une espace après la virgule (« 0, 10 »). */
+/** Number of a reference; OCR sometimes inserts a space after the comma ("0, 10"). */
 private const val DECIMAL = """\d+(?:[.,] ?\d+)?"""
 private val INTERVAL = Regex("""(?<![A-Za-zÀ-ÿ0-9.,])($DECIMAL)\s*(?:-|–|à|a)\s*($DECIMAL)(?![0-9])""")
 private val THRESHOLD = Regex("""([<>≤≥]=?)\s*($DECIMAL)(?![0-9])""")
 
-/** Unités reconnues, les plus longues d'abord (« giga/l » avant « g/l »). */
+/** Recognized units, longest first ("giga/l" before "g/l"). */
 private const val UNITS =
     """(?:ml/mi?n/1[.,]73\s?m[2²]|giga/l|tera/l|10\^?9/l|10\^?12/l|mmol/l|[µu]mol/l|nmol/l|pmol/l|""" +
         """meq/l|mg/dl|mg/l|[µu]g/dl|[µu]g/l|ng/ml|[µu]g/g|mg/kg|g/dl|g/l|ui/l|u/l|fl|[µu]m3|pg|t/l|l/l|""" +
         """/mm3|/[µu]l|%)(?![a-z0-9µ])"""
 
-/** Unité imprimée juste après le résultat. */
+/** Unit printed right after the result. */
 private val LEADING_UNIT = Regex("""^\s*($UNITS)""", RegexOption.IGNORE_CASE)
 
-/** Unité n'importe où sur la rangée, hors mot plus long (« pg » de « pgm »). */
+/** Unit anywhere on the row, excluding a longer word ("pg" of "pgm"). */
 private val ANY_UNIT = Regex("""(?<![a-z])$UNITS""", RegexOption.IGNORE_CASE)
 
-/** Facteur vers l'unité de l'app ; null si l'unité ne correspond pas à l'analyse. */
+/** Factor to the app's unit; null if the unit does not match the analysis. */
 private fun conversionFactor(test: LabTest, unit: String): Double? {
     val u = unit.lowercase().replace(" ", "").replace("^", "").replace('²', '2').replace('.', ',')
         .replace("ug", "µg").replace("umol", "µmol").replace("um3", "µm3").replace("/ul", "/µl")
@@ -352,7 +352,7 @@ private fun conversionFactor(test: LabTest, unit: String): Double? {
     return factors[u]
 }
 
-/** Bornes physiologiquement possibles : au-delà, la lecture est fausse (colonne voisine, OCR). */
+/** Physiologically possible bounds: beyond them, the reading is wrong (neighboring column, OCR). */
 private fun plausible(test: LabTest): ClosedFloatingPointRange<Double> = when (test) {
     LabTest.CRP -> 0.0..1000.0
     LabTest.CALPROTECTIN -> 0.0..20000.0
@@ -385,14 +385,14 @@ private fun plausible(test: LabTest): ClosedFloatingPointRange<Double> = when (t
     LabTest.PSA -> 0.0..10000.0
 }
 
-// --- Date de prélèvement ---
+// --- Sampling date ---
 
-/** « 19.05.2023 », « 05/12/22 » ; l'OCR lit parfois un point comme une virgule (« 19,05.2023 »). */
+/** "19.05.2023", "05/12/22"; OCR sometimes reads a dot as a comma ("19,05.2023"). */
 private const val DATE = """(\d{1,2})\s?[./,]\s?(\d{1,2})\s?[./,]\s?(\d{4}|\d{2})(?!\d)"""
 
 /**
- * Date de prélèvement, sinon date de réalisation ou d'enregistrement (le même jour en pratique) :
- * un compte rendu dont la ligne « Prélevé le » est illisible garde une date plausible.
+ * Sampling date, otherwise the date performed or recorded (the same day in practice):
+ * a report whose "Prélevé le" line is unreadable keeps a plausible date.
  */
 private val SAMPLE_DATES = listOf(
     Regex("""prelev\w*\s+(?:le|du)\s+$DATE"""),

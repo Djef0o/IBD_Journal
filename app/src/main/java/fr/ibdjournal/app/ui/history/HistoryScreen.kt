@@ -389,7 +389,7 @@ private fun StatsCard(
                                 fontWeight = FontWeight.SemiBold,
                             )
                             Spacer(Modifier.height(3.dp))
-                            // Zone de barre à hauteur fixe : le libellé du jour a toujours sa place.
+                            // Fixed-height bar area: the day label always has room.
                             Box(
                                 modifier = Modifier
                                     .fillMaxWidth()

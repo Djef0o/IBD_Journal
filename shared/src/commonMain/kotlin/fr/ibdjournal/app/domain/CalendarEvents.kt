@@ -12,17 +12,17 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.minus
 
-/** Type d'événement d'agenda, une clé stable par élément de l'app. */
+/** Calendar event type, one stable key per app item. */
 enum class CalendarEventKind {
     DOSE, REFILL, CHECKUP,
 
-    /** Étapes d'un examen : une série d'événements uniques par examen. */
+    /** Exam steps: a series of one-off events per exam. */
     EXAM_ANESTHESIA, EXAM_DIET, EXAM_PREP_FIRST, EXAM_PREP_SECOND, EXAM,
 }
 
 /**
- * Événement d'agenda dérivé d'un rappel, indépendant de la plateforme (Android Calendar,
- * EventKit iOS). [repeatUnit] [RepeatUnit.ONCE] = événement unique. Titres : côté plateforme.
+ * Calendar event derived from a reminder, platform-independent (Android Calendar,
+ * iOS EventKit). [repeatUnit] [RepeatUnit.ONCE] = one-off event. Titles: platform side.
  */
 data class CalendarEventSpec(
     val kind: CalendarEventKind,
@@ -31,7 +31,7 @@ data class CalendarEventSpec(
     val repeatEvery: Int,
     val repeatUnit: RepeatUnit,
 ) {
-    /** Identifiant stable de l'élément (« dose:12 »), pour retrouver l'événement créé. */
+    /** Stable identifier of the item ("dose:12"), to find the created event again. */
     val key: String get() = keyOf(kind, itemId)
 
     companion object {
@@ -48,13 +48,13 @@ private fun ReminderSchedule.event(kind: CalendarEventKind, itemId: Long, shiftD
         repeatUnit = repeatUnit,
     )
 
-/** Événement de prise, seulement si le rappel est activé. */
+/** Dose event, only if the reminder is enabled. */
 fun Medication.doseEvent(): CalendarEventSpec? =
     schedule.takeIf { it.enabled }?.event(CalendarEventKind.DOSE, id)
 
 /**
- * Événement « commander » : série décalée de [REFILL_LEAD_DAYS] jours avant les prises, ou
- * événement unique avant la fin du stock. Même règle que [Medication.nextRefillAlert].
+ * "Order" event: series shifted [REFILL_LEAD_DAYS] days before the doses, or a
+ * one-off event before the stock runs out. Same rule as [Medication.nextRefillAlert].
  */
 fun Medication.refillEvent(): CalendarEventSpec? {
     if (!refillAlert) return null
@@ -72,11 +72,11 @@ fun Medication.refillEvent(): CalendarEventSpec? {
     }
 }
 
-/** Événement de contrôle (prise de sang, test des selles), si le rappel est activé. */
+/** Checkup event (blood test, stool test), if the reminder is enabled. */
 fun Checkup.event(): CalendarEventSpec? =
     schedule.takeIf { it.enabled }?.event(CalendarEventKind.CHECKUP, id)
 
-/** Type d'événement d'agenda de chaque étape d'examen. */
+/** Calendar event type for each exam step. */
 val ExamStep.calendarKind: CalendarEventKind
     get() = when (this) {
         ExamStep.ANESTHESIA -> CalendarEventKind.EXAM_ANESTHESIA
@@ -87,8 +87,8 @@ val ExamStep.calendarKind: CalendarEventKind
     }
 
 /**
- * Événement de chaque étape d'examen, à l'heure de l'étape (l'agenda prévient lui-même) ;
- * null pour une étape absente ou quand les rappels de l'examen sont coupés.
+ * Event for each exam step, at the step's time (the calendar notifies by itself);
+ * null for a missing step or when the exam's reminders are off.
  */
 fun Exam.events(): Map<ExamStep, CalendarEventSpec?> {
     val byStep = if (remindersEnabled) steps().associateBy { it.step } else emptyMap()

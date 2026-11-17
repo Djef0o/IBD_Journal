@@ -52,8 +52,8 @@ import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.ui.theme.isDark
 
 /**
- * AppCompatActivity plutôt que ComponentActivity : c'est elle qui applique la langue
- * choisie dans l'app (AppCompatDelegate.setApplicationLocales) avant Android 13.
+ * AppCompatActivity rather than ComponentActivity: it is what applies the language
+ * chosen in the app (AppCompatDelegate.setApplicationLocales) before Android 13.
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -69,8 +69,8 @@ class MainActivity : AppCompatActivity() {
             val appearance = loadedAppearance ?: Appearance()
             val dark = appearance.isDark()
 
-            // Icônes des barres système claires ou sombres selon le thème choisi,
-            // même quand il diffère du mode du téléphone.
+            // System bar icons light or dark depending on the chosen theme,
+            // even when it differs from the phone's mode.
             DisposableEffect(dark) {
                 enableEdgeToEdge(
                     statusBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { dark },
@@ -128,8 +128,8 @@ private fun MainScaffold() {
                                 }
                             },
                             icon = { Icon(tab.icon, contentDescription = null) },
-                            // Une seule ligne, réduite si besoin : avec une grande police système,
-                            // « Aujourd'hui » passait sur deux lignes et décalait son onglet.
+                            // A single line, shrunk if needed: with a large system font,
+                            // "Today" wrapped onto two lines and shifted its tab.
                             label = {
                                 Text(
                                     stringResource(tab.labelRes),

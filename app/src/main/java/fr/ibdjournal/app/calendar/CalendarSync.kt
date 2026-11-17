@@ -22,9 +22,9 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.first
 
 /**
- * Reflète traitements et contrôles dans l'agenda du téléphone : un événement par rappel
- * (prise, commande, contrôle), mis à jour ou supprimé avec l'élément. Les identifiants des
- * événements créés sont conservés pour ne jamais toucher aux autres événements de l'agenda.
+ * Mirrors treatments and check-ups into the phone's calendar: one event per reminder
+ * (dose, refill, check-up), updated or deleted along with the item. The IDs of the
+ * created events are kept so as to never touch the calendar's other events.
  */
 @Singleton
 class CalendarSync @Inject constructor(
@@ -33,7 +33,7 @@ class CalendarSync @Inject constructor(
     private val calendar: PhoneCalendar,
 ) {
 
-    /** Mode agenda effectif : activé et autorisé (sinon l'app reprend ses notifications). */
+    /** Effective calendar mode: enabled and permitted (otherwise the app falls back to its notifications). */
     suspend fun isActive(): Boolean = prefs.calendarSync.first().enabled && calendar.hasPermission()
 
     suspend fun sync(medication: Medication) {
@@ -62,7 +62,7 @@ class CalendarSync @Inject constructor(
         ExamStep.entries.forEach { put(it.calendarKind, id, null) }
     }
 
-    /** Supprime tous les événements créés par l'app (désactivation, changement d'agenda). */
+    /** Deletes all events created by the app (deactivation, calendar change). */
     suspend fun removeAll() {
         prefs.calendarEventIds.first().forEach { (key, eventId) ->
             calendar.delete(eventId)
@@ -85,7 +85,7 @@ class CalendarSync @Inject constructor(
         if (eventId != existing) prefs.setCalendarEventId(key, eventId)
     }
 
-    /** Agenda choisi s'il existe encore, sinon l'agenda principal, sinon le premier modifiable. */
+    /** The chosen calendar if it still exists, otherwise the primary calendar, otherwise the first writable one. */
     private suspend fun targetCalendarId(): Long? {
         val calendars = calendar.writableCalendars()
         val chosen = prefs.calendarSync.first().calendarId
@@ -117,7 +117,7 @@ class CalendarSync @Inject constructor(
         description = context.getString(R.string.calendar_event_description),
     )
 
-    /** « Coloscopie · Clinique du Parc » ; étapes : « 1re prise de la préparation (coloscopie) ». */
+    /** "Colonoscopy · Parc Clinic"; steps: "1st preparation dose (colonoscopy)". */
     private fun examEvent(exam: Exam, step: ExamStep, spec: CalendarEventSpec) = CalendarEvent(
         spec = spec,
         title = examStepTitle(context, exam, step),

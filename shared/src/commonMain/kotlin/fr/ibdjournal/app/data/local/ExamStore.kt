@@ -12,8 +12,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
 /**
- * Examens (version 7). Dates et heures locales au format ISO (« 2026-12-04T09:30 ») : elles
- * restent celles du rendez-vous même si le fuseau du téléphone change, et se trient comme du texte.
+ * Exams (version 7). Local dates and times in ISO format ("2026-12-04T09:30"): they
+ * stay those of the appointment even if the phone's time zone changes, and sort like text.
  */
 @Entity(tableName = "exams")
 data class ExamEntity(

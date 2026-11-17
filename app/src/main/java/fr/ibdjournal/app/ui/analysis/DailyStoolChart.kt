@@ -50,14 +50,14 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
-/** Jours affichés au minimum, même avec un historique plus court. */
+/** Minimum days displayed, even with a shorter history. */
 private const val MIN_DAYS = 14L
 private val BAR_WIDTH = 20.dp
 private val BAR_SPACING = 6.dp
 private val BAR_AREA_HEIGHT = 132.dp
 private val BLOOD_DOT = 7.dp
 
-/** Catégories empilées de bas en haut ; le type 0 (« pas de selle ») n'est pas une selle. */
+/** Categories stacked from bottom to top; type 0 ("no stool") is not a stool. */
 private enum class StoolCategory(val types: IntRange, val legendRes: Int) {
     HARD(1..2, R.string.analysis_legend_hard),
     NORMAL(3..4, R.string.analysis_legend_normal),
@@ -75,14 +75,14 @@ private class DayBar(val date: LocalDate, val stools: List<Stool>) {
 }
 
 /**
- * Selles par jour sur tout l'historique : barres empilées par catégorie Bristol, point rouge
- * si du sang a été signalé. Le graphique s'ouvre sur aujourd'hui et défile vers le passé ;
- * toucher une barre affiche le détail du jour. L'échelle est celle de l'historique entier,
- * pour que la hauteur d'une barre ne change pas pendant le défilement.
+ * Stools per day over the whole history: stacked bars by Bristol category, red dot
+ * if blood was reported. The chart opens on today and scrolls into the past;
+ * tapping a bar shows the day's detail. The scale is that of the entire history,
+ * so that a bar's height does not change while scrolling.
  */
 @Composable
 fun DailyStoolChart(stools: List<Stool>, today: LocalDate = today()) {
-    // Du plus récent au plus ancien : la LazyRow inversée démarre à droite, sur aujourd'hui.
+    // From most recent to oldest: the reversed LazyRow starts on the right, on today.
     val days = remember(stools, today) {
         val byDate = stools.groupBy { it.date }
         val first = minOf(stools.minOfOrNull { it.date } ?: today, today.minus(MIN_DAYS - 1, DateTimeUnit.DAY))
@@ -94,7 +94,7 @@ fun DailyStoolChart(stools: List<Stool>, today: LocalDate = today()) {
     val max = remember(days) { days.maxOf { it.total }.coerceAtLeast(1) }
     var selected by remember { mutableStateOf<LocalDate?>(null) }
     val listState = rememberLazyListState()
-    // Mois des barres visibles, recalculé pendant le défilement.
+    // Months of the visible bars, recomputed while scrolling.
     val visibleMonths by remember(days) {
         derivedStateOf {
             val visible = listState.layoutInfo.visibleItemsInfo
@@ -131,7 +131,7 @@ fun DailyStoolChart(stools: List<Stool>, today: LocalDate = today()) {
             Spacer(Modifier.height(8.dp))
 
             Row(verticalAlignment = Alignment.Top) {
-                // Repère de l'échelle : valeur maximale en haut, 0 en bas.
+                // Scale marker: maximum value at the top, 0 at the bottom.
                 Column(
                     modifier = Modifier
                         .padding(top = BLOOD_DOT + 6.dp, end = 6.dp)
@@ -234,7 +234,7 @@ private fun DayColumn(
                         .height(BAR_AREA_HEIGHT * (day.total.toFloat() / max))
                         .clip(RoundedCornerShape(topStart = 4.dp, topEnd = 4.dp)),
                 ) {
-                    // Du haut vers le bas : mou, normal, dur.
+                    // From top to bottom: soft, normal, hard.
                     StoolCategory.entries.reversed().forEach { category ->
                         val count = day.counts.getValue(category)
                         if (count > 0) {
@@ -262,7 +262,7 @@ private fun DayColumn(
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
             color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        // Repère de mois au 1er du mois (l'en-tête indique en permanence le mois visible).
+        // Month marker on the 1st of the month (the header always shows the visible month).
         Text(
             text = if (showMonth) DateFormats.monthShort(day.date) else "",
             style = MaterialTheme.typography.labelSmall,
@@ -295,7 +295,7 @@ private fun DayDetail(day: DayBar) {
             if (real.isNotEmpty()) {
                 add(stringResource(R.string.analysis_detail_types, real.joinToString(", ") { it.bristolType.toString() }))
             }
-            // Nombre de fausses envies du jour : un signe de poussée, hors du compte des selles.
+            // Number of false urges of the day: a sign of flare-up, outside the stool count.
             val falseUrges = day.stools.count { it.falseUrge }
             if (falseUrges > 0) add(pluralStringResource(R.plurals.false_urge_count, falseUrges, falseUrges))
             if (day.blood) add(stringResource(R.string.stool_flag_blood))

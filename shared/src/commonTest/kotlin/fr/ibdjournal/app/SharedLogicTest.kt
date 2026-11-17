@@ -41,7 +41,7 @@ class ReminderScheduleTest {
 
     @Test
     fun occurrenceAtExactlyNowIsSkipped() {
-        // Une alarme qui vient de sonner ne doit pas se reprogrammer sur elle-même.
+        // An alarm that just rang must not reschedule itself.
         assertEquals("2026-11-16T08:00", next(schedule("2026-11-01", 1, RepeatUnit.DAY), "2026-11-15T08:00"))
     }
 
@@ -72,7 +72,7 @@ class ReminderScheduleTest {
 
     @Test
     fun spacedInjectionAlertsSevenDaysBeforeEachDose() {
-        // Adalimumab toutes les 2 semaines depuis le 2 novembre : prises le 16, le 30…
+        // Adalimumab every 2 weeks since November 2: doses on the 16th, the 30th…
         val injection = Medication(
             name = "Adalimumab",
             schedule = schedule("2026-11-02", 2, RepeatUnit.WEEK),
@@ -92,7 +92,7 @@ class ReminderScheduleTest {
         )
         assertEquals(RefillBasis.STOCK_END, daily.refillBasis)
         assertEquals("2026-11-24T08:00", daily.nextRefillAlert(LocalDateTime.parse("2026-11-15T10:00")).toString())
-        // Alerte passée : plus rien tant que la date de fin n'est pas renouvelée.
+        // Alert in the past: nothing more until the end date is renewed.
         assertNull(daily.nextRefillAlert(LocalDateTime.parse("2026-11-24T08:00")))
     }
 
@@ -109,7 +109,7 @@ class ReminderScheduleTest {
 
         assertEquals("dose:4", dose.key)
         assertEquals("2026-11-02T08:00", dose.start.toString())
-        // Série des commandes : même rythme, 7 jours avant chaque prise.
+        // Refill series: same rhythm, 7 days before each dose.
         assertEquals("2026-10-26T08:00", refill.start.toString())
         assertEquals(RepeatUnit.WEEK, refill.repeatUnit)
         assertEquals(2, refill.repeatEvery)
@@ -138,9 +138,9 @@ class AnalyzeTest {
     fun countsDaysWithBloodAndComparesWithThePreviousPeriod() {
         val history = listOf(
             stool("2026-11-15", blood = 2),
-            stool("2026-11-15", blood = 1), // même jour : compté une fois
+            stool("2026-11-15", blood = 1), // same day: counted once
             stool("2026-11-01", blood = 1),
-            stool("2026-10-10", blood = 3), // période précédente (16 sept. – 16 oct.)
+            stool("2026-10-10", blood = 3), // previous period (Sept 16 – Oct 16)
             stool("2026-10-20"),
         )
 
@@ -175,7 +175,7 @@ class AnalyzeTest {
 
 class BackupFormatTest {
 
-    /** Sauvegarde produite avant le module partagé (dates java.time en ISO, sans profil). */
+    /** Backup produced before the shared module (java.time dates in ISO, no profile). */
     private val legacyBackup = """
         {"meals":[{"id":3,"date":"2026-11-14","type":"LUNCH","description":"Riz"}],
          "stools":[{"id":7,"date":"2026-11-15","bristolType":6,"bloodLevel":1,"createdAt":1794733200000}]}
@@ -221,7 +221,7 @@ class AdherenceTest {
             DoseLog(medicationId = 2, scheduledAt = due[2].toEpochMillis(), status = DoseStatus.TAKEN),
         )
 
-        // Le 15 à 07:00, la prise de 08:00 n'est pas encore due : 10 → 14 = 5 prises.
+        // On the 15th at 07:00, the 08:00 dose is not yet due: 10 → 14 = 5 doses.
         val result = adherence(medication, logs, LocalDate.parse("2026-11-01"), LocalDateTime.parse("2026-11-15T07:00"))
 
         assertEquals(Adherence(expected = 5, taken = 1, missed = 1), result)

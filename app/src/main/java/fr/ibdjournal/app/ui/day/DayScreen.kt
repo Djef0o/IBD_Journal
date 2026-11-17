@@ -61,9 +61,9 @@ import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.LocalDate
 
 /**
- * Détail d'une journée : repas et selles, avec ajout, modification et suppression.
- * Remplace l'ancienne « vue détaillée » (mois/semaine/jour) par un écran unique
- * cohérent avec le reste de l'application.
+ * Detail of a day: meals and stools, with add, edit and delete.
+ * Replaces the former "detailed view" (month/week/day) with a single screen
+ * consistent with the rest of the application.
  */
 @Composable
 fun DayScreen(

@@ -27,7 +27,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-/** Écran Tendances : les calculs sont dans le module partagé ([analyze]). */
+/** Trends screen: calculations are in the shared module ([analyze]). */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
@@ -39,7 +39,7 @@ class AnalysisViewModel @Inject constructor(
     private val period = MutableStateFlow(AnalysisPeriod.LAST_30)
 
     val uiState: StateFlow<AnalysisSummary> = period.flatMapLatest { selected ->
-        // Sans borne de départ (« Tout »), tous les repas depuis le début.
+        // Without a start bound ("All"), all meals since the beginning.
         val mealsFrom = selected.startFrom(today) ?: LocalDate.fromEpochDays(0)
         combine(
             repository.observeAllStools(),
@@ -55,15 +55,15 @@ class AnalysisViewModel @Inject constructor(
 
     private val _exportingReport = MutableStateFlow(false)
 
-    /** Vrai pendant la génération du rapport PDF. */
+    /** True while the PDF report is being generated. */
     val exportingReport: StateFlow<Boolean> = _exportingReport.asStateFlow()
 
     private val reportResults = Channel<Result<Uri>>(Channel.BUFFERED)
 
-    /** Rapports prêts à partager (URI du FileProvider) ou échecs, consommés une seule fois. */
+    /** Reports ready to share (FileProvider URI) or failures, consumed only once. */
     val reports: Flow<Result<Uri>> = reportResults.receiveAsFlow()
 
-    /** Rapport pour le médecin sur la période affichée. */
+    /** Report for the doctor over the displayed period. */
     fun exportReport() {
         if (_exportingReport.value) return
         _exportingReport.value = true

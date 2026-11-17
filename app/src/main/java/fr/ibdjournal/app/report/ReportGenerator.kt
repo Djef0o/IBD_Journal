@@ -20,12 +20,12 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 
-/** Dossier du cache partagé par le FileProvider (voir res/xml/report_paths.xml). */
+/** Cache folder shared by the FileProvider (see res/xml/report_paths.xml). */
 private const val REPORTS_DIR = "reports"
 
 /**
- * Génère le rapport PDF d'une période dans le cache et renvoie l'URI partageable
- * (FileProvider) du fichier.
+ * Generates the PDF report for a period in the cache and returns the shareable URI
+ * (FileProvider) of the file.
  */
 @Singleton
 class ReportGenerator @Inject constructor(
@@ -50,7 +50,7 @@ class ReportGenerator @Inject constructor(
         )
         return withContext(Dispatchers.IO) {
             val dir = File(context.cacheDir, REPORTS_DIR).apply { mkdirs() }
-            // Un seul rapport à la fois : les précédents ont déjà été partagés.
+            // One report at a time: previous ones have already been shared.
             dir.listFiles()?.forEach { it.delete() }
             val file = File(dir, "ibd-journal-report-${data.to}.pdf")
             file.outputStream().use { ReportPdfBuilder(localizedContext()).write(data, it) }
@@ -59,8 +59,8 @@ class ReportGenerator @Inject constructor(
     }
 
     /**
-     * Le contexte d'application ne suit pas la langue choisie dans l'app avant Android 13
-     * (AppCompat ne l'applique qu'aux activités) : on la lui impose pour les textes du PDF.
+     * The application context does not follow the language chosen in the app before Android 13
+     * (AppCompat only applies it to activities): we impose it on it for the PDF texts.
      */
     private fun localizedContext(): Context {
         val locales = AppCompatDelegate.getApplicationLocales()
@@ -72,5 +72,5 @@ class ReportGenerator @Inject constructor(
     }
 }
 
-/** Autorité du FileProvider déclaré dans le manifeste. */
+/** Authority of the FileProvider declared in the manifest. */
 private fun fileProviderAuthority(context: Context): String = "${context.packageName}.fileprovider"

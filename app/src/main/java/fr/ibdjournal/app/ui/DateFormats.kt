@@ -18,12 +18,12 @@ import kotlinx.datetime.toJavaMonth
 import kotlinx.datetime.yearMonth
 
 /**
- * Formatage des dates dans la langue de l'app (Locale par défaut, que la langue
- * choisie dans les réglages met à jour). L'ordre des éléments suit les conventions
- * de chaque langue : « samedi 14 novembre » / « Saturday, November 14 ».
+ * Date formatting in the app's language (default Locale, which the language
+ * chosen in the settings updates). The order of elements follows the conventions
+ * of each language: "samedi 14 novembre" / "Saturday, November 14".
  *
- * Les dates de l'app sont des kotlinx-datetime (module partagé) ; seul le rendu passe par
- * java.time, qui porte les formats localisés d'Android.
+ * The app's dates are kotlinx-datetime (shared module); only rendering goes through
+ * java.time, which carries Android's localized formats.
  */
 object DateFormats {
 
@@ -33,12 +33,12 @@ object DateFormats {
         val dayMonthYear = skeleton("dMMMMyyyy", FormatStyle.LONG)
         val fullDate = skeleton("EEEEdMMMMyyyy", FormatStyle.FULL)
         val weekdayDayMonth = skeleton("EEEEdMMMM", FormatStyle.FULL)
-        // Heure courte localisée : 24 h en français, « 8:00 PM » en anglais américain…
+        // Short localized time: 24 h in French, "8:00 PM" in US English…
         val time: DateTimeFormatter = DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT).withLocale(locale)
         val weekdaysNarrow: List<String> =
             DayOfWeek.entries.map { it.toJavaDayOfWeek().getDisplayName(TextStyle.NARROW, locale) }
 
-        /** Motif ICU adapté à la langue ; repli sur le format localisé standard. */
+        /** ICU pattern adapted to the language; falls back to the standard localized format. */
         private fun skeleton(skeleton: String, fallback: FormatStyle): DateTimeFormatter =
             runCatching {
                 DateTimeFormatter.ofPattern(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
@@ -56,7 +56,7 @@ object DateFormats {
 
     private fun LocalDate.format(formatter: DateTimeFormatter): String = toJavaLocalDate().format(formatter)
 
-    /** Initiales des jours, lundi en premier : « L M M J V S D ». */
+    /** Day initials, Monday first: "L M M J V S D". */
     val weekdaysNarrow: List<String> get() = formatters.weekdaysNarrow
 
     fun weekdayNarrow(day: DayOfWeek): String = formatters.weekdaysNarrow[day.ordinal]
@@ -69,17 +69,17 @@ object DateFormats {
 
     fun weekdayDayMonth(date: LocalDate): String = capitalize(date.format(formatters.weekdayDayMonth))
 
-    /** Même date au fil d'une phrase, sans majuscule ajoutée : « lundi 30 novembre ». */
+    /** Same date within a sentence, without added capital: "lundi 30 novembre". */
     fun weekdayDayMonthInline(date: LocalDate): String = date.format(formatters.weekdayDayMonth)
 
-    /** « 12 mars 1985 » / « March 12, 1985 ». */
+    /** "12 mars 1985" / "March 12, 1985". */
     fun dayMonthYear(date: LocalDate): String = date.format(formatters.dayMonthYear)
 
-    /** Mois abrégé : « nov. » / « Nov ». */
+    /** Abbreviated month: "nov." / "Nov". */
     fun monthShort(date: LocalDate): String =
         date.month.toJavaMonth().getDisplayName(TextStyle.SHORT, formatters.locale)
 
-    /** « Novembre 2026 », « Octobre – novembre 2026 » ou « Décembre 2025 – janvier 2026 ». */
+    /** "Novembre 2026", "Octobre – novembre 2026" or "Décembre 2025 – janvier 2026". */
     fun monthRange(from: LocalDate, to: LocalDate): String {
         val start = from.yearMonth
         val end = to.yearMonth
@@ -92,7 +92,7 @@ object DateFormats {
         }
     }
 
-    /** Mois et année sans majuscule initiale, pour la fin d'une plage. */
+    /** Month and year without initial capital, for the end of a range. */
     private fun month(month: YearMonth): String = month.onDay(1).format(formatters.monthYear)
 
     fun time(epochMillis: Long): String =

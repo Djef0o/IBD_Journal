@@ -63,7 +63,7 @@ fun AnalysisScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val exportingReport by viewModel.exportingReport.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    // Contexte de l'activité : le sélecteur de partage s'ouvre par-dessus l'app.
+    // Activity context: the share sheet opens on top of the app.
     LaunchedEffect(viewModel) {
         viewModel.reports.collect { result ->
             result
@@ -111,7 +111,7 @@ fun AnalysisContent(
                 fontWeight = FontWeight.Bold,
             )
             Spacer(Modifier.height(12.dp))
-            // Pilote les tuiles et les symptômes ; le graphique couvre toujours tout l'historique.
+            // Drives the tiles and the symptoms; the chart always covers the whole history.
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 AnalysisPeriod.entries.forEachIndexed { index, period ->
                     SegmentedButton(
@@ -124,7 +124,7 @@ fun AnalysisContent(
                 }
             }
             Spacer(Modifier.height(10.dp))
-            // Rapport PDF de la période choisie, à partager avec le médecin.
+            // PDF report of the chosen period, to share with the doctor.
             OutlinedButton(
                 onClick = onExportReport,
                 enabled = !exportingReport,
@@ -229,7 +229,7 @@ private fun MetricTile(
     }
 }
 
-/** Jours touchés par symptôme sur la période, avec l'écart par rapport à la période précédente. */
+/** Days affected per symptom over the period, with the difference from the previous period. */
 @Composable
 private fun SymptomsCard(state: AnalysisSummary) {
     Surface(
@@ -280,7 +280,7 @@ private fun SymptomRow(row: SymptomDays, periodDays: Int) {
                         else -> "="
                     },
                     style = MaterialTheme.typography.labelLarge,
-                    // Plus de jours avec symptômes = dégradation.
+                    // More days with symptoms = worsening.
                     color = when {
                         delta > 0 -> MaterialTheme.colorScheme.error
                         delta < 0 -> bristolColor(4)

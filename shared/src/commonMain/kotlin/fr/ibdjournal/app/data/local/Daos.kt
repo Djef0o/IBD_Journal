@@ -37,7 +37,7 @@ interface MealDao {
 @Dao
 interface StoolDao {
 
-    /** Ordre chronologique : l'interface affiche les selles dans cet ordre, sans retri. */
+    /** Chronological order: the UI displays stools in this order, without re-sorting. */
     @Query("SELECT * FROM stools WHERE dateEpochDay BETWEEN :fromEpochDay AND :toEpochDay ORDER BY dateEpochDay, createdAt")
     fun observeBetween(fromEpochDay: Long, toEpochDay: Long): Flow<List<StoolEntity>>
 
@@ -167,7 +167,7 @@ interface DoseLogDao {
     @Query("SELECT * FROM dose_logs")
     suspend fun getAll(): List<DoseLogEntity>
 
-    /** Remplace l'éventuelle confirmation de la même occurrence (index unique). */
+    /** Replaces any existing confirmation of the same occurrence (unique index). */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(log: DoseLogEntity): Long
 

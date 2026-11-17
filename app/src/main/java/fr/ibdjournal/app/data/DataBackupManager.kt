@@ -16,12 +16,12 @@ import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Nature d'un fichier choisi pour l'import. */
+/** Kind of file chosen for import. */
 enum class BackupFormat { Encrypted, PlainJson, Unknown }
 
 /**
- * Sauvegarde du journal : export toujours chiffré par mot de passe ([BackupCrypto]) ;
- * import des fichiers chiffrés et des anciens exports JSON en clair. Le contenu vient du module partagé.
+ * Journal backup: export is always password-encrypted ([BackupCrypto]);
+ * import of encrypted files and of old plaintext JSON exports. The content comes from the shared module.
  */
 @OptIn(ExperimentalSerializationApi::class)
 @Singleton
@@ -34,20 +34,20 @@ class DataBackupManager @Inject constructor(
     suspend fun exportData(outputStream: OutputStream, password: CharArray) = withContext(Dispatchers.IO) {
         outputStream.use { output ->
             val backup = database.snapshot()
-            // Écriture en flux dans le chiffrement : ni chaîne JSON complète ni copie en ByteArray côté app.
+            // Streamed writing into the encryption: neither a full JSON string nor a ByteArray copy on the app side.
             BackupCrypto.encrypt(output.buffered(), password).buffered().use { json.encodeToStream(backup, it) }
         }
     }
 
-    /** Lit le début du fichier : signature chiffrée, ancien JSON en clair (`{`) ou autre chose. */
+    /** Reads the start of the file: encrypted signature, old plaintext JSON (`{`) or something else. */
     suspend fun detectFormat(inputStream: InputStream): BackupFormat = withContext(Dispatchers.IO) {
         inputStream.use { detect(it.readPrefix()) }
     }
 
     /**
-     * Déchiffre (si [password] est fourni pour un fichier chiffré) et décode tout le fichier
-     * avant de toucher à la base : en cas d'erreur, rien n'est modifié.
-     * @throws BackupCrypto.WrongPasswordException mot de passe faux ou fichier altéré
+     * Decrypts (if [password] is provided for an encrypted file) and decodes the whole file
+     * before touching the database: on error, nothing is modified.
+     * @throws BackupCrypto.WrongPasswordException wrong password or tampered file
      */
     suspend fun importData(inputStream: InputStream, password: CharArray?) = withContext(Dispatchers.IO) {
         val backup = inputStream.buffered().use { stream ->
@@ -68,8 +68,8 @@ class DataBackupManager @Inject constructor(
             }
         }
 
-        // Les identifiants changent à l'import : on retire d'abord les alarmes des anciens,
-        // puis on replanifie ce que contient la base, que l'import ait abouti ou non.
+        // IDs change on import: first remove the old ones' alarms,
+        // then reschedule what the database contains, whether or not the import succeeded.
         reminders.cancelAll()
         try {
             database.restore(backup)
@@ -91,7 +91,7 @@ class DataBackupManager @Inject constructor(
 
     private fun detect(prefix: ByteArray): BackupFormat = when {
         BackupCrypto.hasMagic(prefix) -> BackupFormat.Encrypted
-        // Ancien export de l'app : JSON en clair qui commence par « { ».
+        // Old app export: plaintext JSON starting with "{".
         prefix.firstOrNull { !it.toInt().toChar().isWhitespace() } == '{'.code.toByte() -> BackupFormat.PlainJson
         else -> BackupFormat.Unknown
     }

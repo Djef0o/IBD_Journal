@@ -34,13 +34,13 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import kotlinx.datetime.yearsUntil
 
-/* A4 en points PostScript (1/72 pouce), l'unité de PdfDocument. */
+/* A4 in PostScript points (1/72 inch), the unit of PdfDocument. */
 private const val PAGE_WIDTH = 595
 private const val PAGE_HEIGHT = 842
 private const val MARGIN = 40f
 private const val CONTENT_WIDTH = PAGE_WIDTH - 2 * MARGIN
 
-/** Filet du pied de page ; le contenu s'arrête un peu au-dessus. */
+/** Footer rule; the content stops a bit above it. */
 private const val FOOTER_TOP = PAGE_HEIGHT - 48f
 private const val CONTENT_BOTTOM = FOOTER_TOP - 12f
 
@@ -52,18 +52,18 @@ private const val TILE_PADDING = 8f
 
 private const val CHART_HEIGHT = 120f
 private const val AXIS_WIDTH = 18f
-/** Bande au-dessus des barres réservée au point « sang », comme dans l'app. */
+/** Band above the bars reserved for the "blood" dot, as in the app. */
 private const val DOT_ROW = 8f
-/** Numéros de jour puis repères de mois sous l'axe. */
+/** Day numbers then month markers below the axis. */
 private const val LABEL_ROWS = 22f
 private const val LEGEND_HEIGHT = 12f
-/** Écart minimal entre deux numéros de jour sous le graphique. */
+/** Minimum gap between two day numbers below the chart. */
 private const val MIN_LABEL_SPACING = 14f
 
-/** Tableau des bilans : analyse et unité, puis une colonne par date, puis les valeurs du laboratoire. */
+/** Lab table: analysis and unit, then one column per date, then the laboratory values. */
 private const val LAB_TEST_WIDTH = 150f
 private const val LAB_DATE_WIDTH = 62f
-/** Lignes resserrées : ~45 analyses doivent tenir sur une à deux pages. */
+/** Tight rows: ~45 analyses must fit on one to two pages. */
 private const val LAB_ROW_PADDING = 2.5f
 
 private val INK = 0xFF212121.toInt()
@@ -73,7 +73,7 @@ private val TRACK = 0xFFEEEEEE.toInt()
 private val BAR = 0xFF757575.toInt()
 private val BLOOD = bristolColor(0).toArgb()
 
-/** Catégories empilées de bas en haut, comme le graphique « Selles par jour » de l'app. */
+/** Categories stacked from bottom to top, as in the app's "Stools per day" chart. */
 private enum class StoolCategory(val types: IntRange, @StringRes val legendRes: Int) {
     HARD(1..2, R.string.analysis_legend_hard),
     NORMAL(3..4, R.string.analysis_legend_normal),
@@ -82,7 +82,7 @@ private enum class StoolCategory(val types: IntRange, @StringRes val legendRes: 
     val color: Int get() = bristolColor(types.first).toArgb()
 }
 
-/** Le type 0 (« pas de selle ») ne compte pas dans les barres. */
+/** Type 0 ("no stool") does not count in the bars. */
 private class DayBar(val date: LocalDate, stools: List<Stool>) {
     val counts: Map<StoolCategory, Int> = StoolCategory.entries.associateWith { category ->
         stools.count { it.bristolType in category.types }
@@ -91,7 +91,7 @@ private class DayBar(val date: LocalDate, stools: List<Stool>) {
     val blood: Boolean = stools.any { it.bloodLevel > 0 }
 }
 
-/** Colonne de tableau : décalage depuis la marge gauche et largeur. */
+/** Table column: offset from the left margin and width. */
 private class Column(
     val x: Float,
     val width: Float,
@@ -99,15 +99,15 @@ private class Column(
 )
 
 /**
- * Ligne de tableau mesurée d'avance : [draw] la dessine à l'ordonnée donnée. [keepWith] : hauteur
- * gardée sur la même page qu'elle (un intertitre ne reste pas seul en bas de page).
+ * Table row measured in advance: [draw] draws it at the given ordinate. [keepWith]: height
+ * kept on the same page as it (a subheading is not left alone at the bottom of a page).
  */
 private class TableRow(val height: Float, val keepWith: Float = 0f, val draw: (top: Float) -> Unit)
 
 /**
- * Rapport de suivi A4 à montrer au médecin : simple mise en page Canvas de [ReportData], déjà
- * calculées. [context] ne sert qu'aux textes, dans la langue voulue. Les sections qui ne tiennent
- * plus sur la page passent à la suivante ; les tableaux répètent leur en-tête.
+ * A4 follow-up report to show the doctor: simple Canvas layout of [ReportData], already
+ * computed. [context] is only used for the texts, in the desired language. Sections that no
+ * longer fit on the page move to the next one; tables repeat their header.
  */
 class ReportPdfBuilder(private val context: Context) {
 
@@ -154,7 +154,7 @@ class ReportPdfBuilder(private val context: Context) {
         }
     }
 
-    /** Curseur d'écriture : page courante et ordonnée [y] du prochain élément. */
+    /** Write cursor: current page and ordinate [y] of the next element. */
     private inner class Writer(private val document: PdfDocument, private val data: ReportData) {
         private var pageNumber = 1
         private var page: PdfDocument.Page = document.startPage(pageInfo(pageNumber))
@@ -168,7 +168,7 @@ class ReportPdfBuilder(private val context: Context) {
             document.finishPage(page)
         }
 
-        /** Change de page si [height] ne tient plus ; vrai si une nouvelle page a été ouverte. */
+        /** Moves to a new page if [height] no longer fits; true if a new page was opened. */
         private fun ensure(height: Float): Boolean {
             if (y + height <= CONTENT_BOTTOM) return false
             closePage()
@@ -199,12 +199,12 @@ class ReportPdfBuilder(private val context: Context) {
             y += layout.height + gapAfter
         }
 
-        /** Titre de section, gardé sur la même page que les [keepWith] premiers points du contenu. */
+        /** Section title, kept on the same page as the first [keepWith] points of content. */
         private fun section(title: String, subtitle: String?, keepWith: Float) {
             val titleLayout = layout(title, sectionPaint, CONTENT_WIDTH)
             val subtitleLayout = subtitle?.let { layout(it, notePaint, CONTENT_WIDTH) }
             val height = titleLayout.height + (subtitleLayout?.let { it.height + 2f } ?: 0f) + 8f
-            // En haut d'une nouvelle page, pas d'espace avant le titre.
+            // At the top of a new page, no space before the title.
             if (!ensure(SECTION_GAP + height + keepWith)) y += SECTION_GAP
             canvas.drawLayout(titleLayout, MARGIN, y)
             y += titleLayout.height
@@ -254,7 +254,7 @@ class ReportPdfBuilder(private val context: Context) {
             val profile = data.profile
             val name = listOf(profile.firstName, profile.lastName).filter { it.isNotBlank() }.joinToString(" ")
             if (name.isNotEmpty()) line(string(R.string.report_patient, name), patientPaint, 2f)
-            // Âge et sexe sur une ligne.
+            // Age and sex on one line.
             val identity = listOfNotNull(
                 profile.birthDate?.let { birthDate ->
                     string(
@@ -291,7 +291,7 @@ class ReportPdfBuilder(private val context: Context) {
         fun summary() {
             val summary = data.summary
             val stools = summary.realStools
-            // Jours notés : au moins une saisie de selle, y compris « pas de selle » (même base que les selles liquides).
+            // Days logged: at least one stool entry, including "no stool" (same basis as liquid stools).
             val trackedDays = summary.stools.map { it.date }.distinct().size
             val daysFollowed = (summary.stools.map { it.date } + summary.meals.map { it.date }).distinct().size
             val tiles = listOf(
@@ -366,7 +366,7 @@ class ReportPdfBuilder(private val context: Context) {
                     canvas.drawLayout(labelLayout, MARGIN + label.x, top + ROW_PADDING)
                     canvas.drawLayout(daysLayout, MARGIN + days.x, top + ROW_PADDING)
                     previousLayout?.let { canvas.drawLayout(it, MARGIN + previous.x, top + ROW_PADDING) }
-                    // Part des jours de la période touchés par le symptôme.
+                    // Share of the period's days affected by the symptom.
                     val barTop = top + height / 2 - 3f
                     val barLeft = MARGIN + bar.x
                     fillPaint.color = TRACK
@@ -414,7 +414,7 @@ class ReportPdfBuilder(private val context: Context) {
             val dotRadius = (slot * 0.35f).coerceAtMost(2.5f)
             val labelEvery = ceil(MIN_LABEL_SPACING / slot).toInt().coerceAtLeast(1)
 
-            // Échelle : maximum en haut, 0 en bas.
+            // Scale: maximum at the top, 0 at the bottom.
             canvas.drawLine(plotLeft, top, plotLeft + plotWidth, top, rulePaint)
             canvas.drawLine(plotLeft, baseline, plotLeft + plotWidth, baseline, rulePaint)
             val maxLabel = layout(max.toString(), axisPaint, AXIS_WIDTH - 4f, Layout.Alignment.ALIGN_OPPOSITE)
@@ -438,7 +438,7 @@ class ReportPdfBuilder(private val context: Context) {
                     fillPaint.color = BLOOD
                     canvas.drawCircle(center, top - DOT_ROW / 2, dotRadius, fillPaint)
                 }
-                // Numéros comptés depuis le dernier jour, toujours étiqueté.
+                // Numbers counted from the last day, which is always labeled.
                 if ((bars.lastIndex - index) % labelEvery == 0) {
                     canvas.drawText(day.date.day.toString(), center, baseline + 9f, dayLabelPaint)
                 }
@@ -447,7 +447,7 @@ class ReportPdfBuilder(private val context: Context) {
                 }
             }
 
-            // Légende.
+            // Legend.
             val legendTop = baseline + LABEL_ROWS + 6f
             val swatch = 7f
             var x = MARGIN
@@ -491,15 +491,15 @@ class ReportPdfBuilder(private val context: Context) {
         }
 
         /**
-         * Derniers bilans côte à côte, le plus récent à gauche, analyses groupées par catégorie sous
-         * un intertitre. Hors des valeurs du laboratoire : gras, flèche ↑/↓ (lisible en noir et
-         * blanc) et fond grisé. Les notes suivent le tableau.
+         * Latest panels side by side, most recent on the left, analyses grouped by category under
+         * a subheading. Outside the laboratory values: bold, ↑/↓ arrow (readable in black and
+         * white) and grayed background. Notes follow the table.
          */
         fun labResults() {
             val panels = data.labPanels
             if (panels.rows.isEmpty()) return
             val testColumn = Column(0f, LAB_TEST_WIDTH)
-            // Valeurs alignées à droite : les chiffres restent alignés malgré les flèches.
+            // Right-aligned values: digits stay aligned despite the arrows.
             val dateColumns = panels.dates.indices.map { index ->
                 Column(
                     LAB_TEST_WIDTH + COLUMN_GAP + index * (LAB_DATE_WIDTH + COLUMN_GAP),
@@ -525,7 +525,7 @@ class ReportPdfBuilder(private val context: Context) {
             labNotes()
         }
 
-        /** Intertitre de catégorie sur toute la largeur, gardé avec la première analyse du groupe. */
+        /** Category subheading across the full width, kept with the first analysis of the group. */
         private fun categoryRow(title: String, keepWith: Float): TableRow {
             val label = layout(title.uppercase(locale), categoryPaint, CONTENT_WIDTH)
             return TableRow(label.height + 2 * LAB_ROW_PADDING + 3f, keepWith) { top ->
@@ -567,7 +567,7 @@ class ReportPdfBuilder(private val context: Context) {
             }
         }
 
-        /** « date – analyse : note », sous le tableau des bilans ; titre gardé avec la première note. */
+        /** "date – analysis: note", below the lab table; title kept with the first note. */
         private fun labNotes() {
             val notes = data.labPanels.notes.map { result ->
                 string(
@@ -631,7 +631,7 @@ class ReportPdfBuilder(private val context: Context) {
     private fun plural(@PluralsRes id: Int, count: Int): String =
         context.resources.getQuantityString(id, count, count)
 
-    /** « Tous les jours à 08:00, depuis le 3 mars 2026 » ou « Une fois, le 3 mars 2026 à 08:00 ». */
+    /** "Every day at 08:00, since March 3, 2026" or "Once, on March 3, 2026 at 08:00". */
     private fun scheduleText(schedule: ReminderSchedule): String {
         val time = DateFormats.time(schedule.hour, schedule.minute)
         val start = DateFormats.dayMonthYear(schedule.startDate)
@@ -645,7 +645,7 @@ class ReportPdfBuilder(private val context: Context) {
         return string(R.string.report_schedule, repeat, time, start)
     }
 
-    /** Rien sans prise prévue sur la période ; les prises sans réponse sont comptées à part. */
+    /** Nothing without a scheduled intake over the period; unanswered intakes are counted separately. */
     private fun adherenceText(adherence: Adherence): String? {
         val answered = adherence.taken + adherence.missed
         return when {
@@ -667,7 +667,7 @@ class ReportPdfBuilder(private val context: Context) {
     private fun pageInfo(number: Int): PdfDocument.PageInfo =
         PdfDocument.PageInfo.Builder(PAGE_WIDTH, PAGE_HEIGHT, number).create()
 
-    /** Colonnes de largeurs fixes, la dernière prenant le reste de la ligne. */
+    /** Fixed-width columns, the last taking the rest of the line. */
     private fun columns(vararg widths: Float): List<Column> {
         var x = 0f
         val fixed = widths.map { width -> Column(x, width).also { x += width + COLUMN_GAP } }

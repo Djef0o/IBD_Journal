@@ -3,20 +3,20 @@ package fr.ibdjournal.app.domain
 import fr.ibdjournal.app.data.model.LabQualifier
 import fr.ibdjournal.app.data.model.LabResult
 
-/** Valeurs imprimées par le laboratoire ; une borne absente n'est pas vérifiée (CRP : seulement un maximum). */
+/** Values printed by the laboratory; a missing bound is not checked (CRP: only a maximum). */
 data class ReferenceRange(val low: Double?, val high: Double?)
 
-/** Résultat hors des valeurs du laboratoire, comme le signale son compte rendu. */
+/** Result outside the laboratory's values, as flagged by its report. */
 enum class LabStatus { BELOW, ABOVE }
 
-/** Valeurs du laboratoire (importées ou saisies), ou null s'il n'en donne pas : l'app n'en fournit aucune. */
+/** Laboratory values (imported or entered), or null if it gives none: the app provides none. */
 fun LabResult.reference(): ReferenceRange? =
     if (referenceLow != null || referenceHigh != null) ReferenceRange(referenceLow, referenceHigh) else null
 
 /**
- * Position par rapport aux valeurs du laboratoire ; null dedans ou sans valeurs du laboratoire.
- * Un seuil (« < 1 ») ne dit que d'un côté où est la valeur : « < 1 » n'est jamais au-dessus,
- * « > 300 » jamais en dessous ; on ne le signale que si le seuil lui-même est hors des valeurs.
+ * Position relative to the laboratory's values; null if inside or without laboratory values.
+ * A threshold ("< 1") only says on one side where the value is: "< 1" is never above,
+ * "> 300" never below; it is only flagged if the threshold itself is outside the values.
  */
 fun LabResult.status(): LabStatus? {
     val range = reference() ?: return null

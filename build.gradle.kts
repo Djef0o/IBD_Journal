@@ -1,7 +1,7 @@
 // Top-level build file. Plugins are declared here and applied in :app.
 
-// KGP >= 2.2.10 est requis par le Kotlin intégré d'AGP 9 ; on force la dernière
-// version stable pour lire le métadonnées des bibliothèques récentes (Kotlin 2.4).
+// KGP >= 2.2.10 is required by AGP 9's built-in Kotlin; we force the latest
+// stable version to read the metadata of recent libraries (Kotlin 2.4).
 buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.10")

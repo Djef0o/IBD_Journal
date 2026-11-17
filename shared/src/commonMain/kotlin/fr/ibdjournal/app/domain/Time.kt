@@ -10,7 +10,7 @@ import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 
-/* Heure de l'appareil, dans son fuseau courant. */
+/* Device time, in its current time zone. */
 
 @OptIn(ExperimentalTime::class)
 fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -18,12 +18,12 @@ fun today(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 @OptIn(ExperimentalTime::class)
 fun now(): LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
-/** Date et heure locales d'un horodatage en millisecondes. */
+/** Local date and time of a timestamp in milliseconds. */
 @OptIn(ExperimentalTime::class)
 fun localDateTimeAt(epochMillis: Long): LocalDateTime =
     Instant.fromEpochMilliseconds(epochMillis).toLocalDateTime(TimeZone.currentSystemDefault())
 
-/** Horodatage en millisecondes d'une date et heure locales. */
+/** Timestamp in milliseconds of a local date and time. */
 @OptIn(ExperimentalTime::class)
 fun LocalDateTime.toEpochMillis(): Long =
     toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()

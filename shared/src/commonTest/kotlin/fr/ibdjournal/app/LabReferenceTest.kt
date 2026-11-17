@@ -23,7 +23,7 @@ class LabReferenceTest {
 
     @Test
     fun withoutLabValuesThereIsNoReferenceNorStatus() {
-        // L'app ne fournit aucune valeur de référence, quelle que soit la valeur.
+        // The app provides no reference value, whatever the value.
         LabTest.entries.forEach { test ->
             assertNull(result(test, 0.001).reference())
             assertNull(result(test, 100_000.0).status())
@@ -35,19 +35,19 @@ class LabReferenceTest {
         assertNull(result(LabTest.HEMOGLOBIN, 16.1, low = 13.4, high = 16.7).status())
         assertEquals(LabStatus.ABOVE, result(LabTest.HEMOGLOBIN, 16.9, low = 13.4, high = 16.7).status())
         assertEquals(LabStatus.BELOW, result(LabTest.HEMOGLOBIN, 13.0, low = 13.4, high = 16.7).status())
-        // Seuil seul : aucune borne basse vérifiée.
+        // Threshold alone: no lower bound checked.
         assertNull(result(LabTest.CRP, 0.5, high = 5.0).status())
     }
 
     @Test
     fun aThresholdOnlyFlagsWhatItProves() {
-        // « < 1 » sous un maximum de 5 : dedans ; jamais au-dessus.
+        // "< 1" under a maximum of 5: inside; never above.
         assertNull(result(LabTest.CRP, 1.0, LabQualifier.BELOW, high = 5.0).status())
-        // « < 10 » sous un minimum de 30 : forcément en dessous.
+        // "< 10" under a minimum of 30: necessarily below.
         assertEquals(LabStatus.BELOW, result(LabTest.VITAMIN_D, 10.0, LabQualifier.BELOW, low = 30.0).status())
-        // « > 160 » au-dessus d'un maximum de 5 : forcément au-dessus.
+        // "> 160" above a maximum of 5: necessarily above.
         assertEquals(LabStatus.ABOVE, result(LabTest.CRP, 160.0, LabQualifier.ABOVE, high = 5.0).status())
-        // « < 50 » avec un maximum de 5 : on ne peut pas conclure.
+        // "< 50" with a maximum of 5: cannot conclude.
         assertNull(result(LabTest.CRP, 50.0, LabQualifier.BELOW, high = 5.0).status())
     }
 }

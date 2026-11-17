@@ -6,8 +6,8 @@ import fr.ibdjournal.app.data.DailyCheckIn
 import fr.ibdjournal.app.data.model.Stool
 
 /**
- * Échelles 0 à 5 de la notification du soir, dans l'ordre d'affichage : vues de la section,
- * lecture et écriture de la réponse dans [DailyCheckIn] et dans la selle du rappel.
+ * 0 to 5 scales of the evening notification, in display order: section views,
+ * reading and writing the answer in [DailyCheckIn] and in the reminder's stool.
  */
 enum class CheckInScale(
     val headerId: Int,

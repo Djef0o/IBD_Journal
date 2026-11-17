@@ -68,7 +68,7 @@ import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
 
 /**
- * Feuille d'édition d'un repas : description, photo (photo picker), code-barres
+ * Meal edit sheet: description, photo (photo picker), barcode
  * (scanner + Open Food Facts).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -116,8 +116,8 @@ fun MealEditorSheet(
 }
 
 /**
- * Contenu de l'éditeur de repas, séparé pour être prévisualisé sans ModalBottomSheet
- * ni ActivityResultLauncher (qui ne fonctionnent pas en Preview).
+ * Meal editor content, separated so it can be previewed without ModalBottomSheet
+ * or ActivityResultLauncher (which do not work in Preview).
  */
 @Composable
 fun MealEditorContent(
@@ -140,7 +140,7 @@ fun MealEditorContent(
     val removePhoto = state.removePhoto
     val draftProduct = state.product
 
-    // Photo déjà enregistrée : chemin relatif au stockage interne (ou ancienne URI).
+    // Photo already saved: path relative to internal storage (or legacy URI).
     val existingPhoto: Any? = remember(editing?.photoUri) {
         editing?.photoUri?.let { path ->
             if ("://" in path) path else File(context.filesDir, path)
@@ -228,14 +228,14 @@ fun MealEditorContent(
             }
         }
 
-        // Scanner de code-barres.
+        // Barcode scanner.
         OutlinedButton(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
             Icon(Icons.Outlined.QrCodeScanner, contentDescription = null)
             Spacer(Modifier.width(8.dp))
             Text(stringResource(R.string.scan_barcode))
         }
 
-        // Produit scanné.
+        // Scanned product.
         draftProduct?.let { product ->
             ScannedProductCard(product, onRemove = { onProductChanged(null) })
         }
@@ -265,7 +265,7 @@ fun MealEditorContent(
     }
 }
 
-/** Carte du produit trouvé via Open Food Facts. */
+/** Card for the product found via Open Food Facts. */
 @Composable
 fun ScannedProductCard(product: Product, onRemove: () -> Unit) {
     Surface(
@@ -328,7 +328,7 @@ fun ScannedProductCard(product: Product, onRemove: () -> Unit) {
     }
 }
 
-/** Couleur du Nutri-Score : A/B vert, C jaune, D orange, E rouge. */
+/** Nutri-Score color: A/B green, C yellow, D orange, E red. */
 @Composable
 fun nutriscoreColor(score: String): Color = when (score.uppercase().firstOrNull()) {
     'A', 'B' -> Color(0xFF2E7D32)

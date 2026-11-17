@@ -53,9 +53,9 @@ private val PainColor = Color(0xFFA78BFA)
 private val FatigueColor = Color(0xFF6FBF8B)
 
 /**
- * Feuille de saisie détaillée d'une selle : Bristol, symptômes, commentaire.
- * La saisie rapide (2 gestes) reste disponible depuis l'accueil ; cette feuille
- * est le mode complet, accessible via « Plus de détails ».
+ * Detailed stool entry sheet: Bristol, symptoms, comment.
+ * Quick entry (2 taps) remains available from the home screen; this sheet
+ * is the full mode, reachable via "More details".
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,7 +83,7 @@ fun StoolSheet(
     }
 }
 
-/** Enregistrement : type, sang, glaires, douleur, fatigue, commentaire, urgence, nuit, fausse envie. */
+/** Save: type, blood, mucus, pain, fatigue, comment, urgency, night, false urge. */
 typealias StoolSave = (Int, Int, Int, Int, Int, String, Boolean, Boolean, Boolean) -> Unit
 
 @Composable
@@ -95,7 +95,7 @@ fun StoolSheetContent(
     onSave: StoolSave,
 ) {
     var bristolType by remember(editingStool, initialBristol) {
-        // Une fausse envie est enregistrée en type 0 : la repasser en selle repart du type 4.
+        // A false urge is saved as type 0: switching it back to a stool restarts from type 4.
         mutableIntStateOf(editingStool?.bristolType?.takeUnless { editingStool.falseUrge } ?: initialBristol ?: 4)
     }
     var bloodLevel by remember(editingStool) { mutableIntStateOf(editingStool?.bloodLevel ?: 0) }
@@ -162,7 +162,7 @@ fun StoolSheetContent(
                 }
             }
 
-            // Selle ou fausse envie : la fausse envie n'a pas de type de Bristol.
+            // Stool or false urge: a false urge has no Bristol type.
             Spacer(Modifier.height(14.dp))
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 listOf(false, true).forEachIndexed { index, choice ->
@@ -249,7 +249,7 @@ fun StoolSheetContent(
                 onChange = { fatigueLevel = it },
             )
 
-            // Impériosité et réveil nocturne : marqueurs d'activité suivis par les scores cliniques.
+            // Urgency and night waking: activity markers tracked by the clinical scores.
             Spacer(Modifier.height(12.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -286,7 +286,7 @@ fun StoolSheetContent(
             )
         }
 
-        // Pied fixe : toujours visible, sans défilement.
+        // Fixed footer: always visible, no scrolling.
         Surface(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 3.dp,
