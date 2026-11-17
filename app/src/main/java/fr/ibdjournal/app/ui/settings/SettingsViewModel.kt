@@ -12,7 +12,6 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.data.BackupCrypto
-import fr.ibdjournal.app.data.BackupFormat
 import fr.ibdjournal.app.data.DataBackupManager
 import fr.ibdjournal.app.data.NotificationSettings
 import fr.ibdjournal.app.data.ThemeMode
@@ -37,8 +36,6 @@ sealed interface BackupState {
     /** Key derivation (a few seconds) then read/write. */
     data class Working(val exporting: Boolean) : BackupState
     data class ImportPassword(val wrongPassword: Boolean = false) : BackupState
-    /** Old unencrypted export: confirmation before import. */
-    data object ImportPlainConfirm : BackupState
     data class Finished(@StringRes val message: Int) : BackupState
 }
 
@@ -146,13 +143,11 @@ class SettingsViewModel @Inject constructor(
             _backupState.value = try {
                 val input = context.contentResolver.openInputStream(uri)
                     ?: throw FileNotFoundException(uri.toString())
-                when (backupManager.detectFormat(input)) {
-                    BackupFormat.Encrypted -> BackupState.ImportPassword()
-                    BackupFormat.PlainJson -> BackupState.ImportPlainConfirm
-                    BackupFormat.Unknown -> {
-                        importUri = null
-                        BackupState.Finished(R.string.backup_import_unrecognized)
-                    }
+                if (backupManager.isEncryptedBackup(input)) {
+                    BackupState.ImportPassword()
+                } else {
+                    importUri = null
+                    BackupState.Finished(R.string.backup_import_unrecognized)
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -165,9 +160,7 @@ class SettingsViewModel @Inject constructor(
 
     fun importWithPassword(password: String) = runImport(password.toCharArray())
 
-    fun confirmPlainImport() = runImport(null)
-
-    private fun runImport(password: CharArray?) {
+    private fun runImport(password: CharArray) {
         val uri = importUri ?: return
         _backupState.value = BackupState.Working(exporting = false)
         viewModelScope.launch {
@@ -185,7 +178,7 @@ class SettingsViewModel @Inject constructor(
                 importUri = null
                 BackupState.Finished(R.string.backup_import_failed)
             } finally {
-                password?.fill(' ')
+                password.fill(' ')
             }
         }
     }

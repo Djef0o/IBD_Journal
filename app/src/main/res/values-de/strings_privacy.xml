@@ -20,8 +20,6 @@
     <string name="backup_import_message">Gib das Passwort ein, das beim Export dieser Datei gewählt wurde. Der Import ersetzt die aktuellen Daten in der App.</string>
     <string name="backup_import_wrong_password">Falsches Passwort oder beschädigte Datei.</string>
     <string name="backup_import_button">Importieren</string>
-    <string name="backup_import_plain_title">Unverschlüsselte Datei</string>
-    <string name="backup_import_plain_message">Diese Datei ist ein älterer, unverschlüsselter Export: Jeder, der sie hat, kann sie lesen. Trotzdem importieren? Der Import ersetzt die aktuellen Daten in der App. Lösche diese Datei danach am besten und erstelle einen neuen verschlüsselten Export.</string>
     <string name="backup_import_done">Daten importiert.</string>
     <string name="backup_import_failed">Import fehlgeschlagen: Die Datei konnte nicht gelesen werden. Deine Daten wurden nicht verändert.</string>
     <string name="backup_import_unrecognized">Diese Datei ist keine Sicherung von IBD Journal. Es wurde nichts importiert.</string>

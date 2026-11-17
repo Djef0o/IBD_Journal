@@ -20,8 +20,6 @@
     <string name="backup_import_message">Enter the password chosen when this file was exported. Importing replaces the data currently in the app.</string>
     <string name="backup_import_wrong_password">Wrong password, or the file is damaged.</string>
     <string name="backup_import_button">Import</string>
-    <string name="backup_import_plain_title">Unencrypted file</string>
-    <string name="backup_import_plain_message">This file is an older export that is not encrypted: anyone who has it can read it. Import it anyway? Importing replaces the data currently in the app. Afterwards, consider deleting this file and making a new encrypted export.</string>
     <string name="backup_import_done">Data imported.</string>
     <string name="backup_import_failed">Import failed: the file could not be read. Your data was not changed.</string>
     <string name="backup_import_unrecognized">This file is not an IBD Journal backup. Nothing was imported.</string>

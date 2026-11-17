@@ -16,12 +16,9 @@ import java.io.OutputStream
 import javax.inject.Inject
 import javax.inject.Singleton
 
-/** Kind of file chosen for import. */
-enum class BackupFormat { Encrypted, PlainJson, Unknown }
-
 /**
- * Journal backup: export is always password-encrypted ([BackupCrypto]);
- * import of encrypted files and of old plaintext JSON exports. The content comes from the shared module.
+ * Journal backup: export and import are always password-encrypted ([BackupCrypto]).
+ * The content comes from the shared module.
  */
 @OptIn(ExperimentalSerializationApi::class)
 @Singleton
@@ -39,32 +36,23 @@ class DataBackupManager @Inject constructor(
         }
     }
 
-    /** Reads the start of the file: encrypted signature, old plaintext JSON (`{`) or something else. */
-    suspend fun detectFormat(inputStream: InputStream): BackupFormat = withContext(Dispatchers.IO) {
-        inputStream.use { detect(it.readPrefix()) }
+    /** Reads the start of the file: true if it carries the encrypted backup signature. */
+    suspend fun isEncryptedBackup(inputStream: InputStream): Boolean = withContext(Dispatchers.IO) {
+        inputStream.use { BackupCrypto.hasMagic(it.readPrefix()) }
     }
 
     /**
-     * Decrypts (if [password] is provided for an encrypted file) and decodes the whole file
-     * before touching the database: on error, nothing is modified.
+     * Decrypts and decodes the whole file before touching the database: on error, nothing is modified.
      * @throws BackupCrypto.WrongPasswordException wrong password or tampered file
+     * @throws BackupCrypto.InvalidBackupException not an encrypted backup
      */
-    suspend fun importData(inputStream: InputStream, password: CharArray?) = withContext(Dispatchers.IO) {
+    suspend fun importData(inputStream: InputStream, password: CharArray) = withContext(Dispatchers.IO) {
         val backup = inputStream.buffered().use { stream ->
-            stream.mark(BackupCrypto.MAGIC_SIZE)
-            val format = detect(stream.readPrefix())
-            stream.reset()
-            when (format) {
-                BackupFormat.Encrypted -> {
-                    val plain = BackupCrypto.decrypt(stream, requireNotNull(password) { "Password required" })
-                    try {
-                        json.decodeFromStream<BackupData>(plain.inputStream())
-                    } finally {
-                        plain.fill(0)
-                    }
-                }
-                BackupFormat.PlainJson -> json.decodeFromStream<BackupData>(stream)
-                BackupFormat.Unknown -> throw BackupCrypto.InvalidBackupException("Unrecognized file")
+            val plain = BackupCrypto.decrypt(stream, password)
+            try {
+                json.decodeFromStream<BackupData>(plain.inputStream())
+            } finally {
+                plain.fill(0)
             }
         }
 
@@ -87,12 +75,5 @@ class DataBackupManager @Inject constructor(
             read += n
         }
         return prefix.copyOf(read)
-    }
-
-    private fun detect(prefix: ByteArray): BackupFormat = when {
-        BackupCrypto.hasMagic(prefix) -> BackupFormat.Encrypted
-        // Old app export: plaintext JSON starting with "{".
-        prefix.firstOrNull { !it.toInt().toChar().isWhitespace() } == '{'.code.toByte() -> BackupFormat.PlainJson
-        else -> BackupFormat.Unknown
     }
 }

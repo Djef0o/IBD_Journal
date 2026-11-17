@@ -514,19 +514,6 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
             onConfirm = viewModel::importWithPassword,
             onDismiss = viewModel::dismissBackup,
         )
-        BackupState.ImportPlainConfirm -> AlertDialog(
-            onDismissRequest = viewModel::dismissBackup,
-            title = { Text(stringResource(R.string.backup_import_plain_title)) },
-            text = { Text(stringResource(R.string.backup_import_plain_message)) },
-            confirmButton = {
-                TextButton(onClick = viewModel::confirmPlainImport) {
-                    Text(stringResource(R.string.backup_import_button))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = viewModel::dismissBackup) { Text(stringResource(R.string.cancel)) }
-            },
-        )
         is BackupState.Finished -> AlertDialog(
             onDismissRequest = viewModel::dismissBackup,
             text = { Text(stringResource(current.message)) },

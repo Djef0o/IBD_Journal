@@ -20,8 +20,6 @@
     <string name="backup_import_message">Saisissez le mot de passe choisi lors de l\'export de ce fichier. L\'import remplace les données actuellement dans l\'app.</string>
     <string name="backup_import_wrong_password">Mot de passe incorrect, ou fichier endommagé.</string>
     <string name="backup_import_button">Importer</string>
-    <string name="backup_import_plain_title">Fichier non chiffré</string>
-    <string name="backup_import_plain_message">Ce fichier est un ancien export non chiffré : toute personne qui l\'a peut le lire. L\'importer quand même ? L\'import remplace les données actuellement dans l\'app. Pensez ensuite à supprimer ce fichier et à refaire un export chiffré.</string>
     <string name="backup_import_done">Données importées.</string>
     <string name="backup_import_failed">Échec de l\'import : le fichier n\'a pas pu être lu. Vos données n\'ont pas été modifiées.</string>
     <string name="backup_import_unrecognized">Ce fichier n\'est pas une sauvegarde d\'IBD Journal. Rien n\'a été importé.</string>

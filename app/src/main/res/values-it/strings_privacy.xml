@@ -20,8 +20,6 @@
     <string name="backup_import_message">Inserisci la password scelta quando hai esportato questo file. L\'importazione sostituisce i dati attualmente nell\'app.</string>
     <string name="backup_import_wrong_password">Password errata o file danneggiato.</string>
     <string name="backup_import_button">Importa</string>
-    <string name="backup_import_plain_title">File non cifrato</string>
-    <string name="backup_import_plain_message">Questo file è una vecchia esportazione non cifrata: chiunque lo abbia può leggerlo. Importarlo comunque? L\'importazione sostituisce i dati attualmente nell\'app. Dopo, valuta di eliminare questo file e fare una nuova esportazione cifrata.</string>
     <string name="backup_import_done">Dati importati.</string>
     <string name="backup_import_failed">Importazione non riuscita: impossibile leggere il file. I tuoi dati non sono stati modificati.</string>
     <string name="backup_import_unrecognized">Questo file non è un backup di IBD Journal. Non è stato importato nulla.</string>
