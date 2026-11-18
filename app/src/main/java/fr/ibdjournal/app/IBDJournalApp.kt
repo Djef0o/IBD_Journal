@@ -11,7 +11,10 @@ import coil3.request.crossfade
 import dagger.hilt.android.HiltAndroidApp
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.notification.NotificationHelper
+import fr.ibdjournal.app.notification.PendingActions
+import fr.ibdjournal.app.notification.ReminderSource
 import fr.ibdjournal.app.notification.TreatmentReminderScheduler
+import fr.ibdjournal.app.security.AutoLock
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +33,15 @@ class IBDJournalApp : Application(), Configuration.Provider {
     @Inject
     lateinit var treatmentReminders: TreatmentReminderScheduler
 
+    @Inject
+    lateinit var reminderSource: ReminderSource
+
+    @Inject
+    lateinit var pendingActions: PendingActions
+
+    @Inject
+    lateinit var autoLock: AutoLock
+
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     // WorkManager: only to cancel work from older versions (old reminder,
@@ -40,6 +52,12 @@ class IBDJournalApp : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
 
+        // Encrypted journal: reminder copy and pending notification answers follow the
+        // unlocks; the journal locks itself a minute after leaving the screen.
+        reminderSource.start(applicationScope)
+        pendingActions.start(applicationScope)
+        autoLock.start(applicationScope)
+
         // Reschedules on every process start: also covers the case where the device was
         // rebooted or the app was force-stopped (alarms are then lost).
         // This also removes the old WorkManager reminder that notified at the old time.
@@ -47,7 +65,7 @@ class IBDJournalApp : Application(), Configuration.Provider {
             notificationHelper.rescheduleFromPreferences(appPrefs)
         }
         applicationScope.launch {
-            treatmentReminders.rescheduleAll()
+            runCatching { treatmentReminders.rescheduleAll() }
         }
         applicationScope.launch { removeLegacyCloudBackup() }
 

@@ -45,6 +45,7 @@ Your health data stays on your phone.
 ### Also
 - Reminders as app notifications or as events in the phone calendar.
 - Password-encrypted backup and restore to a file you keep yourself.
+- **PIN lock and local encryption**: a PIN (4 to 8 digits) is chosen at first launch, or right after updating. The journal database (SQLCipher) and meal photos are encrypted with a random key that only the PIN, or optionally your fingerprint, can unlock. The app locks one minute after leaving the screen; wrong PINs trigger waiting times. A forgotten PIN cannot be recovered: the only way out is to erase the data and restore an encrypted backup.
 - Guided first launch, light and dark themes, several color palettes.
 - Available in English, French, German, Spanish, Italian and Portuguese.
 
@@ -54,6 +55,7 @@ Your health data stays on your phone.
 - No Google services and no trackers: lab reports are read from the PDF's own text (PdfBox-Android) and barcodes are scanned with ZXing, both entirely on the phone.
 - Network access is only used for barcode lookups (Open Food Facts). No cloud backup: Android's automatic Google backup is turned off for the app.
 - Exports are encrypted with a password you choose (AES-256-GCM, PBKDF2 key derivation).
+- Local data is encrypted at rest with the PIN. Reminders and answers given from notifications keep working while the app is locked: a minimal copy of treatment, check-up and exam schedules and the pending answers are kept in files sealed by an Android Keystore key, readable only on this phone.
 - Calendar sync is off by default. Turning it on writes treatment and exam names into the phone calendar, which may be synced with an online account; the app warns about this before enabling it.
 
 ## Build

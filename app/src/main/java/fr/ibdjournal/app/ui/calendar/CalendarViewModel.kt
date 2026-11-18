@@ -50,6 +50,8 @@ data class MealEditorState(
     val newPhotoUri: Uri? = null,
     val removePhoto: Boolean = false,
     val product: Product? = null,
+    /** Saved photo, decrypted (or legacy URI); null while loading or without photo. */
+    val savedPhoto: Any? = null,
 )
 
 /** Open stool entry sheet; [stool] is null for an addition. */
@@ -122,6 +124,12 @@ class CalendarViewModel @Inject constructor(
             description = meal?.description.orEmpty(),
             product = meal?.product,
         )
+        val path = meal?.photoUri ?: return
+        viewModelScope.launch {
+            // Photo stored encrypted, except for very old meals pointing to a URI.
+            val photo: Any? = if ("://" in path) path else repository.readPhoto(path)
+            _mealEditor.update { editor -> editor?.takeIf { it.editingMeal?.id == meal.id }?.copy(savedPhoto = photo) ?: editor }
+        }
     }
 
     fun closeMealEditor() {

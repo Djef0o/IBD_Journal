@@ -278,7 +278,7 @@ private fun languageName(tag: String): String {
 }
 
 @Composable
-private fun SectionTitle(@StringRes title: Int) {
+internal fun SectionTitle(@StringRes title: Int) {
     Text(
         text = stringResource(title),
         style = MaterialTheme.typography.labelLarge,

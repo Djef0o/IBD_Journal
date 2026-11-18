@@ -50,6 +50,12 @@ import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.ui.calendar.CalendarViewModel
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.ui.theme.isDark
+import fr.ibdjournal.app.security.VaultState
+import fr.ibdjournal.app.ui.security.LockScreen
+import fr.ibdjournal.app.ui.security.SecurityUpgradeScreen
+import fr.ibdjournal.app.ui.security.SecurityViewModel
+import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.semantics.clearAndSetSemantics
 
 /**
  * AppCompatActivity rather than ComponentActivity: it is what applies the language
@@ -64,8 +70,11 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
+            val security: SecurityViewModel = hiltViewModel()
             val loadedAppearance by viewModel.appearance.collectAsStateWithLifecycle()
             val onboardingDone by viewModel.onboardingDone.collectAsStateWithLifecycle()
+            val vaultState by security.vaultState.collectAsStateWithLifecycle()
+            val setupPhase by security.setupPhase.collectAsStateWithLifecycle()
             val appearance = loadedAppearance ?: Appearance()
             val dark = appearance.isDark()
 
@@ -80,10 +89,19 @@ class MainActivity : AppCompatActivity() {
             }
 
             IBDJournalTheme(appearance) {
-                when {
-                    loadedAppearance == null || onboardingDone == null -> Surface(Modifier.fillMaxSize()) {}
-                    onboardingDone == false -> OnboardingScreen(onFinish = viewModel::finishOnboarding)
-                    else -> MainScaffold()
+                val locked = vaultState == VaultState.LOCKED
+                Box(Modifier.fillMaxSize()) {
+                    // Locked: the screens stay composed below (drafts kept) but hidden.
+                    Box(Modifier.fillMaxSize().then(if (locked) Modifier.clearAndSetSemantics {} else Modifier)) {
+                        when {
+                            loadedAppearance == null || onboardingDone == null -> Surface(Modifier.fillMaxSize()) {}
+                            onboardingDone == false -> OnboardingScreen(onFinish = viewModel::finishOnboarding, security = security)
+                            // Update from a version without encryption: PIN before anything else.
+                            security.setupVisible(vaultState, setupPhase) -> SecurityUpgradeScreen(security)
+                            else -> MainScaffold()
+                        }
+                    }
+                    if (locked) LockScreen(security)
                 }
             }
         }

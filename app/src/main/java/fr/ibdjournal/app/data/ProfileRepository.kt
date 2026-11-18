@@ -1,6 +1,6 @@
 package fr.ibdjournal.app.data
 
-import fr.ibdjournal.app.data.local.AppDatabase
+import fr.ibdjournal.app.security.Vault
 import fr.ibdjournal.app.data.local.toCheckup
 import fr.ibdjournal.app.data.local.toCheckupEntity
 import fr.ibdjournal.app.data.local.toExam
@@ -31,28 +31,29 @@ import kotlinx.coroutines.flow.map
 
 /**
  * Profile, treatments, check-ups, lab results and confirmed doses; each treatment
- * or check-up write keeps the reminders up to date.
+ * or check-up write keeps the reminders up to date. Reads stay silent and writes fail
+ * while the app is locked ([Vault]).
  */
 @Singleton
 class ProfileRepository @Inject constructor(
-    database: AppDatabase,
+    private val vault: Vault,
     private val reminders: TreatmentReminderScheduler,
 ) {
-    private val profileDao = database.profileDao()
-    private val medicationDao = database.medicationDao()
-    private val checkupDao = database.checkupDao()
-    private val labResultDao = database.labResultDao()
-    private val doseLogDao = database.doseLogDao()
-    private val examDao = database.examDao()
-    private val weightDao = database.weightDao()
+    private val profileDao get() = vault.requireDatabase().profileDao()
+    private val medicationDao get() = vault.requireDatabase().medicationDao()
+    private val checkupDao get() = vault.requireDatabase().checkupDao()
+    private val labResultDao get() = vault.requireDatabase().labResultDao()
+    private val doseLogDao get() = vault.requireDatabase().doseLogDao()
+    private val examDao get() = vault.requireDatabase().examDao()
+    private val weightDao get() = vault.requireDatabase().weightDao()
 
-    val profile: Flow<Profile> = profileDao.observe().map { it?.toProfile() ?: Profile() }
+    val profile: Flow<Profile> = vault.observe { it.profileDao().observe() }.map { it?.toProfile() ?: Profile() }
 
     val medications: Flow<List<Medication>> =
-        medicationDao.observeAll().map { list -> list.map { it.toMedication() } }
+        vault.observe { it.medicationDao().observeAll() }.map { list -> list.map { it.toMedication() } }
 
     val checkups: Flow<List<Checkup>> =
-        checkupDao.observeAll().map { list -> list.map { it.toCheckup() } }
+        vault.observe { it.checkupDao().observeAll() }.map { list -> list.map { it.toCheckup() } }
 
     suspend fun saveProfile(profile: Profile) = profileDao.upsert(profile.toProfileEntity())
 
@@ -79,7 +80,7 @@ class ProfileRepository @Inject constructor(
 
     // --- Exams (colonoscopy, rectosigmoidoscopy) ---
 
-    val exams: Flow<List<Exam>> = examDao.observeAll().map { list -> list.map { it.toExam() } }
+    val exams: Flow<List<Exam>> = vault.observe { it.examDao().observeAll() }.map { list -> list.map { it.toExam() } }
 
     suspend fun saveExam(exam: Exam) {
         val id = examDao.upsert(exam.toExamEntity())
@@ -94,7 +95,7 @@ class ProfileRepository @Inject constructor(
     // --- Lab results ---
 
     val labResults: Flow<List<LabResult>> =
-        labResultDao.observeAll().map { list -> list.map { it.toLabResult() } }
+        vault.observe { it.labResultDao().observeAll() }.map { list -> list.map { it.toLabResult() } }
 
     suspend fun saveLabResult(result: LabResult) {
         labResultDao.upsert(result.toLabResultEntity())
@@ -104,7 +105,8 @@ class ProfileRepository @Inject constructor(
 
     // --- Body weight ---
 
-    val weights: Flow<List<Weight>> = weightDao.observeAll().map { list -> list.map { it.toWeight() } }
+    val weights: Flow<List<Weight>> =
+        vault.observe { it.weightDao().observeAll() }.map { list -> list.map { it.toWeight() } }
 
     suspend fun saveWeight(weight: Weight) {
         weightDao.upsert(weight.toWeightEntity())
@@ -115,7 +117,7 @@ class ProfileRepository @Inject constructor(
     // --- Confirmed doses (adherence) ---
 
     val doseLogs: Flow<List<DoseLog>> =
-        doseLogDao.observeAll().map { list -> list.map { it.toDoseLog() } }
+        vault.observe { it.doseLogDao().observeAll() }.map { list -> list.map { it.toDoseLog() } }
 
     /** Confirms a scheduled dose ([status] null: cancels the confirmation). */
     suspend fun logDose(medicationId: Long, scheduledAt: Long, status: DoseStatus?) {

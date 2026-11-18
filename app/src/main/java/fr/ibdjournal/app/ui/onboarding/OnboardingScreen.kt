@@ -77,24 +77,30 @@ import fr.ibdjournal.app.ui.care.MedicationEditorSheet
 import fr.ibdjournal.app.ui.care.scheduleStatus
 import fr.ibdjournal.app.ui.settings.SexSelector
 import fr.ibdjournal.app.ui.settings.settingsRowColors
+import fr.ibdjournal.app.ui.security.SecuritySetupContent
+import fr.ibdjournal.app.ui.security.SecurityViewModel
+import fr.ibdjournal.app.ui.security.SetupPhase
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
 /** First-launch steps: setup, then a guided tour of the tabs. */
-private enum class Step { WELCOME, PROFILE, TREATMENTS, TOUR_TODAY, TOUR_HISTORY, TOUR_TRENDS, TOUR_CARE, NOTIFICATIONS }
+private enum class Step { WELCOME, SECURITY, PROFILE, TREATMENTS, TOUR_TODAY, TOUR_HISTORY, TOUR_TRENDS, TOUR_CARE, NOTIFICATIONS }
 
 /**
- * First launch: introduction, profile, treatments, tab tour and notification permission.
- * Each input step can be skipped; everything stays editable afterwards in the Profile
- * tab.
+ * First launch: introduction, PIN (mandatory: the journal is encrypted with it), profile,
+ * treatments, tab tour and notification permission. The other input steps can be skipped;
+ * everything stays editable afterwards in the Profile tab.
  */
 @Composable
 fun OnboardingScreen(
     onFinish: () -> Unit,
+    security: SecurityViewModel,
     viewModel: OnboardingViewModel = hiltViewModel(),
 ) {
     val medications by viewModel.medications.collectAsStateWithLifecycle()
+    val vaultState by security.vaultState.collectAsStateWithLifecycle()
+    val setupPhase by security.setupPhase.collectAsStateWithLifecycle()
     var stepIndex by rememberSaveable { mutableIntStateOf(0) }
     var firstName by rememberSaveable { mutableStateOf("") }
     var lastName by rememberSaveable { mutableStateOf("") }
@@ -106,8 +112,10 @@ fun OnboardingScreen(
     val profileEmpty = firstName.isBlank() && lastName.isBlank() && birthEpochDay == null && sex == null
     // "Skip" rather than "Next" when the input step was left empty.
     val skipping = (step == Step.PROFILE && profileEmpty) || (step == Step.TREATMENTS && medications.isEmpty())
+    // The PIN cannot be skipped: the following steps already write to the encrypted journal.
+    val securityPending = step == Step.SECURITY && security.setupVisible(vaultState, setupPhase)
 
-    BackHandler(enabled = stepIndex > 0) { stepIndex-- }
+    BackHandler(enabled = stepIndex > 0 && setupPhase != SetupPhase.ENCRYPTING) { stepIndex-- }
 
     val next = {
         if (step == Step.PROFILE && !profileEmpty) {
@@ -151,6 +159,7 @@ fun OnboardingScreen(
                 ) {
                     when (current) {
                         Step.WELCOME -> WelcomeStep()
+                        Step.SECURITY -> SecuritySetupContent(security, upgrade = false)
                         Step.PROFILE -> ProfileStep(
                             firstName = firstName,
                             lastName = lastName,
@@ -196,14 +205,15 @@ fun OnboardingScreen(
             }
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                if (stepIndex > 0) {
+                if (stepIndex > 0 && setupPhase != SetupPhase.ENCRYPTING) {
                     TextButton(onClick = { stepIndex-- }) { Text(stringResource(R.string.onboarding_back)) }
                 }
                 Spacer(Modifier.weight(1f))
-                if (skipping) {
-                    OutlinedButton(onClick = next) { Text(stringResource(R.string.onboarding_skip)) }
-                } else {
-                    Button(onClick = next) {
+                when {
+                    // The PIN pad has its own button.
+                    securityPending -> Unit
+                    skipping -> OutlinedButton(onClick = next) { Text(stringResource(R.string.onboarding_skip)) }
+                    else -> Button(onClick = next) {
                         Text(stringResource(if (isLast) R.string.start else R.string.onboarding_next))
                     }
                 }

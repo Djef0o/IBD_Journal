@@ -11,14 +11,10 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.ibdjournal.app.MainActivity
 import fr.ibdjournal.app.R
-import fr.ibdjournal.app.data.local.AppDatabase
-import fr.ibdjournal.app.data.local.toCheckup
-import fr.ibdjournal.app.data.local.toMedication
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RefillBasis
-import fr.ibdjournal.app.data.local.toExam
 import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.ExamStepTime
@@ -52,7 +48,7 @@ import fr.ibdjournal.app.data.AppPrefs
 @Singleton
 class TreatmentReminderScheduler @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val database: AppDatabase,
+    private val reminderSource: ReminderSource,
     private val notificationHelper: NotificationHelper,
     private val calendarSync: CalendarSync,
     private val prefs: AppPrefs,
@@ -132,15 +128,17 @@ class TreatmentReminderScheduler @Inject constructor(
     }
 
     suspend fun rescheduleAll() {
-        database.medicationDao().getAll().forEach { schedule(it.toMedication()) }
-        database.checkupDao().getAll().forEach { schedule(it.toCheckup()) }
-        database.examDao().getAll().forEach { schedule(it.toExam()) }
+        val data = reminderSource.current()
+        data.medications.forEach { schedule(it) }
+        data.checkups.forEach { schedule(it) }
+        data.exams.forEach { schedule(it) }
     }
 
     suspend fun cancelAll() {
-        database.medicationDao().getAll().forEach { cancelMedication(it.id) }
-        database.checkupDao().getAll().forEach { cancelCheckup(it.id) }
-        database.examDao().getAll().forEach { cancelExam(it.id) }
+        val data = reminderSource.current()
+        data.medications.forEach { cancelMedication(it.id) }
+        data.checkups.forEach { cancelCheckup(it.id) }
+        data.exams.forEach { cancelExam(it.id) }
     }
 
     /**
@@ -172,9 +170,10 @@ class TreatmentReminderScheduler @Inject constructor(
             maxOf(System.currentTimeMillis(), intent.getLongExtra(EXTRA_TRIGGER_AT, 0L))
         )
 
+        val data = reminderSource.current()
         when (kind) {
             Kind.MEDICATION -> {
-                val medication = database.medicationDao().get(id)?.toMedication() ?: return
+                val medication = data.medications.firstOrNull { it.id == id } ?: return
                 if (!medication.schedule.enabled) return
                 schedule(kind, id, medication.schedule.nextOccurrence(firedAt))
                 // Intake key: the exact scheduled occurrence (that of the "Today's treatments"
@@ -184,13 +183,13 @@ class TreatmentReminderScheduler @Inject constructor(
                 showMedication(medication, planned.toEpochMillis())
             }
             Kind.REFILL -> {
-                val medication = database.medicationDao().get(id)?.toMedication() ?: return
+                val medication = data.medications.firstOrNull { it.id == id } ?: return
                 if (!medication.refillAlert) return
                 schedule(kind, id, medication.nextRefillAlert(firedAt))
                 showRefill(medication, firedAt)
             }
             Kind.CHECKUP -> {
-                val checkup = database.checkupDao().get(id)?.toCheckup() ?: return
+                val checkup = data.checkups.firstOrNull { it.id == id } ?: return
                 if (!checkup.schedule.enabled) return
                 schedule(kind, id, checkup.schedule.nextOccurrence(firedAt))
                 showCheckup(checkup)
@@ -199,7 +198,7 @@ class TreatmentReminderScheduler @Inject constructor(
                 // Exam step: one-off reminder, nothing to reschedule. The exam may have changed
                 // since the alarm was set: only notify for the step still planned.
                 val step = EXAM_KINDS.entries.firstOrNull { it.value == kind }?.key ?: return
-                val exam = database.examDao().get(id)?.toExam()?.takeIf { it.remindersEnabled } ?: return
+                val exam = data.exams.firstOrNull { it.id == id }?.takeIf { it.remindersEnabled } ?: return
                 val stepTime = exam.steps().firstOrNull { it.step == step } ?: return
                 showExamStep(exam, stepTime, kind)
             }

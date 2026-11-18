@@ -8,9 +8,6 @@ import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.AndroidEntryPoint
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
-import fr.ibdjournal.app.data.DiaryRepository
-import fr.ibdjournal.app.data.model.Stool
-import fr.ibdjournal.app.data.ProfileRepository
 import fr.ibdjournal.app.data.model.DoseStatus
 import fr.ibdjournal.app.domain.today
 import javax.inject.Inject
@@ -26,9 +23,6 @@ import kotlinx.coroutines.withContext
 class NotificationReceiver : BroadcastReceiver() {
 
     @Inject
-    lateinit var diaryRepository: DiaryRepository
-
-    @Inject
     lateinit var appPrefs: AppPrefs
 
     @Inject
@@ -38,7 +32,7 @@ class NotificationReceiver : BroadcastReceiver() {
     lateinit var treatmentReminders: TreatmentReminderScheduler
 
     @Inject
-    lateinit var profileRepository: ProfileRepository
+    lateinit var pendingActions: PendingActions
 
     override fun onReceive(context: Context, intent: Intent) {
         val pendingResult = goAsync()
@@ -67,7 +61,7 @@ class NotificationReceiver : BroadcastReceiver() {
         val scheduledAt = intent.getLongExtra(TreatmentReminderScheduler.EXTRA_SCHEDULED_AT, -1L)
         if (medicationId < 0 || scheduledAt < 0) return
         treatmentReminders.cancelMedicationNotification(medicationId)
-        profileRepository.logDose(medicationId, scheduledAt, status)
+        pendingActions.logDose(medicationId, scheduledAt, status)
     }
 
     /**
@@ -76,19 +70,9 @@ class NotificationReceiver : BroadcastReceiver() {
      */
     private suspend fun recordStool(context: Context, intent: Intent) {
         val bristolType = intent.getIntExtra(EXTRA_BRISTOL_TYPE, 4)
-        val checkIn = appPrefs.dailyCheckIn(today().toEpochDays())
-        val existing = checkIn.stoolId?.let { diaryRepository.getStool(it) }
-        val stoolId = diaryRepository.saveStool(
-            existing?.copy(bristolType = bristolType)
-                ?: Stool(
-                    date = today(),
-                    bristolType = bristolType,
-                    painLevel = checkIn.painLevel ?: 0,
-                    fatigueLevel = checkIn.fatigueLevel ?: 0,
-                )
-        )
-        val updated = checkIn.copy(stoolId = stoolId, bristolType = bristolType)
+        val updated = appPrefs.dailyCheckIn(today().toEpochDays()).copy(bristolType = bristolType)
         appPrefs.saveDailyCheckIn(updated)
+        pendingActions.recordCheckIn(updated)
         notificationHelper.showDailyCheckIn(updated)
         toast(
             context,
@@ -102,12 +86,9 @@ class NotificationReceiver : BroadcastReceiver() {
         val scale = intent.getStringExtra(EXTRA_SCALE)
             ?.let { name -> CheckInScale.entries.firstOrNull { it.name == name } } ?: return
         val level = intent.getIntExtra(EXTRA_LEVEL, 0)
-        val checkIn = appPrefs.dailyCheckIn(today().toEpochDays())
-        checkIn.stoolId?.let { diaryRepository.getStool(it) }?.let { stool ->
-            diaryRepository.saveStool(scale.applyTo(stool, level))
-        }
-        val updated = scale.answered(checkIn, level)
+        val updated = scale.answered(appPrefs.dailyCheckIn(today().toEpochDays()), level)
         appPrefs.saveDailyCheckIn(updated)
+        pendingActions.recordCheckIn(updated)
         notificationHelper.showDailyCheckIn(updated)
         toast(context, context.getString(scale.recordedFormat, level))
     }

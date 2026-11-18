@@ -180,6 +180,23 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
         }
     }
 
+    /** Links the stool recorded for [epochDay]'s answers, unless a later reminder has replaced them. */
+    suspend fun setCheckInStool(epochDay: Long, stoolId: Long) {
+        dataStore.edit { prefs ->
+            if (prefs[KEY_CHECKIN_DAY] == epochDay) prefs[KEY_CHECKIN_STOOL_ID] = stoolId
+        }
+    }
+
+    /** Journal erased (forgotten PIN): back to the first launch, settings kept. */
+    suspend fun resetJournal() {
+        dataStore.edit { prefs ->
+            prefs.remove(KEY_ONBOARDING_DONE)
+            prefs.remove(KEY_CALENDAR_EVENTS)
+            listOf(KEY_CHECKIN_DAY, KEY_CHECKIN_STOOL_ID).forEach { prefs.remove(it) }
+            listOf(KEY_CHECKIN_BRISTOL, KEY_CHECKIN_FATIGUE, KEY_CHECKIN_PAIN).forEach { prefs.remove(it) }
+        }
+    }
+
     private fun <T> MutablePreferences.setOrRemove(key: Preferences.Key<T>, value: T?) {
         if (value == null) remove(key) else this[key] = value
     }

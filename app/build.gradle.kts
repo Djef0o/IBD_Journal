@@ -127,4 +127,9 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    // Local encryption: database (SQLCipher), PIN and biometric unlock, auto-lock
+    implementation(libs.sqlcipher.android)
+    implementation(libs.androidx.biometric)
+    implementation(libs.androidx.lifecycle.process)
 }

@@ -50,7 +50,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,7 +62,6 @@ import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
-import java.io.File
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
 
@@ -132,7 +130,6 @@ fun MealEditorContent(
     onScan: () -> Unit,
 ) {
     val editing = state.editingMeal
-    val context = LocalContext.current
 
     val type = state.type
     val description = state.description
@@ -140,12 +137,8 @@ fun MealEditorContent(
     val removePhoto = state.removePhoto
     val draftProduct = state.product
 
-    // Photo already saved: path relative to internal storage (or legacy URI).
-    val existingPhoto: Any? = remember(editing?.photoUri) {
-        editing?.photoUri?.let { path ->
-            if ("://" in path) path else File(context.filesDir, path)
-        }
-    }
+    // Photo already saved: decrypted by the ViewModel.
+    val existingPhoto: Any? = state.savedPhoto
 
     Column(
         modifier = Modifier

@@ -200,6 +200,7 @@ fun SettingsContent(
                 onPaletteChange = onPaletteChange,
             )
             LanguageSection()
+            SecuritySection()
 
             Text(
                 text = stringResource(R.string.notifications),

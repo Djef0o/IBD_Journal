@@ -3,7 +3,6 @@ package fr.ibdjournal.app.data
 import android.content.Context
 import android.net.Uri
 import dagger.hilt.android.qualifiers.ApplicationContext
-import fr.ibdjournal.app.data.local.AppDatabase
 import fr.ibdjournal.app.data.local.toMeal
 import fr.ibdjournal.app.data.local.toMealEntity
 import fr.ibdjournal.app.data.local.toProduct
@@ -15,6 +14,7 @@ import fr.ibdjournal.app.data.model.Product
 import fr.ibdjournal.app.data.model.ProductLookup
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.data.remote.OpenFoodFactsApi
+import fr.ibdjournal.app.security.Vault
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -27,26 +27,26 @@ import kotlinx.datetime.LocalDate
 
 @Singleton
 class DiaryRepository @Inject constructor(
-    database: AppDatabase,
+    private val vault: Vault,
     private val api: OpenFoodFactsApi,
     @ApplicationContext private val context: Context,
 ) {
-    private val mealDao = database.mealDao()
-    private val stoolDao = database.stoolDao()
-    private val productDao = database.productDao()
+    private val mealDao get() = vault.requireDatabase().mealDao()
+    private val stoolDao get() = vault.requireDatabase().stoolDao()
+    private val productDao get() = vault.requireDatabase().productDao()
 
     // --- Reading ---
 
     fun observeMeals(from: LocalDate, to: LocalDate): Flow<List<Meal>> =
-        mealDao.observeBetween(from.toEpochDays(), to.toEpochDays())
+        vault.observe { it.mealDao().observeBetween(from.toEpochDays(), to.toEpochDays()) }
             .map { list -> list.map { it.toMeal() } }
 
     fun observeStools(from: LocalDate, to: LocalDate): Flow<List<Stool>> =
-        stoolDao.observeBetween(from.toEpochDays(), to.toEpochDays())
+        vault.observe { it.stoolDao().observeBetween(from.toEpochDays(), to.toEpochDays()) }
             .map { list -> list.map { it.toStool() } }
 
     fun observeAllStools(): Flow<List<Stool>> =
-        stoolDao.observeAll().map { list -> list.map { it.toStool() } }
+        vault.observe { it.stoolDao().observeAll() }.map { list -> list.map { it.toStool() } }
 
     // --- Meals ---
 
@@ -57,18 +57,23 @@ class DiaryRepository @Inject constructor(
         mealDao.delete(meal.toMealEntity())
     }
 
-    // --- Photos (copied into the app's internal storage) ---
+    // --- Photos (copied into the app's internal storage, encrypted) ---
 
-    /** Copies a chosen photo into internal storage and returns its relative path. */
+    /** Copies a chosen photo, encrypted, into internal storage and returns its relative path. */
     suspend fun importPhoto(uri: Uri): String? = withContext(Dispatchers.IO) {
         runCatching {
-            val dir = File(context.filesDir, "photos").apply { mkdirs() }
+            val plain = context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                ?: return@withContext null
+            val dir = File(context.filesDir, Vault.PHOTOS_DIR).apply { mkdirs() }
             val file = File(dir, "${UUID.randomUUID()}.jpg")
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                file.outputStream().use { output -> input.copyTo(output) }
-            } ?: return@withContext null
+            file.writeBytes(vault.photos().encrypt(plain))
             file.relativeTo(context.filesDir).path
         }.getOrNull()
+    }
+
+    /** Decrypted photo (relative path), null if missing or unreadable. */
+    suspend fun readPhoto(relativePath: String): ByteArray? = withContext(Dispatchers.IO) {
+        runCatching { vault.photos().decrypt(File(context.filesDir, relativePath).readBytes()) }.getOrNull()
     }
 
     /** Deletes a photo from internal storage (relative path). */

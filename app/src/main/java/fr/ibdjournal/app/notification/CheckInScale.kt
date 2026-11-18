@@ -3,11 +3,10 @@ package fr.ibdjournal.app.notification
 import androidx.annotation.StringRes
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.DailyCheckIn
-import fr.ibdjournal.app.data.model.Stool
 
 /**
  * 0 to 5 scales of the evening notification, in display order: section views,
- * reading and writing the answer in [DailyCheckIn] and in the reminder's stool.
+ * reading and writing the answer in [DailyCheckIn].
  */
 enum class CheckInScale(
     val headerId: Int,
@@ -36,10 +35,5 @@ enum class CheckInScale(
     fun answered(checkIn: DailyCheckIn, level: Int): DailyCheckIn = when (this) {
         PAIN -> checkIn.copy(painLevel = level)
         FATIGUE -> checkIn.copy(fatigueLevel = level)
-    }
-
-    fun applyTo(stool: Stool, level: Int): Stool = when (this) {
-        PAIN -> stool.copy(painLevel = level)
-        FATIGUE -> stool.copy(fatigueLevel = level)
     }
 }

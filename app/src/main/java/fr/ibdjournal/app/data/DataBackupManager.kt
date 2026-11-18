@@ -1,6 +1,6 @@
 package fr.ibdjournal.app.data
 
-import fr.ibdjournal.app.data.local.AppDatabase
+import fr.ibdjournal.app.security.Vault
 import fr.ibdjournal.app.data.local.restore
 import fr.ibdjournal.app.data.local.snapshot
 import fr.ibdjournal.app.data.model.BackupData
@@ -23,14 +23,14 @@ import javax.inject.Singleton
 @OptIn(ExperimentalSerializationApi::class)
 @Singleton
 class DataBackupManager @Inject constructor(
-    private val database: AppDatabase,
+    private val vault: Vault,
     private val reminders: TreatmentReminderScheduler,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
     suspend fun exportData(outputStream: OutputStream, password: CharArray) = withContext(Dispatchers.IO) {
         outputStream.use { output ->
-            val backup = database.snapshot()
+            val backup = vault.requireDatabase().snapshot()
             // Streamed writing into the encryption: neither a full JSON string nor a ByteArray copy on the app side.
             BackupCrypto.encrypt(output.buffered(), password).buffered().use { json.encodeToStream(backup, it) }
         }
@@ -60,7 +60,7 @@ class DataBackupManager @Inject constructor(
         // then reschedule what the database contains, whether or not the import succeeded.
         reminders.cancelAll()
         try {
-            database.restore(backup)
+            vault.requireDatabase().restore(backup)
         } finally {
             reminders.rescheduleAll()
         }
