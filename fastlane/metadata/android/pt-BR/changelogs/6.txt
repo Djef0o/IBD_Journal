@@ -1,0 +1,1 @@
+Segurança: escolha um PIN no primeiro uso (também pedido após esta atualização) e desbloqueie opcionalmente com a digital. O diário, as fotos e os resultados agora são criptografados no celular com esse PIN. O app bloqueia um minuto depois de sair. Se esquecer o PIN, os dados não podem ser recuperados: guarde seus backups criptografados.

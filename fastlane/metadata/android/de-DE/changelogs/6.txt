@@ -1,0 +1,1 @@
+Sicherheit: Wähle beim ersten Start eine PIN (nach diesem Update ebenfalls) und entsperre optional per Fingerabdruck. Tagebuch, Fotos und Werte werden auf dem Handy nun mit dieser PIN verschlüsselt. Die App sperrt sich eine Minute nach dem Verlassen. Bei vergessener PIN sind die Daten nicht wiederherstellbar: Bewahre deine verschlüsselten Sicherungen auf.

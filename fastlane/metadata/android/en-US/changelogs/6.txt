@@ -1,0 +1,1 @@
+Security: choose a PIN at first launch (also asked after this update) and optionally unlock with your fingerprint. The journal, photos and results are now encrypted on the phone with this PIN. The app locks one minute after you leave it. If you forget the PIN the data cannot be recovered: keep your encrypted backups.

@@ -1,0 +1,1 @@
+Seguridad: elige un PIN en el primer inicio (también se pide tras esta actualización) y desbloquea opcionalmente con la huella. El diario, las fotos y los resultados se cifran ahora en el teléfono con este PIN. La app se bloquea un minuto después de salir. Si olvidas el PIN, los datos no se pueden recuperar: conserva tus copias cifradas.

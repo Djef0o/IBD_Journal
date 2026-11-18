@@ -1,0 +1,1 @@
+Sécurité : choisissez un code PIN au premier lancement (demandé aussi après cette mise à jour) et déverrouillez au choix par empreinte. Le journal, les photos et les résultats sont désormais chiffrés sur le téléphone avec ce code. L'app se verrouille une minute après sa fermeture. En cas d'oubli du code, les données sont irrécupérables : conservez vos sauvegardes chiffrées.

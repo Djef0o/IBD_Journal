@@ -1,0 +1,1 @@
+Sicurezza: scegli un PIN al primo avvio (richiesto anche dopo questo aggiornamento) e sblocca facoltativamente con l'impronta. Il diario, le foto e i risultati sono ora cifrati sul telefono con questo PIN. L'app si blocca un minuto dopo l'uscita. Se dimentichi il PIN i dati non sono recuperabili: conserva i backup cifrati.
