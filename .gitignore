@@ -18,3 +18,6 @@ keystore/
 /*.pdf
 /Labos/
 .kotlin/
+
+# SQLCipher AAR built from source by fdroid/build-sqlcipher.sh
+/app/libs/

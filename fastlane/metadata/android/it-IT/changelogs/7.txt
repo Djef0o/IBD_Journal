@@ -1,0 +1,1 @@
+Build: SQLCipher, la libreria di cifratura, ora viene compilata dal codice sorgente invece di essere scaricata precompilata. Nessuna modifica per l'app stessa.

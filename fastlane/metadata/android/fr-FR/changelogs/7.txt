@@ -1,0 +1,1 @@
+Compilation : SQLCipher, la bibliothèque de chiffrement, est désormais compilée depuis son code source au lieu d'être téléchargée précompilée. Aucun changement pour l'application elle-même.

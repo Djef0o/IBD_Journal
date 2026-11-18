@@ -1,0 +1,1 @@
+Compilação: o SQLCipher, a biblioteca de criptografia, agora é compilado a partir do código-fonte em vez de baixado pré-compilado. Nenhuma mudança no app em si.

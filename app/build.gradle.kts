@@ -41,8 +41,8 @@ android {
         applicationId = "fr.ibdjournal.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 6
-        versionName = "1.5"
+        versionCode = 7
+        versionName = "1.5.1"
     }
 
     buildTypes {
@@ -128,8 +128,15 @@ dependencies {
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
 
-    // Local encryption: database (SQLCipher), PIN and biometric unlock, auto-lock
-    implementation(libs.sqlcipher.android)
+    // Local encryption: database (SQLCipher), PIN and biometric unlock, auto-lock.
+    // SQLCipher: the AAR built from source (see fdroid/build-sqlcipher.sh) when present,
+    // otherwise the Maven Central artifact.
+    val sourceBuiltSqlcipher = file("libs/sqlcipher-android.aar")
+    if (sourceBuiltSqlcipher.exists()) {
+        implementation(files(sourceBuiltSqlcipher))
+    } else {
+        implementation(libs.sqlcipher.android)
+    }
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.lifecycle.process)
 }

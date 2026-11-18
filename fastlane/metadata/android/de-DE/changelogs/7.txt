@@ -1,0 +1,1 @@
+Build: SQLCipher, die Verschlüsselungsbibliothek, wird jetzt aus dem Quellcode kompiliert statt vorkompiliert heruntergeladen. Keine Änderung an der App selbst.

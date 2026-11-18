@@ -1,0 +1,1 @@
+Build: SQLCipher, the encryption library, is now compiled from its source code instead of being downloaded prebuilt. No change for the app itself.
