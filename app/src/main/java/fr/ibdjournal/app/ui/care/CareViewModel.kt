@@ -8,6 +8,7 @@ import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoseLog
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.Medication
+import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.domain.LabReportScan
 import fr.ibdjournal.app.domain.parseLabReport
 import fr.ibdjournal.app.labimport.LabReportReader
@@ -75,6 +76,18 @@ class CareViewModel @Inject constructor(
 
     fun deleteLabResult(result: LabResult) {
         viewModelScope.launch { repository.deleteLabResult(result.id) }
+    }
+
+    /** Body weight entries, chronological. */
+    val weights: StateFlow<List<Weight>> = repository.weights
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveWeight(weight: Weight) {
+        viewModelScope.launch { repository.saveWeight(weight) }
+    }
+
+    fun deleteWeight(weight: Weight) {
+        viewModelScope.launch { repository.deleteWeight(weight.id) }
     }
 
     // --- Report import ---

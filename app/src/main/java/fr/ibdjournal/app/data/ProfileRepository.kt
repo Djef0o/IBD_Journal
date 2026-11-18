@@ -20,6 +20,9 @@ import fr.ibdjournal.app.data.model.DoseStatus
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Profile
+import fr.ibdjournal.app.data.model.Weight
+import fr.ibdjournal.app.data.local.toWeight
+import fr.ibdjournal.app.data.local.toWeightEntity
 import fr.ibdjournal.app.notification.TreatmentReminderScheduler
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -41,6 +44,7 @@ class ProfileRepository @Inject constructor(
     private val labResultDao = database.labResultDao()
     private val doseLogDao = database.doseLogDao()
     private val examDao = database.examDao()
+    private val weightDao = database.weightDao()
 
     val profile: Flow<Profile> = profileDao.observe().map { it?.toProfile() ?: Profile() }
 
@@ -97,6 +101,16 @@ class ProfileRepository @Inject constructor(
     }
 
     suspend fun deleteLabResult(id: Long) = labResultDao.deleteById(id)
+
+    // --- Body weight ---
+
+    val weights: Flow<List<Weight>> = weightDao.observeAll().map { list -> list.map { it.toWeight() } }
+
+    suspend fun saveWeight(weight: Weight) {
+        weightDao.upsert(weight.toWeightEntity())
+    }
+
+    suspend fun deleteWeight(id: Long) = weightDao.deleteById(id)
 
     // --- Confirmed doses (adherence) ---
 

@@ -77,6 +77,7 @@ data class BackupData(
     val labResults: List<LabResult>? = null,
     val doseLogs: List<DoseLog>? = null,
     val exams: List<Exam>? = null,
+    val weights: List<Weight>? = null,
 )
 
 /** Result of a product lookup by barcode. */

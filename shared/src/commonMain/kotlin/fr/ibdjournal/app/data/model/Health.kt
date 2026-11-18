@@ -102,3 +102,11 @@ data class DoseLog(
     val status: DoseStatus,
     val loggedAt: Long = nowEpochMillis(),
 )
+
+/** Body weight in kilograms on [date]; several entries the same day are allowed. */
+@Serializable
+data class Weight(
+    val id: Long = 0,
+    val date: LocalDate,
+    val kg: Double,
+)

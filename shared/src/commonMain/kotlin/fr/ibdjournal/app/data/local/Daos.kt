@@ -183,3 +183,25 @@ interface DoseLogDao {
     @Query("DELETE FROM dose_logs")
     suspend fun deleteAll()
 }
+
+@Dao
+interface WeightDao {
+
+    @Query("SELECT * FROM weights ORDER BY dateEpochDay, id")
+    fun observeAll(): Flow<List<WeightEntity>>
+
+    @Query("SELECT * FROM weights")
+    suspend fun getAll(): List<WeightEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(weight: WeightEntity): Long
+
+    @Query("DELETE FROM weights WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Insert
+    suspend fun insertAll(weights: List<WeightEntity>)
+
+    @Query("DELETE FROM weights")
+    suspend fun deleteAll()
+}

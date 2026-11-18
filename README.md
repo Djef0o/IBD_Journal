@@ -34,6 +34,7 @@ Your health data stays on your phone.
 - **Colonoscopy and rectosigmoidoscopy**: exam date, low-residue diet and bowel preparation doses as prescribed by your doctor, anesthesiologist appointment. A reminder for each step.
 - **Lab results**: 43 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids…), with the reference range printed by your lab, charts and a table of blood panels. The app provides no normal values of its own.
 - **Import lab reports** (lab PDFs, several at once): the text of the PDF is read on the phone, values are converted to the app's units, and nothing is saved before you review it. Scanned documents are not supported.
+- **Body weight**: weight entries with their date and a weight curve over 6 months, 1 year or the whole history.
 
 <p>
   <img src="docs/screenshots/labs.png" width="200" alt="Lab results by test">

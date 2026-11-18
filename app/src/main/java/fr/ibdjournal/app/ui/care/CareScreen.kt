@@ -68,6 +68,7 @@ import fr.ibdjournal.app.data.model.CheckupType
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
+import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.ui.settings.settingsRowColors
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.domain.adherence
@@ -95,6 +96,7 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
     val labResults by viewModel.labResults.collectAsStateWithLifecycle()
     val exams by viewModel.exams.collectAsStateWithLifecycle()
     val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
+    val weights by viewModel.weights.collectAsStateWithLifecycle()
 
     CareContent(
         medications = medications,
@@ -109,6 +111,9 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
         onSaveExam = viewModel::saveExam,
         onDeleteExam = viewModel::deleteExam,
         onOpenLabs = onOpenLabs,
+        weights = weights,
+        onSaveWeight = viewModel::saveWeight,
+        onDeleteWeight = viewModel::deleteWeight,
     )
 }
 
@@ -130,11 +135,16 @@ fun CareContent(
     exams: List<Exam> = emptyList(),
     onSaveExam: (Exam) -> Unit = {},
     onDeleteExam: (Exam) -> Unit = {},
+    weights: List<Weight> = emptyList(),
+    onSaveWeight: (Weight) -> Unit = {},
+    onDeleteWeight: (Weight) -> Unit = {},
 ) {
     val context = LocalContext.current
     var editMedication by remember { mutableStateOf<Editing<Medication>?>(null) }
     var editCheckup by remember { mutableStateOf<Editing<Checkup>?>(null) }
     var editExam by remember { mutableStateOf<Editing<Exam>?>(null) }
+    var editWeight by remember { mutableStateOf<Editing<Weight>?>(null) }
+    var weightHistory by remember { mutableStateOf(false) }
 
     var notificationsGranted by remember { mutableStateOf(hasNotificationPermission(context)) }
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -230,6 +240,17 @@ fun CareContent(
                 ExamRow(exam = exam, upcoming = false, onClick = { editExam = Editing(exam) })
             }
 
+            SectionHeader(
+                title = stringResource(R.string.weight_title),
+                addLabel = stringResource(R.string.weight_add),
+                onAdd = { editWeight = Editing(null) },
+            )
+            if (weights.isEmpty()) {
+                EmptyLine(stringResource(R.string.weights_empty))
+            } else {
+                WeightCard(weights = weights, onOpenHistory = { weightHistory = true })
+            }
+
             Text(
                 text = stringResource(R.string.lab_results_title),
                 style = MaterialTheme.typography.labelLarge,
@@ -263,6 +284,23 @@ fun CareContent(
             onDismiss = { editExam = null },
             onSave = { onSaveExam(it); requestPermissionIfNeeded(it.remindersEnabled) },
             onDelete = onDeleteExam,
+        )
+    }
+    // The history hides during entry to avoid stacking two sheets, then comes back.
+    if (weightHistory && weights.isNotEmpty() && editWeight == null) {
+        WeightHistorySheet(
+            weights = weights,
+            onDismiss = { weightHistory = false },
+            onAdd = { editWeight = Editing(null) },
+            onEdit = { editWeight = Editing(it) },
+        )
+    }
+    editWeight?.let { editing ->
+        WeightEditorSheet(
+            initial = editing.item,
+            onDismiss = { editWeight = null },
+            onSave = onSaveWeight,
+            onDelete = onDeleteWeight,
         )
     }
 }
@@ -509,6 +547,11 @@ private fun CarePreview() {
             onDeleteMedication = {},
             onSaveCheckup = {},
             onDeleteCheckup = {},
+            weights = listOf(
+                Weight(1, today.minus(60, DateTimeUnit.DAY), 68.4),
+                Weight(2, today.minus(30, DateTimeUnit.DAY), 66.9),
+                Weight(3, today.minus(2, DateTimeUnit.DAY), 67.5),
+            ),
         )
     }
 }

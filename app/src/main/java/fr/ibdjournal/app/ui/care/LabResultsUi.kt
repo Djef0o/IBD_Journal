@@ -147,12 +147,12 @@ private fun LabStatusLabel(status: LabStatus) {
  * Relative x-position (0..1) proportional to elapsed time; a single point is centered,
  * all-equal dates are spread out. [points] in chronological order.
  */
-private fun timeFraction(points: List<LabResult>, index: Int): Float {
+internal inline fun <T> timeFraction(points: List<T>, index: Int, date: (T) -> LocalDate): Float {
     if (points.size == 1) return 0.5f
-    val first = points.first().date.toEpochDays()
-    val span = (points.last().date.toEpochDays() - first).toFloat()
+    val first = date(points.first()).toEpochDays()
+    val span = (date(points.last()).toEpochDays() - first).toFloat()
     return if (span == 0f) index.toFloat() / (points.size - 1)
-    else (points[index].date.toEpochDays() - first).toFloat() / span
+    else (date(points[index]).toEpochDays() - first).toFloat() / span
 }
 
 // --- Follow-up section: by test or by panel ---
@@ -275,7 +275,7 @@ private fun LabSparkline(points: List<LabResult>, color: Color, modifier: Modifi
         val min = points.minOf { it.value }
         val max = points.maxOf { it.value }
         fun offset(index: Int): Offset = Offset(
-            radius + width * timeFraction(points, index),
+            radius + width * timeFraction(points, index) { it.date },
             if (max == min) size.height / 2
             else radius + height * ((max - points[index].value) / (max - min)).toFloat(),
         )
@@ -692,7 +692,7 @@ private fun LabBoundField(
 // --- Test detail ---
 
 /** Chart window; [months] null = whole history. */
-private enum class LabPeriod(val months: Int?, @StringRes val labelRes: Int) {
+internal enum class ChartPeriod(val months: Int?, @StringRes val labelRes: Int) {
     SIX_MONTHS(6, R.string.lab_period_6_months),
     YEAR(12, R.string.lab_period_1_year),
     ALL(null, R.string.lab_period_all),
@@ -712,15 +712,15 @@ internal fun LabResultDetailSheet(
     val byPeriod = remember(history) {
         val today = today()
         val chronological = history.reversed()
-        LabPeriod.entries.associateWith { period ->
+        ChartPeriod.entries.associateWith { period ->
             val months = period.months
             if (months == null) chronological
             else today.minus(months, DateTimeUnit.MONTH).let { since -> chronological.filter { it.date >= since } }
         }
     }
-    var period by rememberSaveable { mutableStateOf(LabPeriod.YEAR) }
+    var period by rememberSaveable { mutableStateOf(ChartPeriod.YEAR) }
     // No point in the chosen window: whole history.
-    val shown = if (byPeriod.getValue(period).isEmpty()) LabPeriod.ALL else period
+    val shown = if (byPeriod.getValue(period).isEmpty()) ChartPeriod.ALL else period
 
     LabSheet(onDismiss = onDismiss) {
         Text(
@@ -729,7 +729,7 @@ internal fun LabResultDetailSheet(
             fontWeight = FontWeight.Bold,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            LabPeriod.entries.forEach { option ->
+            ChartPeriod.entries.forEach { option ->
                 FilterChip(
                     selected = shown == option,
                     onClick = { period = option },
@@ -819,7 +819,7 @@ private fun LabChart(test: LabTest, points: List<LabResult>, reference: Referenc
                 val width = size.width - 2 * pad
                 val height = size.height - 2 * pad
 
-                fun x(index: Int): Float = pad + width * timeFraction(points, index)
+                fun x(index: Int): Float = pad + width * timeFraction(points, index) { it.date }
                 fun y(value: Double): Float =
                     if (max == min) size.height / 2
                     else pad + height * ((max - value) / (max - min)).toFloat()

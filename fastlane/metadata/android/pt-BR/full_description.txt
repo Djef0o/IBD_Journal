@@ -6,6 +6,7 @@ IBD Journal é um diário pessoal para quem vive com doença de Crohn ou retocol
 • Tratamentos com lembretes, adesão e avisos de reposição
 • Colonoscopia e retossigmoidoscopia: data, dieta, doses do preparo e um lembrete por etapa, conforme a orientação do seu médico
 • Exames: 43 exames comuns com os valores de referência impressos pelo seu laboratório, gráficos e tabelas; importação dos PDFs do seu laboratório, lidos no celular
+• Peso corporal: registre seu peso com a data e acompanhe sua curva de peso
 • Relatório em PDF para o seu médico
 • Backup e restauração em um arquivo criptografado com senha
 

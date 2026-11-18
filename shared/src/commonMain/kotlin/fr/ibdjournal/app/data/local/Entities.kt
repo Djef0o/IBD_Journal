@@ -22,6 +22,7 @@ import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.data.model.nowEpochMillis
 import kotlinx.datetime.LocalDate
 
@@ -333,4 +334,24 @@ fun Checkup.toCheckupEntity() = CheckupEntity(
     type = type,
     note = note,
     schedule = schedule.toColumns(),
+)
+
+/** Body weight (version 9). */
+@Entity(tableName = "weights", indices = [Index("dateEpochDay")])
+data class WeightEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val dateEpochDay: Long,
+    val kg: Double,
+)
+
+fun WeightEntity.toWeight() = Weight(
+    id = id,
+    date = LocalDate.fromEpochDays(dateEpochDay),
+    kg = kg,
+)
+
+fun Weight.toWeightEntity() = WeightEntity(
+    id = id,
+    dateEpochDay = date.toEpochDays(),
+    kg = kg,
 )

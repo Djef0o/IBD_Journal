@@ -6,6 +6,7 @@ IBD Journal is a personal diary for people living with Crohn's disease or ulcera
 • Treatments with reminders, adherence and refill alerts
 • Colonoscopy and rectosigmoidoscopy: date, diet, preparation doses and a reminder for each step, as prescribed by your doctor
 • Lab results: 43 common tests with the reference range printed by your lab, charts and tables; import from your lab's PDF reports, read on the phone
+• Body weight: log your weight with its date and follow your weight curve
 • PDF report for your doctor
 • Password-encrypted backup and restore to a file
 
