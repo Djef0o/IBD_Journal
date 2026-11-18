@@ -1,0 +1,1 @@
+New: body weight. Log your weight with its date in Care and follow your weight curve over 6 months, 1 year or your whole history. Weights are included in encrypted backups.

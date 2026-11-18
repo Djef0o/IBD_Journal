@@ -1,0 +1,1 @@
+Nouveau : suivi du poids. Saisissez votre poids avec sa date dans Soins et suivez votre courbe de poids sur 6 mois, 1 an ou tout l'historique. Les poids sont inclus dans les sauvegardes chiffrées.
