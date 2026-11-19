@@ -40,9 +40,12 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.domain.AnalysisPeriod
 import fr.ibdjournal.app.domain.AnalysisSummary
 import fr.ibdjournal.app.domain.Symptom
+import fr.ibdjournal.app.domain.FoodLink
+import fr.ibdjournal.app.domain.MIN_FOOD_OCCURRENCES
 import fr.ibdjournal.app.domain.SymptomDays
 import fr.ibdjournal.app.ui.chipRes
 import fr.ibdjournal.app.ui.formatDecimal
@@ -62,6 +65,8 @@ fun AnalysisScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val exportingReport by viewModel.exportingReport.collectAsStateWithLifecycle()
+    val foodLinks by viewModel.foodLinks.collectAsStateWithLifecycle()
+    val flares by viewModel.flares.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Activity context: the share sheet opens on top of the app.
     LaunchedEffect(viewModel) {
@@ -79,6 +84,8 @@ fun AnalysisScreen(
         onPeriodChange = viewModel::setPeriod,
         exportingReport = exportingReport,
         onExportReport = viewModel::exportReport,
+        foodLinks = foodLinks,
+        flares = flares,
     )
 }
 
@@ -89,6 +96,8 @@ fun AnalysisContent(
     onPeriodChange: (AnalysisPeriod) -> Unit,
     exportingReport: Boolean,
     onExportReport: () -> Unit,
+    foodLinks: List<FoodLink>,
+    flares: List<Flare> = emptyList(),
 ) {
     val stools = state.stools
     val daysFollowed = (stools.map { it.date } + state.meals.map { it.date }).distinct().size
@@ -180,7 +189,7 @@ fun AnalysisContent(
             )
 
             if (state.stoolHistory.isNotEmpty()) {
-                DailyStoolChart(state.stoolHistory)
+                DailyStoolChart(state.stoolHistory, flares)
             }
             if (stools.isEmpty()) {
                 Surface(
@@ -198,6 +207,7 @@ fun AnalysisContent(
             } else {
                 SymptomsCard(state)
             }
+            FoodLinksCard(foodLinks)
         }
     }
 }
@@ -308,6 +318,96 @@ private fun SymptomRow(row: SymptomDays, periodDays: Int) {
                         if (row.symptom == Symptom.BLOOD) bristolColor(0) else MaterialTheme.colorScheme.primary
                     ),
             )
+        }
+    }
+}
+
+/** Foods that came before bad days more often than usual: an observation, never advice. */
+@Composable
+private fun FoodLinksCard(links: List<FoodLink>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Text(
+                text = stringResource(R.string.foodlink_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(8.dp))
+            if (links.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.foodlink_empty, MIN_FOOD_OCCURRENCES),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                links.forEach { FoodLinkRow(it) }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.foodlink_caveat),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.foodlink_definition),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Food with its bad-day rate as a bar; the tick marks the usual rate over all days with meals. */
+@Composable
+private fun FoodLinkRow(link: FoodLink) {
+    val badDays = Math.round(link.badRate * link.occurrences).toInt()
+    Column(Modifier.padding(vertical = 6.dp)) {
+        Text(
+            text = link.item.replaceFirstChar { it.uppercase() },
+            style = MaterialTheme.typography.labelLarge,
+        )
+        Text(
+            text = stringResource(
+                R.string.foodlink_row,
+                badDays,
+                link.occurrences,
+                Math.round(link.baseline * 100).toInt(),
+            ),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(6.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(8.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(link.badRate.toFloat().coerceIn(0f, 1f))
+                    .height(8.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary),
+            )
+            Box(
+                modifier = Modifier.fillMaxWidth(link.baseline.toFloat().coerceIn(0f, 1f)).height(8.dp),
+                contentAlignment = Alignment.CenterEnd,
+            ) {
+                Box(
+                    Modifier
+                        .width(2.dp)
+                        .height(8.dp)
+                        .background(MaterialTheme.colorScheme.onSurface),
+                )
+            }
         }
     }
 }

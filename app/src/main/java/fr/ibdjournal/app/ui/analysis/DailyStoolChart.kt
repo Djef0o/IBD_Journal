@@ -36,13 +36,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.domain.covers
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.bristolColor
 import fr.ibdjournal.app.domain.today
@@ -66,7 +71,7 @@ private enum class StoolCategory(val types: IntRange, val legendRes: Int) {
     val color: Color get() = bristolColor(types.first)
 }
 
-private class DayBar(val date: LocalDate, val stools: List<Stool>) {
+private class DayBar(val date: LocalDate, val stools: List<Stool>, val flare: Boolean) {
     val counts: Map<StoolCategory, Int> = StoolCategory.entries.associateWith { category ->
         stools.count { it.bristolType in category.types }
     }
@@ -81,14 +86,14 @@ private class DayBar(val date: LocalDate, val stools: List<Stool>) {
  * so that a bar's height does not change while scrolling.
  */
 @Composable
-fun DailyStoolChart(stools: List<Stool>, today: LocalDate = today()) {
+fun DailyStoolChart(stools: List<Stool>, flares: List<Flare> = emptyList(), today: LocalDate = today()) {
     // From most recent to oldest: the reversed LazyRow starts on the right, on today.
-    val days = remember(stools, today) {
+    val days = remember(stools, flares, today) {
         val byDate = stools.groupBy { it.date }
         val first = minOf(stools.minOfOrNull { it.date } ?: today, today.minus(MIN_DAYS - 1, DateTimeUnit.DAY))
         generateSequence(today) { it.minus(1, DateTimeUnit.DAY) }
             .takeWhile { it >= first }
-            .map { DayBar(it, byDate[it].orEmpty()) }
+            .map { DayBar(it, byDate[it].orEmpty(), flares.any { flare -> flare.covers(it) }) }
             .toList()
     }
     val max = remember(days) { days.maxOf { it.total }.coerceAtLeast(1) }
@@ -177,7 +182,7 @@ fun DailyStoolChart(stools: List<Stool>, today: LocalDate = today()) {
             }
 
             Spacer(Modifier.height(12.dp))
-            Legend()
+            Legend(showFlare = days.any { it.flare })
         }
     }
 }
@@ -202,8 +207,18 @@ private fun DayColumn(
     modifier: Modifier = Modifier,
 ) {
     val alpha = if (dimmed) 0.35f else 1f
+    val flareColor = MaterialTheme.colorScheme.error.copy(alpha = 0.12f)
+    val spacing = BAR_SPACING
     Column(
-        modifier = modifier.clickable(
+        modifier = modifier
+            .drawBehind {
+                // Band extended by half the gap on each side so adjacent flare days join up.
+                if (day.flare) {
+                    val half = spacing.toPx() / 2
+                    drawRect(flareColor, Offset(-half, 0f), Size(size.width + 2 * half, size.height))
+                }
+            }
+            .clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
             onClick = onClick,
@@ -310,7 +325,7 @@ private fun DayDetail(day: DayBar) {
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Legend() {
+private fun Legend(showFlare: Boolean) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -319,6 +334,13 @@ private fun Legend() {
             LegendItem(category.color, stringResource(category.legendRes), square = true)
         }
         LegendItem(bristolColor(0), stringResource(R.string.analysis_legend_blood), square = false)
+        if (showFlare) {
+            LegendItem(
+                MaterialTheme.colorScheme.error.copy(alpha = 0.25f),
+                stringResource(R.string.flaremark_chart_legend),
+                square = true,
+            )
+        }
     }
 }
 

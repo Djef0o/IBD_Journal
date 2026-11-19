@@ -15,9 +15,17 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.Diagnosis
+import fr.ibdjournal.app.data.model.ScoreKind
+import fr.ibdjournal.app.data.model.VaccineType
+import fr.ibdjournal.app.domain.ActivityLevel
 import fr.ibdjournal.app.domain.Adherence
 import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.Symptom
+import fr.ibdjournal.app.domain.end
+import fr.ibdjournal.app.domain.level
+import fr.ibdjournal.app.domain.total
+import fr.ibdjournal.app.domain.totalMg
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.display
 import fr.ibdjournal.app.ui.displayValue
@@ -45,6 +53,8 @@ private const val FOOTER_TOP = PAGE_HEIGHT - 48f
 private const val CONTENT_BOTTOM = FOOTER_TOP - 12f
 
 private const val SECTION_GAP = 20f
+/** Most recent activity scores listed in the compact line of the report. */
+private const val ACTIVITY_LIST_MAX = 12
 private const val ROW_PADDING = 4f
 private const val COLUMN_GAP = 10f
 private const val TILE_GAP = 8f
@@ -144,6 +154,10 @@ class ReportPdfBuilder(private val context: Context) {
                 symptoms()
                 dailyChart()
                 treatments()
+                flares()
+                activityScores()
+                steroidCourses()
+                vaccinations()
                 labResults()
                 checkups()
                 finish()
@@ -266,6 +280,7 @@ class ReportPdfBuilder(private val context: Context) {
                 profile.sex?.let { string(it.labelRes) },
             ).joinToString(" · ")
             if (identity.isNotEmpty()) line(identity, bodyPaint, 2f)
+            data.profile.diagnosis?.let { line(string(R.string.report_care_diagnosis, diagnosisName(it)), bodyPaint, 2f) }
             line(
                 string(
                     R.string.report_period,
@@ -490,6 +505,111 @@ class ReportPdfBuilder(private val context: Context) {
             }
         }
 
+        /** Text lines stacked in one table row. */
+        private fun linesRow(lines: List<StaticLayout>): TableRow {
+            val height = lines.sumOf { it.height } + 2f * (lines.size - 1) + 2 * ROW_PADDING
+            return TableRow(height) { top ->
+                var lineTop = top + ROW_PADDING
+                lines.forEach { line ->
+                    canvas.drawLayout(line, MARGIN, lineTop)
+                    lineTop += line.height + 2f
+                }
+            }
+        }
+
+        /** Flares overlapping the period: dates, hospitalisation and treatment. */
+        fun flares() {
+            val rows = data.flares.map { flare ->
+                val range = string(
+                    R.string.report_care_flare_range,
+                    DateFormats.dayMonthYear(flare.start),
+                    flare.end?.let { DateFormats.dayMonthYear(it) } ?: string(R.string.report_care_flare_ongoing),
+                )
+                val title = if (flare.hospitalized) "$range · ${string(R.string.report_care_flare_hospitalized)}" else range
+                linesRow(
+                    listOfNotNull(
+                        layout(title, strongPaint, CONTENT_WIDTH),
+                        flare.treatment.takeIf { it.isNotBlank() }
+                            ?.let { layout(string(R.string.report_care_flare_treatment, it.trim()), bodyPaint, CONTENT_WIDTH) },
+                    ),
+                )
+            }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_care_flares), null, rows.first().height)
+            table(null, rows)
+        }
+
+        /** Latest score with its level, then the most recent entries of the period in a compact line. */
+        fun activityScores() {
+            val scores = data.activityScores
+            val latest = scores.lastOrNull() ?: return
+            val date = DateFormats.dayMonthYear(latest.date)
+            val level = latest.level
+            val latestText = if (level != null) {
+                string(R.string.report_care_activity_latest_level, scoreName(latest.kind), latest.total, date, levelName(level))
+            } else {
+                string(R.string.report_care_activity_latest, scoreName(latest.kind), latest.total, date)
+            }
+            section(
+                string(R.string.report_care_activity),
+                string(R.string.report_care_activity_note),
+                layout(latestText, strongPaint, CONTENT_WIDTH).height.toFloat(),
+            )
+            paragraph(latestText, strongPaint)
+            if (scores.size > 1) {
+                val entries = scores.takeLast(ACTIVITY_LIST_MAX).joinToString("; ") {
+                    string(R.string.report_care_activity_entry, DateFormats.dayMonthYear(it.date), scoreName(it.kind), it.total)
+                }
+                paragraph(entries, bodyPaint)
+            }
+        }
+
+        /** Steroid courses overlapping the period, with their total dose. */
+        fun steroidCourses() {
+            val rows = data.steroidCourses.map { course ->
+                val total = course.totalMg
+                val totalText = if (total % 1.0 == 0.0) total.toLong().toString() else formatDecimal(total)
+                val text = string(
+                    R.string.report_care_steroid_row,
+                    course.drug.trim(),
+                    DateFormats.dayMonthYear(course.start),
+                    DateFormats.dayMonthYear(course.end),
+                    totalText,
+                )
+                linesRow(listOf(layout(text, bodyPaint, CONTENT_WIDTH)))
+            }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_care_steroids), null, rows.first().height)
+            table(null, rows)
+        }
+
+        fun vaccinations() {
+            if (data.vaccinations.isEmpty()) return
+            val columns = columns(150f, 120f)
+            val header = textRow(
+                listOf(
+                    string(R.string.report_care_col_vaccine),
+                    string(R.string.report_care_col_given),
+                    string(R.string.report_care_col_next_due),
+                ),
+                columns,
+                headerCellPaint,
+            )
+            val rows = data.vaccinations.map { vaccination ->
+                textRow(
+                    listOf(
+                        vaccineName(vaccination.type),
+                        DateFormats.dayMonthYear(vaccination.date),
+                        vaccination.nextDue?.let { DateFormats.dayMonthYear(it) } ?: "–",
+                    ),
+                    columns,
+                    bodyPaint,
+                )
+            }
+            section(string(R.string.report_care_vaccinations), null, header.height + rows.first().height)
+            table(header, rows)
+        }
+
         /**
          * Latest panels side by side, most recent on the left, analyses grouped by category under
          * a subheading. Outside the laboratory values: bold, ↑/↓ arrow (readable in black and
@@ -623,6 +743,46 @@ class ReportPdfBuilder(private val context: Context) {
             }
         }
     }
+
+    // --- Care labels ---
+
+    private fun scoreName(kind: ScoreKind): String = string(
+        when (kind) {
+            ScoreKind.HBI -> R.string.report_care_score_hbi
+            ScoreKind.SCCAI -> R.string.report_care_score_sccai
+        },
+    )
+
+    private fun levelName(level: ActivityLevel): String = string(
+        when (level) {
+            ActivityLevel.REMISSION -> R.string.report_care_level_remission
+            ActivityLevel.MILD -> R.string.report_care_level_mild
+            ActivityLevel.MODERATE -> R.string.report_care_level_moderate
+            ActivityLevel.SEVERE -> R.string.report_care_level_severe
+            ActivityLevel.ACTIVE -> R.string.report_care_level_active
+        },
+    )
+
+    private fun diagnosisName(diagnosis: Diagnosis): String = string(
+        when (diagnosis) {
+            Diagnosis.CROHN -> R.string.report_care_diagnosis_crohn
+            Diagnosis.ULCERATIVE_COLITIS -> R.string.report_care_diagnosis_uc
+            Diagnosis.OTHER -> R.string.report_care_diagnosis_other
+        },
+    )
+
+    private fun vaccineName(type: VaccineType): String = string(
+        when (type) {
+            VaccineType.INFLUENZA -> R.string.report_care_vaccine_influenza
+            VaccineType.PNEUMOCOCCAL -> R.string.report_care_vaccine_pneumococcal
+            VaccineType.COVID19 -> R.string.report_care_vaccine_covid19
+            VaccineType.HEPATITIS_B -> R.string.report_care_vaccine_hepatitis_b
+            VaccineType.HPV -> R.string.report_care_vaccine_hpv
+            VaccineType.ZOSTER -> R.string.report_care_vaccine_zoster
+            VaccineType.TETANUS -> R.string.report_care_vaccine_tetanus
+            VaccineType.OTHER -> R.string.report_care_vaccine_other
+        },
+    )
 
     // --- Textes ---
 

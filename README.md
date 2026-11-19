@@ -35,6 +35,12 @@ Your health data stays on your phone.
 - **Lab results**: 43 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids…), with the reference range printed by your lab, charts and a table of blood panels. The app provides no normal values of its own.
 - **Import lab reports** (lab PDFs, several at once): the text of the PDF is read on the phone, values are converted to the app's units, and nothing is saved before you review it. Scanned documents are not supported.
 - **Body weight**: weight entries with their date and a weight curve over 6 months, 1 year or the whole history.
+- **Flares**: start and end dates, treatment, hospitalization. Flare days are marked on the calendar, the day screen and the stool chart, and an ongoing flare shows on the Today screen.
+- **Activity scores**: self-assessed Harvey-Bradshaw index (Crohn's) or SCCAI (ulcerative colitis), pre-filled from your stools of the day, with a curve over time.
+- **Vaccinations**: vaccines with date and next due date, with an optional reminder a week before and on the day.
+- **Steroid courses**: dose steps, today's dose and cumulative dose.
+- **Meals and symptoms**: foods eaten before liquid stools, blood or pain more often than usual, shown as an observation, not a cause.
+- **Emergency**: a full-screen "I urgently need a toilet" card and an emergency sheet (diagnosis, treatments, allergies, doctor, contact), optionally readable from the lock screen.
 
 <p>
   <img src="docs/screenshots/labs.png" width="200" alt="Lab results by test">

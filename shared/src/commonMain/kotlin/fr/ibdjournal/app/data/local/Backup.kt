@@ -19,6 +19,11 @@ suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connectio
             doseLogs = doseLogDao().getAll().map { it.toDoseLog() },
             exams = examDao().getAll().map { it.toExam() },
             weights = weightDao().getAll().map { it.toWeight() },
+            flares = flareDao().getAll().map { it.toFlare() },
+            activityScores = activityScoreDao().getAll().map { it.toActivityScore() },
+            vaccinations = vaccinationDao().getAll().map { it.toVaccination() },
+            steroidCourses = steroidCourseDao().getAll().map { it.toSteroidCourse() },
+            emergencyInfo = emergencyDao().get()?.toEmergencyInfo(),
         )
     }
 }
@@ -60,6 +65,23 @@ suspend fun AppDatabase.restore(backup: BackupData) {
                 weightDao().deleteAll()
                 weightDao().insertAll(list.map { it.toWeightEntity() })
             }
+            backup.flares?.let { list ->
+                flareDao().deleteAll()
+                flareDao().insertAll(list.map { it.toFlareEntity() })
+            }
+            backup.activityScores?.let { list ->
+                activityScoreDao().deleteAll()
+                activityScoreDao().insertAll(list.map { it.toActivityScoreEntity() })
+            }
+            backup.vaccinations?.let { list ->
+                vaccinationDao().deleteAll()
+                vaccinationDao().insertAll(list.map { it.toVaccinationEntity() })
+            }
+            backup.steroidCourses?.let { list ->
+                steroidCourseDao().deleteAll()
+                steroidCourseDao().insertAll(list.map { it.toSteroidCourseEntity() })
+            }
+            backup.emergencyInfo?.let { emergencyDao().upsert(it.toEmergencyEntity()) }
         }
     }
 }

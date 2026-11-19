@@ -7,6 +7,7 @@ import android.os.LocaleList
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
+import fr.ibdjournal.app.data.CareRepository
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.ProfileRepository
 import fr.ibdjournal.app.domain.AnalysisPeriod
@@ -32,6 +33,7 @@ class ReportGenerator @Inject constructor(
     @ApplicationContext private val context: Context,
     private val diaryRepository: DiaryRepository,
     private val profileRepository: ProfileRepository,
+    private val careRepository: CareRepository,
 ) {
 
     suspend fun generate(period: AnalysisPeriod): Uri {
@@ -47,6 +49,10 @@ class ReportGenerator @Inject constructor(
             doseLogs = profileRepository.doseLogs.first(),
             labResults = profileRepository.labResults.first(),
             checkups = profileRepository.checkups.first(),
+            flares = careRepository.flares.first(),
+            activityScores = careRepository.activityScores.first(),
+            steroidCourses = careRepository.steroidCourses.first(),
+            vaccinations = careRepository.vaccinations.first(),
         )
         return withContext(Dispatchers.IO) {
             val dir = File(context.cacheDir, REPORTS_DIR).apply { mkdirs() }

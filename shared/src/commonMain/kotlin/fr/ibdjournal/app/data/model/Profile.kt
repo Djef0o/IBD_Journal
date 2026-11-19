@@ -20,6 +20,7 @@ data class Profile(
     val lastName: String = "",
     val birthDate: LocalDate? = null,
     val sex: Sex? = null,
+    val diagnosis: Diagnosis? = null,
 )
 
 @Serializable

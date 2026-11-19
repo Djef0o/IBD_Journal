@@ -6,8 +6,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import fr.ibdjournal.app.data.AppPrefs
+import fr.ibdjournal.app.data.CareRepository
 import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.NotificationSettings
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Product
@@ -62,6 +64,7 @@ data class StoolEditorState(val stool: Stool?, val initialBristol: Int? = null, 
 class CalendarViewModel @Inject constructor(
     private val repository: DiaryRepository,
     appPrefs: AppPrefs,
+    careRepository: CareRepository,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -103,6 +106,10 @@ class CalendarViewModel @Inject constructor(
             }
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CalendarUiState())
+
+    /** Flare periods, chronological: Home and the day screen mark the days they cover. */
+    val flares: StateFlow<List<Flare>> = careRepository.flares
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     // --- Navigation ---
 

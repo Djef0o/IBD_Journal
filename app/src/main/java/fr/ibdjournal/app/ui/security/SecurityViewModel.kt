@@ -3,6 +3,7 @@ package fr.ibdjournal.app.ui.security
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.ibdjournal.app.notification.ReminderSource
 import fr.ibdjournal.app.security.JournalEraser
 import fr.ibdjournal.app.security.PinResult
 import fr.ibdjournal.app.security.Vault
@@ -14,6 +15,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import fr.ibdjournal.app.ui.emergency.EmergencyData
+import fr.ibdjournal.app.ui.emergency.toEmergencyData
 
 /** Steps of the first PIN, at onboarding or after the update that brings encryption. */
 enum class SetupPhase { CHOOSE, CONFIRM, ENCRYPTING, BIOMETRIC_OFFER }
@@ -23,6 +26,7 @@ enum class SetupPhase { CHOOSE, CONFIRM, ENCRYPTING, BIOMETRIC_OFFER }
 class SecurityViewModel @Inject constructor(
     private val vault: Vault,
     private val eraser: JournalEraser,
+    private val reminderSource: ReminderSource,
 ) : ViewModel() {
 
     val vaultState: StateFlow<VaultState> = vault.state
@@ -92,5 +96,17 @@ class SecurityViewModel @Inject constructor(
 
     fun eraseEverything() {
         viewModelScope.launch { eraser.eraseEverything() }
+    }
+
+    /**
+     * Emergency sheet from the sealed copy, readable without the PIN; null when the user did not
+     * allow it on the lock screen or when the copy cannot be read.
+     */
+    suspend fun lockScreenEmergency(): EmergencyData? = try {
+        reminderSource.current().toEmergencyData()
+    } catch (error: CancellationException) {
+        throw error
+    } catch (_: Throwable) {
+        null
     }
 }

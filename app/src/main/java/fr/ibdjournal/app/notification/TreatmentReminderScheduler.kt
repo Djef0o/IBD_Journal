@@ -16,6 +16,8 @@ import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RefillBasis
 import fr.ibdjournal.app.data.model.Exam
+import fr.ibdjournal.app.data.model.Vaccination
+import fr.ibdjournal.app.domain.nextReminder
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.ExamStepTime
 import fr.ibdjournal.app.domain.reminderAt
@@ -25,7 +27,9 @@ import fr.ibdjournal.app.domain.now
 import fr.ibdjournal.app.domain.occurrencesBetween
 import fr.ibdjournal.app.domain.toEpochMillis
 import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.ui.care.nameRes
 import fr.ibdjournal.app.ui.labelRes
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -58,6 +62,7 @@ class TreatmentReminderScheduler @Inject constructor(
         MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
         EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
+        VACCINE("vaccine"),
     }
 
     /** Reminder for each exam step. */
@@ -122,6 +127,16 @@ class TreatmentReminderScheduler @Inject constructor(
         calendarSync.removeExam(id)
     }
 
+    /**
+     * Vaccine reminders always use app notifications, whatever the reminder mode: a week before the
+     * planned date, then on the day.
+     */
+    fun schedule(vaccination: Vaccination, after: LocalDateTime = now()) {
+        schedule(Kind.VACCINE, vaccination.id, vaccination.nextReminder(after))
+    }
+
+    fun cancelVaccination(id: Long) = cancelAlarms(Kind.VACCINE, id)
+
     private fun cancelAlarms(kind: Kind, id: Long) {
         notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
         NotificationManagerCompat.from(context).cancel(kind.path, id.toInt())
@@ -132,6 +147,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.medications.forEach { schedule(it) }
         data.checkups.forEach { schedule(it) }
         data.exams.forEach { schedule(it) }
+        data.vaccinations.forEach { schedule(it) }
     }
 
     suspend fun cancelAll() {
@@ -139,6 +155,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.medications.forEach { cancelMedication(it.id) }
         data.checkups.forEach { cancelCheckup(it.id) }
         data.exams.forEach { cancelExam(it.id) }
+        data.vaccinations.forEach { cancelVaccination(it.id) }
     }
 
     /**
@@ -160,8 +177,6 @@ class TreatmentReminderScheduler @Inject constructor(
 
     /** Alarm fired: notifies, then sets the next occurrence. */
     suspend fun onAlarm(intent: Intent) {
-        // Alarm set before switching to the calendar: the calendar already notifies.
-        if (calendarSync.isActive()) return
         val segments = intent.data?.pathSegments ?: return
         val kind = Kind.entries.firstOrNull { it.path == segments.getOrNull(0) } ?: return
         val id = segments.getOrNull(1)?.toLongOrNull() ?: return
@@ -169,6 +184,12 @@ class TreatmentReminderScheduler @Inject constructor(
         val firedAt = localDateTimeAt(
             maxOf(System.currentTimeMillis(), intent.getLongExtra(EXTRA_TRIGGER_AT, 0L))
         )
+        if (kind == Kind.VACCINE) {
+            onVaccineAlarm(id, firedAt)
+            return
+        }
+        // Alarm set before switching to the calendar: the calendar already notifies.
+        if (calendarSync.isActive()) return
 
         val data = reminderSource.current()
         when (kind) {
@@ -203,6 +224,14 @@ class TreatmentReminderScheduler @Inject constructor(
                 showExamStep(exam, stepTime, kind)
             }
         }
+    }
+
+    /** Sets the following vaccine reminder, then notifies if the reminder is still wanted. */
+    private suspend fun onVaccineAlarm(id: Long, firedAt: LocalDateTime) {
+        val vaccination = reminderSource.current().vaccinations.firstOrNull { it.id == id } ?: return
+        schedule(Kind.VACCINE, id, vaccination.nextReminder(firedAt))
+        val due = vaccination.nextDue?.takeIf { vaccination.reminderEnabled } ?: return
+        showVaccine(vaccination, due)
     }
 
     private fun ReminderSchedule.nextIfEnabled(after: LocalDateTime) = takeIf { it.enabled }?.nextOccurrence(after)
@@ -300,6 +329,22 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    /** Vaccine reminder: names the vaccine and its planned date (a week before, then on the day). */
+    private fun showVaccine(vaccination: Vaccination, due: LocalDate) {
+        notify(
+            kind = Kind.VACCINE,
+            id = vaccination.id,
+            channelId = CHANNEL_VACCINE,
+            channelName = context.getString(R.string.vaccine_reminder_channel),
+            title = context.getString(R.string.vaccine_reminder_title),
+            text = context.getString(
+                R.string.vaccine_reminder_text,
+                context.getString(vaccination.type.nameRes()),
+                DateFormats.weekdayDayMonth(due),
+            ),
+        )
+    }
+
     /** "Remember to reorder": before the next intake or before the stock runs out. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
@@ -373,5 +418,6 @@ class TreatmentReminderScheduler @Inject constructor(
         private const val CHANNEL_MEDICATION = "medication_reminder"
         private const val CHANNEL_CHECKUP = "checkup_reminder"
         private const val CHANNEL_EXAM = "exam_reminder"
+        private const val CHANNEL_VACCINE = "vaccine_reminder"
     }
 }

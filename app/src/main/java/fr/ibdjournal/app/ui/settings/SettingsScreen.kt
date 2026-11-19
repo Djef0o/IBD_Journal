@@ -201,6 +201,7 @@ fun SettingsContent(
             )
             LanguageSection()
             SecuritySection()
+            EmergencySection()
 
             Text(
                 text = stringResource(R.string.notifications),

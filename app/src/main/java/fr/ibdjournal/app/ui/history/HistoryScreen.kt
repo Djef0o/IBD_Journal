@@ -39,10 +39,13 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,6 +54,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.domain.covers
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.calendar.BristolIcon
 import fr.ibdjournal.app.ui.formatDecimal
@@ -148,6 +152,9 @@ private fun MonthCard(
     val totalCells = leading + month.numberOfDays
     val rows = (totalCells + 6) / 7
     val today = today()
+    val flareDays = remember(state.flares, month) {
+        (1..month.numberOfDays).map { month.onDay(it) }.filter { date -> state.flares.any { it.covers(date) } }.toSet()
+    }
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -199,6 +206,7 @@ private fun MonthCard(
                                 date = date,
                                 stools = state.stoolsByDay[date].orEmpty(),
                                 isToday = date == today,
+                                isFlare = date in flareDays,
                                 onClick = { onOpenDay(date) },
                                 modifier = Modifier.weight(1f),
                             )
@@ -211,6 +219,10 @@ private fun MonthCard(
 
             Spacer(Modifier.height(10.dp))
             Legend()
+            if (flareDays.isNotEmpty()) {
+                Spacer(Modifier.height(4.dp))
+                FlareLegend()
+            }
             Spacer(Modifier.height(4.dp))
             Text(
                 text = stringResource(R.string.history_legend_note),
@@ -226,6 +238,7 @@ private fun DayCell(
     date: LocalDate,
     stools: List<Stool>,
     isToday: Boolean,
+    isFlare: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -243,9 +256,18 @@ private fun DayCell(
             .clip(shape)
             .background(background)
             .then(if (border != null) Modifier.border(border, shape) else Modifier)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .then(
+                if (isFlare) {
+                    val description = stringResource(R.string.flaremark_day_desc, DateFormats.fullDate(date))
+                    Modifier.semantics { contentDescription = description }
+                } else {
+                    Modifier
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
+        if (isFlare) FlareMark(Modifier.align(Alignment.TopCenter))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = date.day.toString(),
@@ -265,6 +287,36 @@ private fun DayCell(
                 Spacer(Modifier.height(3.dp))
             }
         }
+    }
+}
+
+/** Thin bar along the top edge of a flare day: adjacent days read as one continuous stretch. */
+@Composable
+private fun FlareMark(modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(3.dp)
+            .background(MaterialTheme.colorScheme.error.copy(alpha = 0.7f)),
+    )
+}
+
+@Composable
+private fun FlareLegend() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .width(16.dp)
+                .height(3.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.7f)),
+        )
+        Spacer(Modifier.width(6.dp))
+        Text(
+            text = stringResource(R.string.flaremark_legend),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

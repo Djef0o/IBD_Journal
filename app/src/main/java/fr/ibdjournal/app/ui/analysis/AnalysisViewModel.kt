@@ -4,15 +4,20 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import fr.ibdjournal.app.data.CareRepository
 import fr.ibdjournal.app.data.DiaryRepository
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.domain.AnalysisPeriod
 import fr.ibdjournal.app.domain.AnalysisSummary
+import fr.ibdjournal.app.domain.FoodLink
+import fr.ibdjournal.app.domain.foodSymptomLinks
 import fr.ibdjournal.app.domain.analyze
 import fr.ibdjournal.app.domain.startFrom
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.report.ReportGenerator
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -22,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -32,6 +38,7 @@ import kotlinx.datetime.LocalDate
 @HiltViewModel
 class AnalysisViewModel @Inject constructor(
     repository: DiaryRepository,
+    careRepository: CareRepository,
     private val reportGenerator: ReportGenerator,
 ) : ViewModel() {
 
@@ -48,6 +55,18 @@ class AnalysisViewModel @Inject constructor(
             analyze(history, meals, today, selected)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalysisSummary())
+
+    /** Foods followed by bad days: always computed over the whole history, whatever the period. */
+    val foodLinks: StateFlow<List<FoodLink>> = combine(
+        repository.observeAllStools(),
+        repository.observeMeals(LocalDate(2000, 1, 1), today),
+    ) { stools, meals -> foodSymptomLinks(meals, stools) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Flare periods, chronological: shaded behind the daily stool chart. */
+    val flares: StateFlow<List<Flare>> = careRepository.flares
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun setPeriod(selected: AnalysisPeriod) {
         period.value = selected

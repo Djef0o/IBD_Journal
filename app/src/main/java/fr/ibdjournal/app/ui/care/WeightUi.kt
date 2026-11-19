@@ -55,6 +55,7 @@ import fr.ibdjournal.app.ui.settings.settingsRowColors
 import java.util.Locale
 import kotlin.math.abs
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 
 /** Accepted entry range, in kg. */
@@ -78,17 +79,8 @@ private val newestWeightFirst: Comparator<Weight> =
 internal fun WeightCard(weights: List<Weight>, onOpenHistory: () -> Unit) {
     val latest = weights.last()
     val previous = weights.getOrNull(weights.lastIndex - 1)
-    val byPeriod = remember(weights) {
-        val today = today()
-        ChartPeriod.entries.associateWith { period ->
-            val months = period.months
-            if (months == null) weights
-            else today.minus(months, DateTimeUnit.MONTH).let { since -> weights.filter { it.date >= since } }
-        }
-    }
-    var period by rememberSaveable { mutableStateOf(ChartPeriod.SIX_MONTHS) }
-    // No weighing in the chosen window: whole history.
-    val shown = if (byPeriod.getValue(period).isEmpty()) ChartPeriod.ALL else period
+    val dates = remember(weights) { weights.map { it.date } }
+    val values = remember(weights) { weights.map { it.kg } }
 
     Card(
         modifier = Modifier
@@ -114,17 +106,12 @@ internal fun WeightCard(weights: List<Weight>, onOpenHistory: () -> Unit) {
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ChartPeriod.entries.forEach { option ->
-                    FilterChip(
-                        selected = shown == option,
-                        onClick = { period = option },
-                        enabled = byPeriod.getValue(option).isNotEmpty(),
-                        label = { Text(stringResource(option.labelRes)) },
-                    )
-                }
-            }
-            WeightChart(points = byPeriod.getValue(shown))
+            PeriodTimeSeries(
+                dates = dates,
+                values = values,
+                formatValue = ::formatDecimal,
+                description = stringResource(R.string.weight_chart_description),
+            )
             TextButton(onClick = onOpenHistory, modifier = Modifier.align(Alignment.End)) {
                 Text(stringResource(R.string.weight_history))
             }
@@ -133,18 +120,66 @@ internal fun WeightCard(weights: List<Weight>, onOpenHistory: () -> Unit) {
 }
 
 /**
- * Weight curve, x-positions proportional to elapsed time; the vertical axis spans the
- * window's lowest and highest weights. [points] chronological, non-empty.
+ * Period chips (6 months / 1 year / all) above a [TimeSeriesChart] of the chosen window.
+ * [dates] chronological, non-empty, same size as [values].
  */
 @Composable
-private fun WeightChart(points: List<Weight>) {
-    val min = points.minOf { it.kg }
-    val max = points.maxOf { it.kg }
+internal fun PeriodTimeSeries(
+    dates: List<LocalDate>,
+    values: List<Double>,
+    formatValue: (Double) -> String,
+    description: String,
+    defaultPeriod: ChartPeriod = ChartPeriod.SIX_MONTHS,
+) {
+    // Index of the first point of each window; -1 = no point in the window.
+    val windowStart = remember(dates) {
+        val today = today()
+        ChartPeriod.entries.associateWith { period ->
+            val months = period.months
+            if (months == null) 0
+            else today.minus(months, DateTimeUnit.MONTH).let { since -> dates.indexOfFirst { it >= since } }
+        }
+    }
+    var period by rememberSaveable { mutableStateOf(defaultPeriod) }
+    // No point in the chosen window: whole history.
+    val shown = if (windowStart.getValue(period) == -1) ChartPeriod.ALL else period
+    val from = windowStart.getValue(shown)
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ChartPeriod.entries.forEach { option ->
+            FilterChip(
+                selected = shown == option,
+                onClick = { period = option },
+                enabled = windowStart.getValue(option) != -1,
+                label = { Text(stringResource(option.labelRes)) },
+            )
+        }
+    }
+    TimeSeriesChart(
+        dates = dates.subList(from, dates.size),
+        values = values.subList(from, values.size),
+        formatValue = formatValue,
+        description = description,
+    )
+}
+
+/**
+ * Curve of a value over time, x-positions proportional to elapsed time; the vertical axis
+ * spans the lowest and highest values. [dates] chronological, non-empty, same size as [values].
+ */
+@Composable
+internal fun TimeSeriesChart(
+    dates: List<LocalDate>,
+    values: List<Double>,
+    formatValue: (Double) -> String,
+    description: String,
+) {
+    val min = values.min()
+    val max = values.max()
     val lineColor = MaterialTheme.colorScheme.primary
     val gridColor = MaterialTheme.colorScheme.outlineVariant
     val labelStyle = MaterialTheme.typography.labelSmall
     val labelColor = MaterialTheme.colorScheme.onSurfaceVariant
-    val description = stringResource(R.string.weight_chart_description)
 
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth().height(160.dp)) {
@@ -153,8 +188,8 @@ private fun WeightChart(points: List<Weight>) {
                 verticalArrangement = if (min == max) Arrangement.Center else Arrangement.SpaceBetween,
                 horizontalAlignment = Alignment.End,
             ) {
-                Text(formatDecimal(max), style = labelStyle, color = labelColor)
-                if (min != max) Text(formatDecimal(min), style = labelStyle, color = labelColor)
+                Text(formatValue(max), style = labelStyle, color = labelColor)
+                if (min != max) Text(formatValue(min), style = labelStyle, color = labelColor)
             }
             Canvas(
                 Modifier
@@ -166,10 +201,10 @@ private fun WeightChart(points: List<Weight>) {
                 val width = size.width - 2 * pad
                 val height = size.height - 2 * pad
 
-                fun x(index: Int): Float = pad + width * timeFraction(points, index) { it.date }
-                fun y(kg: Double): Float =
+                fun x(index: Int): Float = pad + width * timeFraction(dates, index) { it }
+                fun y(value: Double): Float =
                     if (max == min) size.height / 2
-                    else pad + height * ((max - kg) / (max - min)).toFloat()
+                    else pad + height * ((max - value) / (max - min)).toFloat()
 
                 // Minimum and maximum markers, in subtle dotted lines.
                 val dash = PathEffect.dashPathEffect(floatArrayOf(4.dp.toPx(), 4.dp.toPx()))
@@ -182,23 +217,23 @@ private fun WeightChart(points: List<Weight>) {
                         pathEffect = dash,
                     )
                 }
-                if (points.size > 1) {
+                if (values.size > 1) {
                     val path = Path()
-                    points.forEachIndexed { index, point ->
-                        if (index == 0) path.moveTo(x(index), y(point.kg))
-                        else path.lineTo(x(index), y(point.kg))
+                    values.forEachIndexed { index, value ->
+                        if (index == 0) path.moveTo(x(index), y(value))
+                        else path.lineTo(x(index), y(value))
                     }
                     drawPath(path, lineColor, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round))
                 }
                 val radius = 4.dp.toPx()
-                points.forEachIndexed { index, point ->
-                    drawCircle(lineColor, radius = radius, center = Offset(x(index), y(point.kg)))
+                values.forEachIndexed { index, value ->
+                    drawCircle(lineColor, radius = radius, center = Offset(x(index), y(value)))
                 }
             }
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            val first = points.first().date
-            val last = points.last().date
+            val first = dates.first()
+            val last = dates.last()
             if (first == last) {
                 Text(
                     DateFormats.dayMonthYear(first),

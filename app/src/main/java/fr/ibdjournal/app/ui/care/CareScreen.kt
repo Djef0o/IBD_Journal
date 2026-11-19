@@ -85,6 +85,18 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.atTime
+import fr.ibdjournal.app.data.model.ActivityScore
+import fr.ibdjournal.app.data.model.Diagnosis
+import fr.ibdjournal.app.data.model.Flare
+import fr.ibdjournal.app.data.model.ScoreKind
+import fr.ibdjournal.app.data.model.SteroidCourse
+import fr.ibdjournal.app.data.model.SteroidStep
+import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.Vaccination
+import fr.ibdjournal.app.data.model.VaccineType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.datetime.LocalDate
 
 /** Adherence window shown under each treatment, today included. */
 private const val ADHERENCE_DAYS = 30
@@ -97,6 +109,11 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
     val exams by viewModel.exams.collectAsStateWithLifecycle()
     val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
     val weights by viewModel.weights.collectAsStateWithLifecycle()
+    val flares by viewModel.flares.collectAsStateWithLifecycle()
+    val activityScores by viewModel.activityScores.collectAsStateWithLifecycle()
+    val diagnosis by viewModel.diagnosis.collectAsStateWithLifecycle()
+    val vaccinations by viewModel.vaccinations.collectAsStateWithLifecycle()
+    val steroidCourses by viewModel.steroidCourses.collectAsStateWithLifecycle()
 
     CareContent(
         medications = medications,
@@ -114,11 +131,25 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
         weights = weights,
         onSaveWeight = viewModel::saveWeight,
         onDeleteWeight = viewModel::deleteWeight,
+        flares = flares,
+        onSaveFlare = viewModel::saveFlare,
+        onDeleteFlare = viewModel::deleteFlare,
+        activityScores = activityScores,
+        diagnosis = diagnosis,
+        stoolsOn = viewModel::stoolsOn,
+        onSaveActivityScore = viewModel::saveActivityScore,
+        onDeleteActivityScore = viewModel::deleteActivityScore,
+        vaccinations = vaccinations,
+        onSaveVaccination = viewModel::saveVaccination,
+        onDeleteVaccination = viewModel::deleteVaccination,
+        steroidCourses = steroidCourses,
+        onSaveSteroidCourse = viewModel::saveSteroidCourse,
+        onDeleteSteroidCourse = viewModel::deleteSteroidCourse,
     )
 }
 
 /** Item being edited: null = closed; `item == null` = creation. */
-private data class Editing<T>(val item: T?)
+internal data class Editing<T>(val item: T?)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -138,6 +169,20 @@ fun CareContent(
     weights: List<Weight> = emptyList(),
     onSaveWeight: (Weight) -> Unit = {},
     onDeleteWeight: (Weight) -> Unit = {},
+    flares: List<Flare> = emptyList(),
+    onSaveFlare: (Flare) -> Unit = {},
+    onDeleteFlare: (Flare) -> Unit = {},
+    activityScores: List<ActivityScore> = emptyList(),
+    diagnosis: Diagnosis? = null,
+    stoolsOn: (LocalDate) -> Flow<List<Stool>> = { emptyFlow() },
+    onSaveActivityScore: (ActivityScore) -> Unit = {},
+    onDeleteActivityScore: (ActivityScore) -> Unit = {},
+    vaccinations: List<Vaccination> = emptyList(),
+    onSaveVaccination: (Vaccination) -> Unit = {},
+    onDeleteVaccination: (Vaccination) -> Unit = {},
+    steroidCourses: List<SteroidCourse> = emptyList(),
+    onSaveSteroidCourse: (SteroidCourse) -> Unit = {},
+    onDeleteSteroidCourse: (SteroidCourse) -> Unit = {},
 ) {
     val context = LocalContext.current
     var editMedication by remember { mutableStateOf<Editing<Medication>?>(null) }
@@ -239,6 +284,21 @@ fun CareContent(
             pastExams.forEach { exam ->
                 ExamRow(exam = exam, upcoming = false, onClick = { editExam = Editing(exam) })
             }
+
+            FlaresSection(flares = flares, onSave = onSaveFlare, onDelete = onDeleteFlare)
+            ActivityScoreSection(
+                scores = activityScores,
+                diagnosis = diagnosis,
+                stoolsOn = stoolsOn,
+                onSave = onSaveActivityScore,
+                onDelete = onDeleteActivityScore,
+            )
+            VaccinationsSection(
+                vaccinations = vaccinations,
+                onSave = { onSaveVaccination(it); requestPermissionIfNeeded(it.reminderEnabled) },
+                onDelete = onDeleteVaccination,
+            )
+            SteroidSection(courses = steroidCourses, onSave = onSaveSteroidCourse, onDelete = onDeleteSteroidCourse)
 
             SectionHeader(
                 title = stringResource(R.string.weight_title),
@@ -393,7 +453,7 @@ private fun PermissionCard(onGrant: () -> Unit) {
 }
 
 @Composable
-private fun SectionHeader(title: String, addLabel: String, onAdd: () -> Unit) {
+internal fun SectionHeader(title: String, addLabel: String, onAdd: () -> Unit) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.padding(start = 16.dp, end = 4.dp, top = 16.dp),
@@ -411,7 +471,7 @@ private fun SectionHeader(title: String, addLabel: String, onAdd: () -> Unit) {
 }
 
 @Composable
-private fun EmptyLine(text: String) {
+internal fun EmptyLine(text: String) {
     Text(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
@@ -551,6 +611,24 @@ private fun CarePreview() {
                 Weight(1, today.minus(60, DateTimeUnit.DAY), 68.4),
                 Weight(2, today.minus(30, DateTimeUnit.DAY), 66.9),
                 Weight(3, today.minus(2, DateTimeUnit.DAY), 67.5),
+            ),
+            flares = listOf(
+                Flare(1, today.minus(90, DateTimeUnit.DAY), today.minus(75, DateTimeUnit.DAY), "Prednisone 40 mg", hospitalized = true),
+                Flare(2, today.minus(4, DateTimeUnit.DAY), note = "Fatigue, urgency"),
+            ),
+            activityScores = listOf(
+                ActivityScore(1, today.minus(40, DateTimeUnit.DAY), ScoreKind.HBI, listOf(1, 1, 4, 0, 1)),
+                ActivityScore(2, today.minus(10, DateTimeUnit.DAY), ScoreKind.HBI, listOf(0, 0, 2, 0, 0)),
+            ),
+            vaccinations = listOf(
+                Vaccination(1, VaccineType.INFLUENZA, today.minus(400, DateTimeUnit.DAY), today.minus(30, DateTimeUnit.DAY)),
+                Vaccination(2, VaccineType.PNEUMOCOCCAL, today.minus(60, DateTimeUnit.DAY), today.plus(300, DateTimeUnit.DAY)),
+            ),
+            steroidCourses = listOf(
+                SteroidCourse(
+                    1, "Prednisone", today.minus(10, DateTimeUnit.DAY),
+                    listOf(SteroidStep(40.0, 7), SteroidStep(30.0, 7), SteroidStep(20.0, 7)),
+                ),
             ),
         )
     }

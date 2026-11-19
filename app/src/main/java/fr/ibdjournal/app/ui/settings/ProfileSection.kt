@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.AlertDialog
@@ -39,6 +41,8 @@ import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.Sex
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.DateFormats
+import fr.ibdjournal.app.ui.emergency.DiagnosisSelector
+import fr.ibdjournal.app.ui.emergency.labelRes
 import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.care.DatePickerDialogFor
 import fr.ibdjournal.app.ui.care.FieldRow
@@ -93,7 +97,9 @@ fun ProfileSection(modifier: Modifier = Modifier) {
                 } ?: stringResource(R.string.profile_birth_date_missing)
                 val sex = profile.sex?.let { stringResource(it.labelRes) }
                     ?: stringResource(R.string.profile_sex_missing)
-                Text("$birth\n$sex")
+                val diagnosis = profile.diagnosis?.let { stringResource(it.labelRes) }
+                    ?: stringResource(R.string.diagnosis_missing)
+                Text("$birth\n$sex\n$diagnosis")
             },
             trailingContent = {
                 TextButton(onClick = { editing = true }) { Text(stringResource(R.string.modify)) }
@@ -118,13 +124,17 @@ private fun ProfileEditDialog(
     var lastName by remember { mutableStateOf(profile.lastName) }
     var birthDate by remember { mutableStateOf(profile.birthDate) }
     var sex by remember { mutableStateOf(profile.sex) }
+    var diagnosis by remember { mutableStateOf(profile.diagnosis) }
     var pickDate by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(R.string.profile_edit)) },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
                 OutlinedTextField(
                     value = firstName,
                     onValueChange = { firstName = it },
@@ -148,12 +158,13 @@ private fun ProfileEditDialog(
                     TextButton(onClick = { pickDate = true }) { Text(stringResource(R.string.modify)) }
                 }
                 SexSelector(sex = sex, onChange = { sex = it })
+                DiagnosisSelector(diagnosis = diagnosis, onChange = { diagnosis = it })
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    onSave(Profile(firstName.trim(), lastName.trim(), birthDate, sex))
+                    onSave(Profile(firstName.trim(), lastName.trim(), birthDate, sex, diagnosis))
                     onDismiss()
                 },
             ) { Text(stringResource(R.string.save)) }

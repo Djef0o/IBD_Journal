@@ -2,6 +2,7 @@ package fr.ibdjournal.app.data.local
 
 import androidx.room.ColumnInfo
 import androidx.room.Embedded
+import fr.ibdjournal.app.data.model.Diagnosis
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
@@ -235,6 +236,8 @@ data class ProfileEntity(
     val birthDateEpochDay: Long?,
     /** Added in version 6. */
     val sex: Sex? = null,
+    /** Added in version 10. */
+    val diagnosis: Diagnosis? = null,
 ) {
     companion object {
         const val SINGLE_ID = 1
@@ -277,6 +280,7 @@ fun ProfileEntity.toProfile() = Profile(
     lastName = lastName,
     birthDate = birthDateEpochDay?.let { LocalDate.fromEpochDays(it) },
     sex = sex,
+    diagnosis = diagnosis,
 )
 
 fun Profile.toProfileEntity() = ProfileEntity(
@@ -284,6 +288,7 @@ fun Profile.toProfileEntity() = ProfileEntity(
     lastName = lastName,
     birthDateEpochDay = birthDate?.toEpochDays(),
     sex = sex,
+    diagnosis = diagnosis,
 )
 
 fun ScheduleColumns.toSchedule() = ReminderSchedule(

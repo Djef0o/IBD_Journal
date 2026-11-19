@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
 import fr.ibdjournal.app.data.model.Stool
@@ -61,11 +62,19 @@ import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.calendar.DiaryEditors
 import fr.ibdjournal.app.ui.calendar.stoolSummary
 import fr.ibdjournal.app.ui.calendar.stoolTitle
+import androidx.compose.material.icons.outlined.MedicalInformation
+import fr.ibdjournal.app.ui.emergency.EmergencyChooserDialog
+import fr.ibdjournal.app.ui.emergency.EmergencySheet
+import fr.ibdjournal.app.ui.emergency.EmergencyViewModel
+import fr.ibdjournal.app.ui.emergency.UrgentNeedCard
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.domain.localDateTimeAt
+import fr.ibdjournal.app.domain.dayNumberOn
+import fr.ibdjournal.app.domain.ongoingOn
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 
@@ -75,20 +84,28 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     viewModel: CalendarViewModel = hiltViewModel(),
     dosesViewModel: TodayDosesViewModel = hiltViewModel(),
+    emergencyViewModel: EmergencyViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val flares by viewModel.flares.collectAsStateWithLifecycle()
     val doses by dosesViewModel.doses.collectAsStateWithLifecycle()
     var showQuickStool by rememberSaveable { mutableStateOf(false) }
     var showMealTypes by rememberSaveable { mutableStateOf(false) }
+    var showEmergencyChooser by rememberSaveable { mutableStateOf(false) }
+    var showUrgentCard by rememberSaveable { mutableStateOf(false) }
+    var showEmergencySheet by rememberSaveable { mutableStateOf(false) }
+    val emergencyData by emergencyViewModel.data.collectAsStateWithLifecycle()
 
     HomeContent(
         state = state,
+        flares = flares,
         onOpenSettings = onOpenSettings,
         onAddMeal = { showMealTypes = true },
         onAddStool = { showQuickStool = true },
         onEditMeal = { meal -> viewModel.openMealEditor(meal.type, meal) },
         onEditStool = { stool -> viewModel.openStoolSheet(stool) },
         doses = doses,
+        onEmergency = { showEmergencyChooser = true },
         onDose = dosesViewModel::toggle,
     )
 
@@ -116,6 +133,22 @@ fun HomeScreen(
         )
     }
 
+    if (showEmergencyChooser) {
+        EmergencyChooserDialog(
+            onDismiss = { showEmergencyChooser = false },
+            onUrgentCard = {
+                showEmergencyChooser = false
+                showUrgentCard = true
+            },
+            onSheet = {
+                showEmergencyChooser = false
+                showEmergencySheet = true
+            },
+        )
+    }
+    if (showUrgentCard) UrgentNeedCard(onDismiss = { showUrgentCard = false })
+    if (showEmergencySheet) EmergencySheet(data = emergencyData, onDismiss = { showEmergencySheet = false })
+
     DiaryEditors(viewModel)
 }
 
@@ -129,8 +162,11 @@ fun HomeContent(
     onEditStool: (Stool) -> Unit = {},
     doses: List<DoseDue> = emptyList(),
     onDose: (DoseDue, DoseStatus) -> Unit = { _, _ -> },
+    onEmergency: () -> Unit = {},
+    flares: List<Flare> = emptyList(),
 ) {
     val today = today()
+    val ongoingFlare = flares.ongoingOn(today)
     val meals = state.mealsByDay[today].orEmpty()
     val stools = state.stoolsByDay[today].orEmpty()
 
@@ -145,12 +181,16 @@ fun HomeContent(
             .verticalScroll(rememberScrollState())
             .padding(bottom = 28.dp),
     ) {
-        Header(onOpenSettings = onOpenSettings)
+        Header(onOpenSettings = onOpenSettings, onEmergency = onEmergency)
 
         Column(
             modifier = Modifier.padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
+            if (ongoingFlare != null) {
+                FlareCard(flare = ongoingFlare, today = today)
+            }
+
             SummaryCard(stools = stools, meals = meals)
 
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -205,7 +245,7 @@ fun HomeContent(
 }
 
 @Composable
-private fun Header(onOpenSettings: () -> Unit) {
+private fun Header(onOpenSettings: () -> Unit, onEmergency: () -> Unit) {
     val date = DateFormats.weekdayDayMonth(today())
 
     Row(
@@ -226,6 +266,13 @@ private fun Header(onOpenSettings: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
         }
+        IconButton(onClick = onEmergency) {
+            Icon(
+                Icons.Outlined.MedicalInformation,
+                contentDescription = stringResource(R.string.emergency_chooser_title),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
         IconButton(onClick = onOpenSettings) {
             Icon(
                 Icons.Outlined.Settings,
@@ -233,6 +280,28 @@ private fun Header(onOpenSettings: () -> Unit) {
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
+    }
+}
+
+/** Reminder that a flare is in progress; informational only. */
+@Composable
+private fun FlareCard(flare: Flare, today: LocalDate) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.6f),
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+    ) {
+        Text(
+            text = stringResource(
+                R.string.flaremark_home,
+                DateFormats.dayMonthYear(flare.start),
+                flare.dayNumberOn(today) ?: 1,
+            ),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(14.dp),
+        )
     }
 }
 

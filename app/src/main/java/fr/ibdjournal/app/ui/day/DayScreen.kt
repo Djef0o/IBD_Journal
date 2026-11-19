@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.ui.DateFormats
@@ -56,6 +57,8 @@ import fr.ibdjournal.app.ui.calendar.stoolSummary
 import fr.ibdjournal.app.ui.calendar.stoolTitle
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.home.MealTypeSheet
+import fr.ibdjournal.app.domain.activeOn
+import fr.ibdjournal.app.domain.dayNumberOn
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.ui.labelRes
 import kotlinx.datetime.LocalDate
@@ -71,11 +74,13 @@ fun DayScreen(
     viewModel: CalendarViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val flares by viewModel.flares.collectAsStateWithLifecycle()
     var showMealTypes by rememberSaveable { mutableStateOf(false) }
 
     val selected = state.selectedDate
     val meals = state.mealsByDay[selected].orEmpty()
     val stools = state.stoolsByDay[selected].orEmpty()
+    val flare = flares.activeOn(selected)
 
     Column(
         modifier = Modifier
@@ -101,6 +106,10 @@ fun DayScreen(
                 ) {
                     Text(stringResource(R.string.today))
                 }
+            }
+
+            if (flare != null) {
+                FlareChip(flare = flare, date = selected)
             }
 
             SummaryCard(
@@ -171,6 +180,30 @@ fun DayScreen(
     }
 
     DiaryEditors(viewModel)
+}
+
+/** Banner shown when the day falls within a flare: day number since the start, hospitalization. */
+@Composable
+private fun FlareChip(flare: Flare, date: LocalDate) {
+    val text = buildList {
+        add(
+            flare.dayNumberOn(date)?.let { stringResource(R.string.flaremark_day, it) }
+                ?: stringResource(R.string.flaremark_chart_legend),
+        )
+        if (flare.hospitalized) add(stringResource(R.string.flaremark_hospitalized))
+    }.joinToString(" · ")
+    Surface(
+        shape = RoundedCornerShape(50),
+        color = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+        )
+    }
 }
 
 @Composable

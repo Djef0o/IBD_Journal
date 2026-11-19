@@ -66,6 +66,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import fr.ibdjournal.app.R
+import fr.ibdjournal.app.data.model.Diagnosis
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Profile
 import fr.ibdjournal.app.data.model.Sex
@@ -75,6 +76,7 @@ import fr.ibdjournal.app.ui.calendar.BristolIcon
 import fr.ibdjournal.app.ui.care.DatePickerDialogFor
 import fr.ibdjournal.app.ui.care.MedicationEditorSheet
 import fr.ibdjournal.app.ui.care.scheduleStatus
+import fr.ibdjournal.app.ui.emergency.DiagnosisSelector
 import fr.ibdjournal.app.ui.settings.SexSelector
 import fr.ibdjournal.app.ui.settings.settingsRowColors
 import fr.ibdjournal.app.ui.security.SecuritySetupContent
@@ -106,10 +108,12 @@ fun OnboardingScreen(
     var lastName by rememberSaveable { mutableStateOf("") }
     var birthEpochDay by rememberSaveable { mutableStateOf<Long?>(null) }
     var sex by rememberSaveable { mutableStateOf<Sex?>(null) }
+    var diagnosis by rememberSaveable { mutableStateOf<Diagnosis?>(null) }
 
     val step = Step.entries[stepIndex]
     val isLast = stepIndex == Step.entries.lastIndex
-    val profileEmpty = firstName.isBlank() && lastName.isBlank() && birthEpochDay == null && sex == null
+    val profileEmpty = firstName.isBlank() && lastName.isBlank() && birthEpochDay == null && sex == null &&
+        diagnosis == null
     // "Skip" rather than "Next" when the input step was left empty.
     val skipping = (step == Step.PROFILE && profileEmpty) || (step == Step.TREATMENTS && medications.isEmpty())
     // The PIN cannot be skipped: the following steps already write to the encrypted journal.
@@ -120,7 +124,9 @@ fun OnboardingScreen(
     val next = {
         if (step == Step.PROFILE && !profileEmpty) {
             viewModel.saveProfile(
-                Profile(firstName.trim(), lastName.trim(), birthEpochDay?.let { LocalDate.fromEpochDays(it) }, sex)
+                Profile(
+                    firstName.trim(), lastName.trim(), birthEpochDay?.let { LocalDate.fromEpochDays(it) }, sex, diagnosis,
+                )
             )
         }
         if (isLast) onFinish() else stepIndex += 1
@@ -165,10 +171,12 @@ fun OnboardingScreen(
                             lastName = lastName,
                             birthDate = birthEpochDay?.let { LocalDate.fromEpochDays(it) },
                             sex = sex,
+                            diagnosis = diagnosis,
                             onFirstName = { firstName = it },
                             onLastName = { lastName = it },
                             onBirthDate = { birthEpochDay = it.toEpochDays() },
                             onSex = { sex = it },
+                            onDiagnosis = { diagnosis = it },
                         )
                         Step.TREATMENTS -> TreatmentsStep(
                             medications = medications,
@@ -264,10 +272,12 @@ private fun ProfileStep(
     lastName: String,
     birthDate: LocalDate?,
     sex: Sex?,
+    diagnosis: Diagnosis?,
     onFirstName: (String) -> Unit,
     onLastName: (String) -> Unit,
     onBirthDate: (LocalDate) -> Unit,
     onSex: (Sex) -> Unit,
+    onDiagnosis: (Diagnosis) -> Unit,
 ) {
     var pickDate by remember { mutableStateOf(false) }
 
@@ -304,6 +314,7 @@ private fun ProfileStep(
         TextButton(onClick = { pickDate = true }) { Text(stringResource(R.string.modify)) }
     }
     SexSelector(sex = sex, onChange = onSex)
+    DiagnosisSelector(diagnosis = diagnosis, onChange = onDiagnosis)
 
     if (pickDate) {
         DatePickerDialogFor(

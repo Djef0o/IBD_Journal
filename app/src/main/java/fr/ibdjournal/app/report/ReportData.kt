@@ -1,5 +1,6 @@
 package fr.ibdjournal.app.report
 
+import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoseLog
 import fr.ibdjournal.app.data.model.LabResult
@@ -7,7 +8,10 @@ import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Profile
+import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.SteroidCourse
+import fr.ibdjournal.app.data.model.Vaccination
 import fr.ibdjournal.app.domain.Adherence
 import fr.ibdjournal.app.domain.AnalysisPeriod
 import fr.ibdjournal.app.domain.AnalysisSummary
@@ -15,6 +19,7 @@ import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.ReferenceRange
 import fr.ibdjournal.app.domain.adherence
 import fr.ibdjournal.app.domain.analyze
+import fr.ibdjournal.app.domain.end
 import fr.ibdjournal.app.domain.reference
 import fr.ibdjournal.app.domain.startFrom
 import fr.ibdjournal.app.domain.status
@@ -66,6 +71,14 @@ data class ReportData(
     val labPanels: LabPanels,
     /** Upcoming check-ups, from nearest to furthest. */
     val upcomingCheckups: List<UpcomingCheckup>,
+    /** Flares overlapping the period, oldest first. */
+    val flares: List<Flare>,
+    /** Activity scores within the period, oldest first. */
+    val activityScores: List<ActivityScore>,
+    /** Steroid courses overlapping the period, oldest first. */
+    val steroidCourses: List<SteroidCourse>,
+    /** All vaccinations, most recent first. */
+    val vaccinations: List<Vaccination>,
 )
 
 /** Builds the report for [period] ending on the day of [now], from the raw data. */
@@ -79,6 +92,10 @@ fun reportData(
     doseLogs: List<DoseLog>,
     labResults: List<LabResult>,
     checkups: List<Checkup>,
+    flares: List<Flare> = emptyList(),
+    activityScores: List<ActivityScore> = emptyList(),
+    steroidCourses: List<SteroidCourse> = emptyList(),
+    vaccinations: List<Vaccination> = emptyList(),
 ): ReportData {
     val today = now.date
     val summary = analyze(stools, meals, today, period)
@@ -104,6 +121,16 @@ fun reportData(
         upcomingCheckups = checkups
             .mapNotNull { checkup -> checkup.schedule.nextOccurrence(now)?.let { UpcomingCheckup(checkup, it) } }
             .sortedBy { it.at },
+        flares = flares
+            .filter { it.start <= today && (it.end ?: today) >= from }
+            .sortedBy { it.start },
+        activityScores = activityScores
+            .filter { it.date in from..today }
+            .sortedWith(compareBy({ it.date }, { it.id })),
+        steroidCourses = steroidCourses
+            .filter { it.start <= today && it.end >= from }
+            .sortedBy { it.start },
+        vaccinations = vaccinations.sortedByDescending { it.date },
     )
 }
 

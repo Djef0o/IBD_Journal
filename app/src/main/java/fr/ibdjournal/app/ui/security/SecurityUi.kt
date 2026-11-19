@@ -62,10 +62,15 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.security.PinResult
 import fr.ibdjournal.app.security.Vault
 import fr.ibdjournal.app.security.VaultState
+import fr.ibdjournal.app.ui.emergency.EmergencyData
+import fr.ibdjournal.app.ui.emergency.EmergencySheet
+import fr.ibdjournal.app.ui.emergency.UrgentNeedCard
 import javax.crypto.Cipher
 import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 // --- Fingerprint ---
 
@@ -308,6 +313,9 @@ fun LockScreen(viewModel: SecurityViewModel) {
     var lockedUntil by remember { mutableStateOf(viewModel.lockedOutUntil()) }
     var now by remember { mutableLongStateOf(System.currentTimeMillis()) }
     var confirmErase by remember { mutableStateOf(false) }
+    var showUrgentCard by remember { mutableStateOf(false) }
+    var showEmergencySheet by remember { mutableStateOf(false) }
+    var emergency by remember { mutableStateOf<EmergencyData?>(null) }
     val biometric = remember { viewModel.biometricEnabled }
 
     val wrongPin = stringResource(R.string.pin_wrong)
@@ -356,6 +364,9 @@ fun LockScreen(viewModel: SecurityViewModel) {
         }
     }
 
+    // Sealed copy: only present when the user allowed the sheet on the lock screen.
+    LaunchedEffect(Unit) { emergency = withContext(Dispatchers.IO) { viewModel.lockScreenEmergency() } }
+
     LaunchedEffect(Unit) {
         if (biometric && viewModel.lockedOutUntil() == null) promptBiometric()
     }
@@ -399,7 +410,18 @@ fun LockScreen(viewModel: SecurityViewModel) {
                 },
             )
             TextButton(onClick = { confirmErase = true }) { Text(stringResource(R.string.pin_forgot)) }
+            TextButton(onClick = { showUrgentCard = true }) { Text(stringResource(R.string.emergency_open_card)) }
+            if (emergency != null) {
+                TextButton(onClick = { showEmergencySheet = true }) {
+                    Text(stringResource(R.string.emergency_open_sheet))
+                }
+            }
         }
+    }
+
+    if (showUrgentCard) UrgentNeedCard(onDismiss = { showUrgentCard = false })
+    emergency?.takeIf { showEmergencySheet }?.let { data ->
+        EmergencySheet(data = data, onDismiss = { showEmergencySheet = false })
     }
 
     if (confirmErase) {

@@ -7,6 +7,8 @@ IBD Journal es un diario personal para personas con enfermedad de Crohn o coliti
 • Colonoscopia y rectosigmoidoscopia: fecha, dieta, tomas de la preparación y un recordatorio por etapa, según las indicaciones de tu médico
 • Análisis: 43 pruebas habituales con los valores de referencia impresos por tu laboratorio, gráficos y tablas; importación desde los PDF de tu laboratorio, leídos en el teléfono
 • Peso corporal: registra tu peso con su fecha y sigue tu curva de peso
+• Brotes, puntuaciones de actividad (Harvey-Bradshaw, SCCAI), vacunas con recordatorio opcional y pautas de corticoides
+• Análisis de comidas y síntomas, tarjeta de urgencia para ir al baño y ficha de emergencia desde la pantalla bloqueada
 • Informe PDF para tu médico
 • Copia de seguridad y restauración en un archivo cifrado con contraseña
 
