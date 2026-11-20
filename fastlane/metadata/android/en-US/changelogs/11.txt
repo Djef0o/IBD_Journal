@@ -1,0 +1,1 @@
+New: two home-screen widgets (one "add a stool" button, and your last 7 days) and an optional weekly weigh-in reminder where you type your weight right in the notification.

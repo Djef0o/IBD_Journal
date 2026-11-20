@@ -1,0 +1,1 @@
+Nouveau : deux widgets pour l'écran d'accueil (un bouton « ajouter une selle » et vos 7 derniers jours) et un rappel de pesée hebdomadaire facultatif, avec saisie du poids directement dans la notification.

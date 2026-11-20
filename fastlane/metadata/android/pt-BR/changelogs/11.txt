@@ -1,0 +1,1 @@
+Novidades: dois widgets para a tela inicial (um botão «adicionar fezes» e seus últimos 7 dias) e um lembrete semanal de pesagem opcional, com o peso digitado direto na notificação.

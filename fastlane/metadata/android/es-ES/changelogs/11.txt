@@ -1,0 +1,1 @@
+Novedades: dos widgets para la pantalla de inicio (un botón «añadir deposición» y tus últimos 7 días) y un recordatorio semanal de pesaje opcional, con el peso escrito directamente en la notificación.
