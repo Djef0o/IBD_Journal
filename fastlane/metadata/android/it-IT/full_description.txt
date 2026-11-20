@@ -11,7 +11,8 @@ IBD Journal è un diario personale per chi convive con la malattia di Crohn o la
 • Analisi di pasti e sintomi, tessera per urgenza di andare in bagno e scheda di emergenza dalla schermata di blocco
 • Sintomi del giorno (articolazioni, pelle, occhi, afte, febbre), domande per il medico, appuntamenti con promemoria
 • Report PDF per il tuo medico
-• Backup e ripristino su un file cifrato con password
+• Backup e ripristino su un file cifrato con password, con promemoria mensile
+• Esportazione CSV (foglio di calcolo) in un archivio protetto da password
 
 Privacy: nessun account, nessun server, nessun tracker, nessun servizio Google. I tuoi dati non lasciano il telefono se non li esporti. L'unico uso della rete è la ricerca dei codici a barre su Open Food Facts.
 

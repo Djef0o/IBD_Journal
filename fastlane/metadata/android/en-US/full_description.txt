@@ -11,7 +11,8 @@ IBD Journal is a personal diary for people living with Crohn's disease or ulcera
 • Flares, activity scores (Harvey-Bradshaw, SCCAI), vaccinations with optional reminders and steroid courses
 • Meals and symptoms analysis, urgent-need card and emergency sheet readable from the lock screen
 • PDF report for your doctor
-• Password-encrypted backup and restore to a file
+• Password-encrypted backup and restore to a file, with a monthly reminder
+• CSV export (spreadsheet) in a password-protected archive
 
 Privacy: no account, no server, no tracker, no Google services. Your data never leaves the phone unless you export it. The only network use is the barcode lookup on Open Food Facts.
 

@@ -138,5 +138,6 @@ dependencies {
         implementation(libs.sqlcipher.android)
     }
     implementation(libs.androidx.biometric)
+    implementation(libs.zip4j)
     implementation(libs.androidx.lifecycle.process)
 }

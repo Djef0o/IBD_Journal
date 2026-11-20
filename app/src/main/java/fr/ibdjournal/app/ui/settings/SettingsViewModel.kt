@@ -12,11 +12,15 @@ import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.data.BackupCrypto
+import fr.ibdjournal.app.data.BackupSettings
+import fr.ibdjournal.app.data.CsvExportManager
 import fr.ibdjournal.app.data.DataBackupManager
 import fr.ibdjournal.app.data.NotificationSettings
 import fr.ibdjournal.app.data.ThemeMode
 import fr.ibdjournal.app.data.ThemePalette
 import fr.ibdjournal.app.notification.NotificationHelper
+import fr.ibdjournal.app.notification.TreatmentReminderScheduler
+import fr.ibdjournal.app.domain.today
 import java.io.FileNotFoundException
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -32,7 +36,9 @@ import kotlinx.coroutines.launch
 sealed interface BackupState {
     data object Idle : BackupState
     /** Password choice, before the file picker. */
-    data object ExportPassword : BackupState
+    data class ExportPassword(val csv: Boolean = false) : BackupState
+    /** Warning shown before the CSV export. */
+    data object CsvWarning : BackupState
     /** Key derivation (a few seconds) then read/write. */
     data class Working(val exporting: Boolean) : BackupState
     data class ImportPassword(val wrongPassword: Boolean = false) : BackupState
@@ -45,6 +51,8 @@ class SettingsViewModel @Inject constructor(
     private val appPrefs: AppPrefs,
     private val notificationHelper: NotificationHelper,
     private val backupManager: DataBackupManager,
+    private val csvExportManager: CsvExportManager,
+    private val reminders: TreatmentReminderScheduler,
 ) : ViewModel() {
 
     val settings: StateFlow<NotificationSettings> = appPrefs.notificationSettings
@@ -59,6 +67,10 @@ class SettingsViewModel @Inject constructor(
     /** Chosen password, kept for the duration of the file picker then cleared. */
     private var exportPassword: CharArray? = null
     private var importUri: Uri? = null
+
+    /** Last encrypted backup and reminder switch. */
+    val backupSettings: StateFlow<BackupSettings> = appPrefs.backupSettings
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BackupSettings())
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPrefs.setThemeMode(mode) }
@@ -99,7 +111,16 @@ class SettingsViewModel @Inject constructor(
     }
 
     fun startExport() {
-        _backupState.value = BackupState.ExportPassword
+        _backupState.value = BackupState.ExportPassword()
+    }
+
+    /** CSV export: a warning about the sensitivity of the data first, then the archive password. */
+    fun startCsvExport() {
+        _backupState.value = BackupState.CsvWarning
+    }
+
+    fun confirmCsvWarning() {
+        _backupState.value = BackupState.ExportPassword(csv = true)
     }
 
     /** Password validated: the screen then opens the file picker. */
@@ -108,8 +129,13 @@ class SettingsViewModel @Inject constructor(
         _backupState.value = BackupState.Idle
     }
 
-    /** Destination file chosen (or `null` if cancelled). */
-    fun exportTo(uri: Uri?) {
+    /** Destination file of the encrypted backup chosen (or `null` if cancelled). */
+    fun exportTo(uri: Uri?) = runExport(uri, csv = false)
+
+    /** Destination archive of the CSV export chosen (or `null` if cancelled). */
+    fun exportCsvTo(uri: Uri?) = runExport(uri, csv = true)
+
+    private fun runExport(uri: Uri?, csv: Boolean) {
         val password = exportPassword ?: return
         exportPassword = null
         if (uri == null) {
@@ -121,17 +147,31 @@ class SettingsViewModel @Inject constructor(
             _backupState.value = try {
                 val output = context.contentResolver.openOutputStream(uri)
                     ?: throw FileNotFoundException(uri.toString())
-                backupManager.exportData(output, password)
-                BackupState.Finished(R.string.backup_export_done)
+                if (csv) {
+                    csvExportManager.export(output, password)
+                } else {
+                    backupManager.exportData(output, password)
+                    // Only the encrypted backup counts: the CSV archive cannot be restored.
+                    appPrefs.markBackupDone(today())
+                    reminders.scheduleBackupReminder()
+                }
+                BackupState.Finished(if (csv) R.string.csv_export_done else R.string.backup_export_done)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 // Leave no incomplete file behind.
                 runCatching { DocumentsContract.deleteDocument(context.contentResolver, uri) }
-                BackupState.Finished(R.string.backup_export_failed)
+                BackupState.Finished(if (csv) R.string.csv_export_failed else R.string.backup_export_failed)
             } finally {
                 password.fill(' ')
             }
+        }
+    }
+
+    fun setBackupReminderEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            appPrefs.setBackupReminderEnabled(enabled)
+            reminders.scheduleBackupReminder()
         }
     }
 

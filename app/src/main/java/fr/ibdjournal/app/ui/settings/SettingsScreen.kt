@@ -28,9 +28,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Alarm
+import androidx.compose.material.icons.outlined.Backup
 import androidx.compose.material.icons.outlined.Download
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.TableChart
 import androidx.compose.material.icons.outlined.Upload
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material.icons.outlined.VisibilityOff
@@ -82,6 +84,7 @@ import fr.ibdjournal.app.data.ThemePalette
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.domain.localDateTimeAt
+import fr.ibdjournal.app.domain.isBackupOverdue
 import fr.ibdjournal.app.domain.today
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
@@ -463,6 +466,10 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
         ActivityResultContracts.OpenDocument(),
         viewModel::importFrom,
     )
+    val csvExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip"),
+        viewModel::exportCsvTo,
+    )
 
     Spacer(Modifier.height(16.dp))
     Text(
@@ -470,6 +477,38 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
         style = MaterialTheme.typography.labelLarge,
         color = MaterialTheme.colorScheme.primary,
         modifier = Modifier.padding(horizontal = 16.dp)
+    )
+    val backup by viewModel.backupSettings.collectAsStateWithLifecycle()
+    val lastBackup = backup.lastBackup
+    val overdue = isBackupOverdue(lastBackup, today())
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.backup_status_title)) },
+        supportingContent = {
+            Text(
+                text = if (lastBackup == null) {
+                    stringResource(R.string.backup_status_never)
+                } else {
+                    stringResource(R.string.backup_status_last, DateFormats.dayMonthYear(lastBackup))
+                },
+                color = if (overdue) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        leadingContent = {
+            Icon(
+                Icons.Outlined.Backup,
+                contentDescription = null,
+                tint = if (overdue) MaterialTheme.colorScheme.error else LocalContentColor.current,
+            )
+        },
+        colors = settingsRowColors(),
+    )
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.backup_reminder_switch)) },
+        supportingContent = { Text(stringResource(R.string.backup_reminder_desc)) },
+        trailingContent = {
+            Switch(checked = backup.reminderEnabled, onCheckedChange = viewModel::setBackupReminderEnabled)
+        },
+        colors = settingsRowColors(),
     )
     ListItem(
         headlineContent = { Text(stringResource(R.string.export_data)) },
@@ -486,13 +525,36 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
         modifier = Modifier.clickable { importLauncher.launch(arrayOf("*/*")) },
         colors = settingsRowColors(),
     )
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.csv_export_title)) },
+        supportingContent = { Text(stringResource(R.string.csv_export_desc)) },
+        leadingContent = { Icon(Icons.Outlined.TableChart, contentDescription = null) },
+        modifier = Modifier.clickable { viewModel.startCsvExport() },
+        colors = settingsRowColors(),
+    )
 
     when (val current = state) {
         BackupState.Idle -> Unit
-        BackupState.ExportPassword -> ExportPasswordDialog(
+        BackupState.CsvWarning -> AlertDialog(
+            onDismissRequest = viewModel::dismissBackup,
+            title = { Text(stringResource(R.string.csv_warning_title)) },
+            text = { Text(stringResource(R.string.csv_warning_text)) },
+            confirmButton = {
+                TextButton(onClick = viewModel::confirmCsvWarning) { Text(stringResource(R.string.csv_warning_continue)) }
+            },
+            dismissButton = {
+                TextButton(onClick = viewModel::dismissBackup) { Text(stringResource(R.string.cancel)) }
+            },
+        )
+        is BackupState.ExportPassword -> ExportPasswordDialog(
+            csv = current.csv,
             onConfirm = { password ->
                 viewModel.setExportPassword(password)
-                exportLauncher.launch("ibd-journal-backup-${today()}.ibdj")
+                if (current.csv) {
+                    csvExportLauncher.launch("ibd-journal-data-${today()}.zip")
+                } else {
+                    exportLauncher.launch("ibd-journal-backup-${today()}.ibdj")
+                }
             },
             onDismiss = viewModel::dismissBackup,
         )
@@ -527,17 +589,17 @@ private fun BackupSection(viewModel: SettingsViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun ExportPasswordDialog(onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
+private fun ExportPasswordDialog(csv: Boolean, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var confirmation by remember { mutableStateOf("") }
     val tooShort = password.length < MIN_PASSWORD_LENGTH
     val mismatch = confirmation.isNotEmpty() && confirmation != password
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.backup_export_title)) },
+        title = { Text(stringResource(if (csv) R.string.csv_password_title else R.string.backup_export_title)) },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                Text(stringResource(R.string.backup_export_message))
+                Text(stringResource(if (csv) R.string.csv_password_message else R.string.backup_export_message))
                 Spacer(Modifier.height(12.dp))
                 PasswordField(
                     value = password,
@@ -555,7 +617,7 @@ private fun ExportPasswordDialog(onConfirm: (String) -> Unit, onDismiss: () -> U
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.backup_password_warning),
+                    text = stringResource(if (csv) R.string.csv_password_warning else R.string.backup_password_warning),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
                 )

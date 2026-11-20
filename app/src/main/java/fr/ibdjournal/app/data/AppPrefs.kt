@@ -16,6 +16,7 @@ import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -47,6 +48,13 @@ data class DailyCheckIn(
     val complete: Boolean get() = bristolType != null && painLevel != null && fatigueLevel != null
 }
 
+/** [lastBackup]: null if never; [since]: start of the reminder countdown when there is no backup. */
+data class BackupSettings(
+    val reminderEnabled: Boolean = true,
+    val lastBackup: LocalDate? = null,
+    val since: LocalDate? = null,
+)
+
 /** Application preferences (Jetpack DataStore). */
 @Singleton
 class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
@@ -68,6 +76,9 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val KEY_CHECKIN_BRISTOL = intPreferencesKey("checkin_bristol")
     private val KEY_CHECKIN_FATIGUE = intPreferencesKey("checkin_fatigue")
     private val KEY_CHECKIN_PAIN = intPreferencesKey("checkin_pain")
+    private val KEY_BACKUP_REMINDER = booleanPreferencesKey("backup_reminder_enabled")
+    private val KEY_LAST_BACKUP_DAY = longPreferencesKey("last_backup_day")
+    private val KEY_BACKUP_SINCE_DAY = longPreferencesKey("backup_since_day")
 
     /** true if the user has already seen the welcome screen. */
     val onboardingDone: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -105,6 +116,34 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
 
     suspend fun markOnboardingDone() {
         dataStore.edit { prefs -> prefs[KEY_ONBOARDING_DONE] = true }
+    }
+
+    /** Encrypted-backup status and reminder (see `domain/BackupReminders.kt`). */
+    val backupSettings: Flow<BackupSettings> = dataStore.data.map { prefs ->
+        BackupSettings(
+            reminderEnabled = prefs[KEY_BACKUP_REMINDER] ?: true,
+            lastBackup = prefs[KEY_LAST_BACKUP_DAY]?.let { LocalDate.fromEpochDays(it) },
+            since = prefs[KEY_BACKUP_SINCE_DAY]?.let { LocalDate.fromEpochDays(it) },
+        )
+    }
+
+    /** The day the encrypted backup was last exported. */
+    suspend fun markBackupDone(day: LocalDate) {
+        dataStore.edit { prefs -> prefs[KEY_LAST_BACKUP_DAY] = day.toEpochDays() }
+    }
+
+    suspend fun setBackupReminderEnabled(enabled: Boolean) {
+        dataStore.edit { prefs -> prefs[KEY_BACKUP_REMINDER] = enabled }
+    }
+
+    /** Day the reminder countdown started when no backup exists yet: set once, at first use. */
+    suspend fun ensureBackupSince(today: LocalDate): LocalDate {
+        var since = today
+        dataStore.edit { prefs ->
+            val saved = prefs[KEY_BACKUP_SINCE_DAY]
+            if (saved == null) prefs[KEY_BACKUP_SINCE_DAY] = today.toEpochDays() else since = LocalDate.fromEpochDays(saved)
+        }
+        return since
     }
 
     /** Records that a reminder was just shown (used for diagnostics in settings). */
@@ -194,6 +233,7 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
             prefs.remove(KEY_CALENDAR_EVENTS)
             listOf(KEY_CHECKIN_DAY, KEY_CHECKIN_STOOL_ID).forEach { prefs.remove(it) }
             listOf(KEY_CHECKIN_BRISTOL, KEY_CHECKIN_FATIGUE, KEY_CHECKIN_PAIN).forEach { prefs.remove(it) }
+            listOf(KEY_LAST_BACKUP_DAY, KEY_BACKUP_SINCE_DAY).forEach { prefs.remove(it) }
         }
     }
 

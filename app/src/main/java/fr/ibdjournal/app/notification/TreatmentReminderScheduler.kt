@@ -18,7 +18,10 @@ import fr.ibdjournal.app.data.model.RefillBasis
 import fr.ibdjournal.app.data.model.Exam
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.Vaccination
+import fr.ibdjournal.app.domain.isBackupOverdue
+import fr.ibdjournal.app.domain.nextBackupReminder
 import fr.ibdjournal.app.domain.nextReminder
+import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.ExamStepTime
 import fr.ibdjournal.app.domain.reminderAt
@@ -30,6 +33,7 @@ import fr.ibdjournal.app.domain.toEpochMillis
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.care.nameRes
 import fr.ibdjournal.app.ui.labelRes
+import kotlinx.coroutines.flow.first
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
@@ -63,7 +67,7 @@ class TreatmentReminderScheduler @Inject constructor(
         MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
         EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
-        VACCINE("vaccine"), APPOINTMENT("appointment"),
+        VACCINE("vaccine"), APPOINTMENT("appointment"), BACKUP("backup"),
     }
 
     /** Reminder for each exam step. */
@@ -145,6 +149,21 @@ class TreatmentReminderScheduler @Inject constructor(
 
     fun cancelAppointment(id: Long) = cancelAlarms(Kind.APPOINTMENT, id)
 
+    /**
+     * Encrypted-backup reminder, always an app notification: a month after the last backup (or after
+     * the first use), then every week until a backup is exported. Call again after a backup or when the
+     * switch changes.
+     */
+    suspend fun scheduleBackupReminder() {
+        val settings = prefs.backupSettings.first()
+        if (!settings.reminderEnabled) {
+            cancelAlarms(Kind.BACKUP, 0)
+            return
+        }
+        val since = settings.since ?: prefs.ensureBackupSince(today())
+        schedule(Kind.BACKUP, 0, nextBackupReminder(settings.lastBackup, since, now()))
+    }
+
     private fun cancelAlarms(kind: Kind, id: Long) {
         notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
         NotificationManagerCompat.from(context).cancel(kind.path, id.toInt())
@@ -157,6 +176,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.exams.forEach { schedule(it) }
         data.vaccinations.forEach { schedule(it) }
         data.appointments.forEach { schedule(it) }
+        scheduleBackupReminder()
     }
 
     suspend fun cancelAll() {
@@ -166,6 +186,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.exams.forEach { cancelExam(it.id) }
         data.vaccinations.forEach { cancelVaccination(it.id) }
         data.appointments.forEach { cancelAppointment(it.id) }
+        cancelAlarms(Kind.BACKUP, 0)
     }
 
     /**
@@ -200,6 +221,10 @@ class TreatmentReminderScheduler @Inject constructor(
         }
         if (kind == Kind.APPOINTMENT) {
             onAppointmentAlarm(id, firedAt)
+            return
+        }
+        if (kind == Kind.BACKUP) {
+            onBackupAlarm(firedAt)
             return
         }
         // Alarm set before switching to the calendar: the calendar already notifies.
@@ -254,6 +279,15 @@ class TreatmentReminderScheduler @Inject constructor(
         schedule(Kind.APPOINTMENT, id, appointment.nextReminder(firedAt))
         if (!appointment.remindersEnabled || appointment.at <= firedAt) return
         showAppointment(appointment)
+    }
+
+    /** Sets the following backup reminder (weekly until a backup is made), then notifies if one is due. */
+    private suspend fun onBackupAlarm(firedAt: LocalDateTime) {
+        val settings = prefs.backupSettings.first()
+        if (!settings.reminderEnabled) return
+        val since = settings.since ?: prefs.ensureBackupSince(firedAt.date)
+        schedule(Kind.BACKUP, 0, nextBackupReminder(settings.lastBackup, since, firedAt))
+        if (isBackupOverdue(settings.lastBackup, firedAt.date)) showBackup(settings.lastBackup)
     }
 
     private fun ReminderSchedule.nextIfEnabled(after: LocalDateTime) = takeIf { it.enabled }?.nextOccurrence(after)
@@ -385,6 +419,22 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    /** Backup reminder: how old the last encrypted backup is, or that none was ever made. */
+    private fun showBackup(lastBackup: LocalDate?) {
+        notify(
+            kind = Kind.BACKUP,
+            id = 0,
+            channelId = CHANNEL_BACKUP,
+            channelName = context.getString(R.string.backup_reminder_channel),
+            title = context.getString(R.string.backup_reminder_title),
+            text = if (lastBackup == null) {
+                context.getString(R.string.backup_reminder_text_never)
+            } else {
+                context.getString(R.string.backup_reminder_text, DateFormats.dayMonthYear(lastBackup))
+            },
+        )
+    }
+
     /** "Remember to reorder": before the next intake or before the stock runs out. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
@@ -460,5 +510,6 @@ class TreatmentReminderScheduler @Inject constructor(
         private const val CHANNEL_EXAM = "exam_reminder"
         private const val CHANNEL_VACCINE = "vaccine_reminder"
         private const val CHANNEL_APPOINTMENT = "appointment_reminder"
+        private const val CHANNEL_BACKUP = "backup_reminder"
     }
 }
