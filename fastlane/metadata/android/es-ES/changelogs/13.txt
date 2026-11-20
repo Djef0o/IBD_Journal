@@ -1,0 +1,1 @@
+Novedades: cuenta las tomas que te quedan de cada tratamiento. El número baja con cada toma confirmada y recibes un aviso cuando queda poco para pedir a tiempo.

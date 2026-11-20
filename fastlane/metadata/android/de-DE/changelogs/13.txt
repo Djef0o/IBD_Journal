@@ -1,0 +1,1 @@
+Neu: Zähle die Einnahmen, die dir pro Behandlung bleiben. Der Wert sinkt bei jeder bestätigten Einnahme, und eine Benachrichtigung warnt dich, wenn es knapp wird, damit du rechtzeitig nachbestellst.

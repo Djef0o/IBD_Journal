@@ -1,0 +1,1 @@
+Novità: conta le assunzioni che ti restano per ogni terapia. Il numero scende a ogni assunzione confermata e ricevi una notifica quando ne restano poche, per riordinare in tempo.

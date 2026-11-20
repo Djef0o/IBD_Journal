@@ -1,0 +1,1 @@
+New: count the intakes you have left for each treatment. The count goes down each time you confirm a dose, and you get a notification when you are running low so you can reorder in time.

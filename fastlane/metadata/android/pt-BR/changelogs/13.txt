@@ -1,0 +1,1 @@
+Novidades: conte as doses que restam de cada tratamento. O número diminui a cada dose confirmada e você recebe um aviso quando está acabando, para repor a tempo.

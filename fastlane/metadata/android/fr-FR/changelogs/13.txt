@@ -1,0 +1,1 @@
+Nouveau : comptez les prises qu'il vous reste pour chaque traitement. Le compte baisse à chaque prise confirmée, et une notification vous prévient quand il en reste peu pour recommander à temps.
