@@ -16,6 +16,7 @@ IBD Journal ist ein persönliches Tagebuch für Menschen mit Morbus Crohn oder C
 • Startbildschirm-Widgets (Stuhl hinzufügen, letzte 7 Tage) und optionale wöchentliche Wiege-Erinnerung
 • Schlaf-, Stress-, Stimmungs- und Periodennotizen, in Trends mit deinen Symptomen verglichen
 • Verbleibende Einnahmen pro Behandlung, bei jeder bestätigten Einnahme abgezogen, mit Benachrichtigung bei niedrigem Vorrat
+• Reisepaket: mitzunehmende Medikamente, Brief für deinen Arzt und Notfallkarte auf Französisch, Englisch, Spanisch oder Deutsch
 
 Datenschutz: kein Konto, kein Server, keine Tracker, keine Google-Dienste. Deine Daten verlassen das Handy nur, wenn du sie exportierst. Die einzige Netzwerknutzung ist die Barcode-Suche bei Open Food Facts.
 

@@ -21,6 +21,7 @@ import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Biotech
 import androidx.compose.material.icons.outlined.Bloodtype
+import androidx.compose.material.icons.outlined.Flight
 import androidx.compose.material.icons.outlined.Medication
 import androidx.compose.material.icons.outlined.MedicalServices
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -105,7 +106,7 @@ import kotlinx.datetime.LocalDate
 private const val ADHERENCE_DAYS = 30
 
 @Composable
-fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
+fun CareScreen(onOpenLabs: () -> Unit, onOpenTravel: () -> Unit, viewModel: CareViewModel = hiltViewModel()) {
     val medications by viewModel.medications.collectAsStateWithLifecycle()
     val checkups by viewModel.checkups.collectAsStateWithLifecycle()
     val labResults by viewModel.labResults.collectAsStateWithLifecycle()
@@ -133,6 +134,7 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
         onSaveExam = viewModel::saveExam,
         onDeleteExam = viewModel::deleteExam,
         onOpenLabs = onOpenLabs,
+        onOpenTravel = onOpenTravel,
         weights = weights,
         onSaveWeight = viewModel::saveWeight,
         onDeleteWeight = viewModel::deleteWeight,
@@ -174,6 +176,7 @@ fun CareContent(
     onSaveCheckup: (Checkup) -> Unit,
     onDeleteCheckup: (Checkup) -> Unit,
     onOpenLabs: () -> Unit = {},
+    onOpenTravel: () -> Unit = {},
     exams: List<Exam> = emptyList(),
     onSaveExam: (Exam) -> Unit = {},
     onDeleteExam: (Exam) -> Unit = {},
@@ -347,6 +350,19 @@ fun CareContent(
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
             )
             LabSummaryCard(labResults = labResults, onOpen = onOpenLabs)
+            Text(
+                text = stringResource(R.string.travel_title),
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
+            )
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.travel_row_title)) },
+                supportingContent = { Text(stringResource(R.string.travel_row_desc)) },
+                leadingContent = { Icon(Icons.Outlined.Flight, contentDescription = null) },
+                modifier = Modifier.clickable(onClick = onOpenTravel),
+                colors = settingsRowColors(),
+            )
             Spacer(Modifier.height(24.dp))
         }
     }

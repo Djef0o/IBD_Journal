@@ -9,11 +9,11 @@ import android.widget.Toast
 import fr.ibdjournal.app.R
 
 /** Opens the Android share sheet for the PDF report [uri] (FileProvider URI). */
-fun shareReport(context: Context, uri: Uri) {
+fun shareReport(context: Context, uri: Uri, subject: String = context.getString(R.string.report_title)) {
     val send = Intent(Intent.ACTION_SEND).apply {
         type = "application/pdf"
         putExtra(Intent.EXTRA_STREAM, uri)
-        putExtra(Intent.EXTRA_SUBJECT, context.getString(R.string.report_title))
+        putExtra(Intent.EXTRA_SUBJECT, subject)
         // The ClipData carries the read permission to the app chosen in the chooser.
         clipData = ClipData.newRawUri(null, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)

@@ -57,6 +57,7 @@ Your health data stays on your phone.
 - Home-screen widgets: an "add a stool" button, and the last 7 days (stool counts and blood marks only; readable without the PIN, placing it is your choice).
 - Sleep, stress and mood (1 to 5) and menstrual period noted per day, compared with bad days in Trends and averaged in the report.
 - Optional count of intakes left per treatment, counted down as doses are confirmed taken, with a low-stock notification.
+- Travel pack (PDF in French, English, Spanish or German): medication to take along for your dates with a safety margin, a letter for your doctor to date, sign and stamp, and the urgent-need card.
 - Optional weekly weigh-in reminder: type your weight in the notification itself.
 - Guided first launch, light and dark themes, several color palettes.
 - Available in English, French, German, Spanish, Italian and Portuguese.

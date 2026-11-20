@@ -47,6 +47,7 @@ import fr.ibdjournal.app.ui.home.HomeScreen
 import fr.ibdjournal.app.ui.onboarding.OnboardingScreen
 import fr.ibdjournal.app.ui.care.CareScreen
 import fr.ibdjournal.app.ui.settings.SettingsScreen
+import fr.ibdjournal.app.ui.travel.TravelScreen
 import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.ui.calendar.CalendarViewModel
 import fr.ibdjournal.app.ui.theme.IBDJournalTheme
@@ -214,8 +215,14 @@ private fun MainScaffold(launchRequests: LaunchRequests, locked: Boolean) {
                 )
             }
             composable("analysis") { AnalysisScreen() }
-            composable("care") { CareScreen(onOpenLabs = { navController.navigate("care/labs") }) }
+            composable("care") {
+                CareScreen(
+                    onOpenLabs = { navController.navigate("care/labs") },
+                    onOpenTravel = { navController.navigate("care/travel") },
+                )
+            }
             composable("care/labs") { LabsScreen(onBack = { navController.popBackStack() }) }
+            composable("care/travel") { TravelScreen(onBack = { navController.popBackStack() }) }
             composable("settings") { SettingsScreen(onBack = null) }
             composable("day/{${CalendarViewModel.ARG_DATE}}") {
                 DayScreen(onBack = { navController.popBackStack() })
