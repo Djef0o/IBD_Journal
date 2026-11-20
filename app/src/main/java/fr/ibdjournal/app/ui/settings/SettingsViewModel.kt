@@ -14,6 +14,8 @@ import fr.ibdjournal.app.data.Appearance
 import fr.ibdjournal.app.data.BackupCrypto
 import fr.ibdjournal.app.data.BackupSettings
 import fr.ibdjournal.app.data.CsvExportManager
+import fr.ibdjournal.app.data.WeighInSettings
+import kotlinx.datetime.DayOfWeek
 import fr.ibdjournal.app.data.DataBackupManager
 import fr.ibdjournal.app.data.NotificationSettings
 import fr.ibdjournal.app.data.ThemeMode
@@ -71,6 +73,10 @@ class SettingsViewModel @Inject constructor(
     /** Last encrypted backup and reminder switch. */
     val backupSettings: StateFlow<BackupSettings> = appPrefs.backupSettings
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BackupSettings())
+
+    /** Weekly weigh-in reminder: switch and weekday. */
+    val weighIn: StateFlow<WeighInSettings> = appPrefs.weighIn
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), WeighInSettings())
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { appPrefs.setThemeMode(mode) }
@@ -172,6 +178,13 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             appPrefs.setBackupReminderEnabled(enabled)
             reminders.scheduleBackupReminder()
+        }
+    }
+
+    fun setWeighIn(enabled: Boolean, day: DayOfWeek) {
+        viewModelScope.launch {
+            appPrefs.setWeighIn(enabled, day)
+            reminders.scheduleWeighIn()
         }
     }
 

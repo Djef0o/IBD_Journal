@@ -54,6 +54,8 @@ Your health data stays on your phone.
 - Reminders as app notifications or as events in the phone calendar.
 - Password-encrypted backup and restore to a file you keep yourself, with a monthly reminder; CSV export (spreadsheet) in a password-protected AES-256 ZIP archive.
 - **PIN lock and local encryption**: a PIN (4 to 8 digits) is chosen at first launch, or right after updating. The journal database (SQLCipher) and meal photos are encrypted with a random key that only the PIN, or optionally your fingerprint, can unlock. The app locks one minute after leaving the screen; wrong PINs trigger waiting times. A forgotten PIN cannot be recovered: the only way out is to erase the data and restore an encrypted backup.
+- Home-screen widgets: an "add a stool" button, and the last 7 days (stool counts and blood marks only; readable without the PIN, placing it is your choice).
+- Optional weekly weigh-in reminder: type your weight in the notification itself.
 - Guided first launch, light and dark themes, several color palettes.
 - Available in English, French, German, Spanish, Italian and Portuguese.
 

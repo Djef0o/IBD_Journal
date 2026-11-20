@@ -76,6 +76,30 @@
             </intent-filter>
         </receiver>
 
+        <!-- Home-screen widgets: a single "add a stool" button, and the last 7 days. -->
+        <receiver
+            android:name=".widget.QuickStoolWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_quick_stool_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_quick_stool_info" />
+        </receiver>
+        <receiver
+            android:name=".widget.WeekWidgetProvider"
+            android:exported="true"
+            android:label="@string/widget_week_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_week_info" />
+        </receiver>
+
         <!-- Before Android 13: AppCompat itself remembers the language chosen in the app. -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

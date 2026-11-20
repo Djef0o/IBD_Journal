@@ -8,6 +8,7 @@ import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.ProfileRepository
 import fr.ibdjournal.app.data.model.DoseStatus
 import fr.ibdjournal.app.data.model.Stool
+import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.security.KeystoreBox
 import fr.ibdjournal.app.security.Vault
 import java.io.File
@@ -55,7 +56,14 @@ class PendingActions @Inject constructor(
     )
 
     @Serializable
-    private data class Queue(val doses: List<Dose> = emptyList(), val checkIns: List<CheckIn> = emptyList())
+    private data class PendingWeight(val epochDay: Long, val kg: Double)
+
+    @Serializable
+    private data class Queue(
+        val doses: List<Dose> = emptyList(),
+        val checkIns: List<CheckIn> = emptyList(),
+        val weights: List<PendingWeight> = emptyList(),
+    )
 
     suspend fun logDose(medicationId: Long, scheduledAt: Long, status: DoseStatus) = mutex.withLock {
         if (vault.database.value != null) {
@@ -63,6 +71,16 @@ class PendingActions @Inject constructor(
         } else {
             val queue = load()
             save(queue.copy(doses = queue.doses + Dose(medicationId, scheduledAt, status)))
+        }
+    }
+
+    /** Weight typed in the weekly weigh-in notification. */
+    suspend fun logWeight(date: LocalDate, kg: Double) = mutex.withLock {
+        if (vault.database.value != null) {
+            profileRepository.saveWeight(Weight(date = date, kg = kg))
+        } else {
+            val queue = load()
+            save(queue.copy(weights = queue.weights + PendingWeight(date.toEpochDays(), kg)))
         }
     }
 
@@ -90,9 +108,10 @@ class PendingActions @Inject constructor(
 
     private suspend fun flush() = mutex.withLock {
         val queue = load()
-        if (queue.doses.isEmpty() && queue.checkIns.isEmpty()) return@withLock
+        if (queue.doses.isEmpty() && queue.checkIns.isEmpty() && queue.weights.isEmpty()) return@withLock
         queue.doses.forEach { profileRepository.logDose(it.medicationId, it.scheduledAt, it.status) }
         queue.checkIns.forEach { apply(it) }
+        queue.weights.forEach { profileRepository.saveWeight(Weight(date = LocalDate.fromEpochDays(it.epochDay), kg = it.kg)) }
         withContext(Dispatchers.IO) { file.delete() }
     }
 

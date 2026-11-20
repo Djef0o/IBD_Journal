@@ -7,6 +7,7 @@ import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.notification.PendingActions
 import fr.ibdjournal.app.notification.ReminderSource
 import fr.ibdjournal.app.notification.TreatmentReminderScheduler
+import fr.ibdjournal.app.widget.WidgetSource
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -26,12 +27,14 @@ class JournalEraser @Inject constructor(
     private val pendingActions: PendingActions,
     private val calendarSync: CalendarSync,
     private val appPrefs: AppPrefs,
+    private val widgetSource: WidgetSource,
 ) {
     suspend fun eraseEverything() {
         // Reminders and calendar events are found through the copy, readable while locked.
         runCatching { reminders.cancelAll() }
         runCatching { calendarSync.removeAll() }
         reminderSource.clear()
+        widgetSource.clear()
         pendingActions.clear()
         vault.erase()
         appPrefs.resetJournal()

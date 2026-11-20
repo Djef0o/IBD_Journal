@@ -33,6 +33,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -82,6 +83,8 @@ import kotlinx.datetime.plus
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit,
+    quickStoolRequested: Boolean = false,
+    onQuickStoolHandled: () -> Unit = {},
     viewModel: CalendarViewModel = hiltViewModel(),
     dosesViewModel: TodayDosesViewModel = hiltViewModel(),
     emergencyViewModel: EmergencyViewModel = hiltViewModel(),
@@ -90,6 +93,13 @@ fun HomeScreen(
     val flares by viewModel.flares.collectAsStateWithLifecycle()
     val doses by dosesViewModel.doses.collectAsStateWithLifecycle()
     var showQuickStool by rememberSaveable { mutableStateOf(false) }
+    // Asked from the home-screen button.
+    LaunchedEffect(quickStoolRequested) {
+        if (quickStoolRequested) {
+            showQuickStool = true
+            onQuickStoolHandled()
+        }
+    }
     var showMealTypes by rememberSaveable { mutableStateOf(false) }
     var showEmergencyChooser by rememberSaveable { mutableStateOf(false) }
     var showUrgentCard by rememberSaveable { mutableStateOf(false) }

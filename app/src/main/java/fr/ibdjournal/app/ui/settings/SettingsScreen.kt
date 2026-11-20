@@ -13,6 +13,7 @@ import android.text.format.DateFormat
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +27,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.MonitorWeight
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.outlined.Alarm
 import androidx.compose.material.icons.outlined.Backup
@@ -41,6 +43,8 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
@@ -87,7 +91,11 @@ import fr.ibdjournal.app.ui.theme.IBDJournalTheme
 import fr.ibdjournal.app.domain.localDateTimeAt
 import fr.ibdjournal.app.domain.isBackupOverdue
 import fr.ibdjournal.app.domain.today
+import java.time.format.TextStyle
+import java.util.Locale
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.toJavaDayOfWeek
 import kotlinx.datetime.minus
 
 @Composable
@@ -362,6 +370,8 @@ fun SettingsContent(
                 },
                 colors = settingsRowColors(),
             )
+
+            WeighInSection()
 
             CalendarSection()
 
@@ -718,3 +728,44 @@ private fun SettingsPreview() {
         )
     }
 }
+
+/** Weekly weigh-in reminder: a switch, and the weekday once on. */
+@Composable
+private fun WeighInSection(viewModel: SettingsViewModel = hiltViewModel()) {
+    val weighIn by viewModel.weighIn.collectAsStateWithLifecycle()
+    var menuOpen by remember { mutableStateOf(false) }
+    ListItem(
+        headlineContent = { Text(stringResource(R.string.weigh_in_switch)) },
+        supportingContent = { Text(stringResource(R.string.weigh_in_switch_desc)) },
+        leadingContent = { Icon(Icons.Outlined.MonitorWeight, contentDescription = null) },
+        trailingContent = {
+            Switch(checked = weighIn.enabled, onCheckedChange = { viewModel.setWeighIn(it, weighIn.day) })
+        },
+        colors = settingsRowColors(),
+    )
+    if (weighIn.enabled) {
+        Box {
+            ListItem(
+                headlineContent = { Text(stringResource(R.string.weigh_in_day)) },
+                supportingContent = { Text(weighIn.day.localName()) },
+                modifier = Modifier.clickable { menuOpen = true },
+                colors = settingsRowColors(),
+            )
+            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                DayOfWeek.entries.forEach { day ->
+                    DropdownMenuItem(
+                        text = { Text(day.localName()) },
+                        onClick = {
+                            menuOpen = false
+                            viewModel.setWeighIn(true, day)
+                        },
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun DayOfWeek.localName(): String =
+    toJavaDayOfWeek().getDisplayName(TextStyle.FULL_STANDALONE, Locale.getDefault())
+        .replaceFirstChar { it.titlecase(Locale.getDefault()) }

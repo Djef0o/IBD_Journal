@@ -1,5 +1,6 @@
 package fr.ibdjournal.app
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
@@ -56,6 +57,8 @@ import fr.ibdjournal.app.ui.security.SecurityUpgradeScreen
 import fr.ibdjournal.app.ui.security.SecurityViewModel
 import androidx.compose.foundation.layout.Box
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.runtime.LaunchedEffect
+import javax.inject.Inject
 
 /**
  * AppCompatActivity rather than ComponentActivity: it is what applies the language
@@ -64,9 +67,18 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
+    @Inject
+    lateinit var launchRequests: LaunchRequests
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        launchRequests.handle(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        launchRequests.handle(intent)
 
         setContent {
             val viewModel: MainViewModel = hiltViewModel()
@@ -98,7 +110,7 @@ class MainActivity : AppCompatActivity() {
                             onboardingDone == false -> OnboardingScreen(onFinish = viewModel::finishOnboarding, security = security)
                             // Update from a version without encryption: PIN before anything else.
                             security.setupVisible(vaultState, setupPhase) -> SecurityUpgradeScreen(security)
-                            else -> MainScaffold()
+                            else -> MainScaffold(launchRequests, locked)
                         }
                     }
                     if (locked) LockScreen(security)
@@ -123,11 +135,22 @@ private val tabs = listOf(
 )
 
 @Composable
-private fun MainScaffold() {
+private fun MainScaffold(launchRequests: LaunchRequests, locked: Boolean) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showBottomBar = tabs.any { it.route == currentRoute }
+    val quickStool by launchRequests.quickStool.collectAsStateWithLifecycle()
+    // Asked from the home-screen button: land on Home, which opens the quick stool entry.
+    LaunchedEffect(quickStool) {
+        if (quickStool && currentRoute != "home") {
+            navController.navigate("home") {
+                popUpTo(navController.graph.findStartDestination().id) { saveState = true }
+                launchSingleTop = true
+                restoreState = true
+            }
+        }
+    }
 
     Scaffold(
         bottomBar = {
@@ -180,6 +203,9 @@ private fun MainScaffold() {
                             restoreState = true
                         }
                     },
+                    // Never above the PIN screen: the entry opens once the journal is unlocked.
+                    quickStoolRequested = quickStool && !locked,
+                    onQuickStoolHandled = launchRequests::consumeQuickStool,
                 )
             }
             composable("history") {

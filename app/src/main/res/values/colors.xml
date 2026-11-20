@@ -1,4 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="background">#FDFDF6</color>
+    <!-- Home-screen widgets: light and dark (values-night). -->
+    <color name="widget_bg">#F1F4EC</color>
+    <color name="widget_text">#1A1C18</color>
+    <color name="widget_muted">#5A6155</color>
+    <color name="widget_accent">#2F6B57</color>
+    <color name="widget_on_accent">#FFFFFF</color>
+    <color name="widget_blood">#B3261E</color>
 </resources>

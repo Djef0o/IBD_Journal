@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.isoDayNumber
 
 private val Context.dataStore by preferencesDataStore(name = "settings")
 
@@ -55,6 +57,8 @@ data class BackupSettings(
     val since: LocalDate? = null,
 )
 
+data class WeighInSettings(val enabled: Boolean = false, val day: DayOfWeek = DayOfWeek.SUNDAY)
+
 /** Application preferences (Jetpack DataStore). */
 @Singleton
 class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
@@ -79,6 +83,8 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
     private val KEY_BACKUP_REMINDER = booleanPreferencesKey("backup_reminder_enabled")
     private val KEY_LAST_BACKUP_DAY = longPreferencesKey("last_backup_day")
     private val KEY_BACKUP_SINCE_DAY = longPreferencesKey("backup_since_day")
+    private val KEY_WEIGH_IN = booleanPreferencesKey("weigh_in_reminder")
+    private val KEY_WEIGH_IN_DAY = intPreferencesKey("weigh_in_day")
 
     /** true if the user has already seen the welcome screen. */
     val onboardingDone: Flow<Boolean> = dataStore.data.map { prefs ->
@@ -144,6 +150,21 @@ class AppPrefs @Inject constructor(@ApplicationContext context: Context) {
             if (saved == null) prefs[KEY_BACKUP_SINCE_DAY] = today.toEpochDays() else since = LocalDate.fromEpochDays(saved)
         }
         return since
+    }
+
+    /** Weekly weigh-in reminder (see `domain/WeekSummary.kt`). */
+    val weighIn: Flow<WeighInSettings> = dataStore.data.map { prefs ->
+        WeighInSettings(
+            enabled = prefs[KEY_WEIGH_IN] ?: false,
+            day = DayOfWeek(prefs[KEY_WEIGH_IN_DAY] ?: DayOfWeek.SUNDAY.isoDayNumber),
+        )
+    }
+
+    suspend fun setWeighIn(enabled: Boolean, day: DayOfWeek) {
+        dataStore.edit { prefs ->
+            prefs[KEY_WEIGH_IN] = enabled
+            prefs[KEY_WEIGH_IN_DAY] = day.isoDayNumber
+        }
     }
 
     /** Records that a reminder was just shown (used for diagnostics in settings). */

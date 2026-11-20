@@ -13,6 +13,7 @@ IBD Journal is a personal diary for people living with Crohn's disease or ulcera
 • PDF report for your doctor
 • Password-encrypted backup and restore to a file, with a monthly reminder
 • CSV export (spreadsheet) in a password-protected archive
+• Home-screen widgets (add-a-stool button, last 7 days) and an optional weekly weigh-in reminder
 
 Privacy: no account, no server, no tracker, no Google services. Your data never leaves the phone unless you export it. The only network use is the barcode lookup on Open Food Facts.
 

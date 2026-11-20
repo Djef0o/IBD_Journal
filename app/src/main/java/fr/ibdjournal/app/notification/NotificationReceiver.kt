@@ -5,10 +5,12 @@ import android.content.Context
 import android.content.Intent
 import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.app.RemoteInput
 import dagger.hilt.android.AndroidEntryPoint
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.data.model.DoseStatus
+import fr.ibdjournal.app.domain.parseWeightKg
 import fr.ibdjournal.app.domain.today
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
@@ -42,6 +44,7 @@ class NotificationReceiver : BroadcastReceiver() {
                 when (intent.action) {
                     ACTION_RECORD_STOOL -> recordStool(context, intent)
                     ACTION_RECORD_LEVEL -> recordLevel(context, intent)
+                    TreatmentReminderScheduler.ACTION_RECORD_WEIGHT -> recordWeight(context, intent)
                     NotificationHelper.ACTION_ALARM_REMINDER -> onReminderAlarm(context, intent)
                     TreatmentReminderScheduler.ACTION_TREATMENT_REMINDER -> treatmentReminders.onAlarm(intent)
                     TreatmentReminderScheduler.ACTION_DOSE_TAKEN -> logDose(intent, DoseStatus.TAKEN)
@@ -91,6 +94,24 @@ class NotificationReceiver : BroadcastReceiver() {
         pendingActions.recordCheckIn(updated)
         notificationHelper.showDailyCheckIn(updated)
         toast(context, context.getString(scale.recordedFormat, level))
+    }
+
+    /**
+     * Weight typed in the weigh-in notification. Implausible or unreadable: the notification is
+     * shown again (otherwise it would stay on its "sending" spinner) with a message.
+     */
+    private suspend fun recordWeight(context: Context, intent: Intent) {
+        val typed = RemoteInput.getResultsFromIntent(intent)
+            ?.getCharSequence(TreatmentReminderScheduler.KEY_WEIGHT_INPUT)?.toString().orEmpty()
+        val kg = parseWeightKg(typed)
+        if (kg == null) {
+            treatmentReminders.showWeighIn()
+            toast(context, context.getString(R.string.weigh_in_invalid))
+            return
+        }
+        pendingActions.logWeight(today(), kg)
+        treatmentReminders.cancelWeighInNotification()
+        toast(context, context.getString(R.string.weigh_in_recorded, kg))
     }
 
     private suspend fun toast(context: Context, message: String) = withContext(Dispatchers.Main) {

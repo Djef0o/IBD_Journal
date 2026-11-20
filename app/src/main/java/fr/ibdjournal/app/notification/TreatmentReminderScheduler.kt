@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import androidx.core.app.NotificationCompat
+import androidx.core.app.RemoteInput
 import androidx.core.app.NotificationManagerCompat
 import dagger.hilt.android.qualifiers.ApplicationContext
 import fr.ibdjournal.app.MainActivity
@@ -21,6 +22,7 @@ import fr.ibdjournal.app.data.model.Vaccination
 import fr.ibdjournal.app.domain.isBackupOverdue
 import fr.ibdjournal.app.domain.nextBackupReminder
 import fr.ibdjournal.app.domain.nextReminder
+import fr.ibdjournal.app.domain.nextWeighIn
 import fr.ibdjournal.app.domain.today
 import fr.ibdjournal.app.domain.ExamStep
 import fr.ibdjournal.app.domain.ExamStepTime
@@ -67,7 +69,7 @@ class TreatmentReminderScheduler @Inject constructor(
         MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
         EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
-        VACCINE("vaccine"), APPOINTMENT("appointment"), BACKUP("backup"),
+        VACCINE("vaccine"), APPOINTMENT("appointment"), BACKUP("backup"), WEIGH_IN("weigh-in"),
     }
 
     /** Reminder for each exam step. */
@@ -164,6 +166,16 @@ class TreatmentReminderScheduler @Inject constructor(
         schedule(Kind.BACKUP, 0, nextBackupReminder(settings.lastBackup, since, now()))
     }
 
+    /** Weekly weigh-in reminder, an app notification at [WEIGH_IN_HOUR] on the chosen weekday. */
+    suspend fun scheduleWeighIn() {
+        val settings = prefs.weighIn.first()
+        if (!settings.enabled) {
+            cancelAlarms(Kind.WEIGH_IN, 0)
+            return
+        }
+        schedule(Kind.WEIGH_IN, 0, nextWeighIn(settings.day, now()))
+    }
+
     private fun cancelAlarms(kind: Kind, id: Long) {
         notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
         NotificationManagerCompat.from(context).cancel(kind.path, id.toInt())
@@ -177,6 +189,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.vaccinations.forEach { schedule(it) }
         data.appointments.forEach { schedule(it) }
         scheduleBackupReminder()
+        scheduleWeighIn()
     }
 
     suspend fun cancelAll() {
@@ -187,6 +200,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.vaccinations.forEach { cancelVaccination(it.id) }
         data.appointments.forEach { cancelAppointment(it.id) }
         cancelAlarms(Kind.BACKUP, 0)
+        cancelAlarms(Kind.WEIGH_IN, 0)
     }
 
     /**
@@ -225,6 +239,10 @@ class TreatmentReminderScheduler @Inject constructor(
         }
         if (kind == Kind.BACKUP) {
             onBackupAlarm(firedAt)
+            return
+        }
+        if (kind == Kind.WEIGH_IN) {
+            onWeighInAlarm(firedAt)
             return
         }
         // Alarm set before switching to the calendar: the calendar already notifies.
@@ -288,6 +306,14 @@ class TreatmentReminderScheduler @Inject constructor(
         val since = settings.since ?: prefs.ensureBackupSince(firedAt.date)
         schedule(Kind.BACKUP, 0, nextBackupReminder(settings.lastBackup, since, firedAt))
         if (isBackupOverdue(settings.lastBackup, firedAt.date)) showBackup(settings.lastBackup)
+    }
+
+    /** Sets the following weigh-in reminder (a week later), then notifies. */
+    private suspend fun onWeighInAlarm(firedAt: LocalDateTime) {
+        val settings = prefs.weighIn.first()
+        if (!settings.enabled) return
+        schedule(Kind.WEIGH_IN, 0, nextWeighIn(settings.day, firedAt))
+        showWeighIn()
     }
 
     private fun ReminderSchedule.nextIfEnabled(after: LocalDateTime) = takeIf { it.enabled }?.nextOccurrence(after)
@@ -435,6 +461,41 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    /**
+     * Weigh-in reminder: the weight is typed in the notification itself (RemoteInput) and
+     * written to the journal, or kept until the next unlock.
+     */
+    fun showWeighIn() {
+        val input = RemoteInput.Builder(KEY_WEIGHT_INPUT)
+            .setLabel(context.getString(R.string.weigh_in_input_hint))
+            .build()
+        val intent = Intent(context, NotificationReceiver::class.java).apply {
+            action = ACTION_RECORD_WEIGHT
+            setPackage(context.packageName)
+        }
+        // RemoteInput fills the intent in: it must be mutable.
+        val pendingIntent = PendingIntent.getBroadcast(
+            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE,
+        )
+        val action = NotificationCompat.Action.Builder(0, context.getString(R.string.weigh_in_action), pendingIntent)
+            .addRemoteInput(input)
+            .build()
+        notify(
+            kind = Kind.WEIGH_IN,
+            id = 0,
+            channelId = CHANNEL_WEIGH_IN,
+            channelName = context.getString(R.string.weigh_in_channel),
+            title = context.getString(R.string.weigh_in_title),
+            text = context.getString(R.string.weigh_in_text),
+            actions = listOf(action),
+        )
+    }
+
+    /** Removes the weigh-in notification once the weight is given. */
+    fun cancelWeighInNotification() {
+        NotificationManagerCompat.from(context).cancel(Kind.WEIGH_IN.path, 0)
+    }
+
     /** "Remember to reorder": before the next intake or before the stock runs out. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
@@ -511,5 +572,8 @@ class TreatmentReminderScheduler @Inject constructor(
         private const val CHANNEL_VACCINE = "vaccine_reminder"
         private const val CHANNEL_APPOINTMENT = "appointment_reminder"
         private const val CHANNEL_BACKUP = "backup_reminder"
+        private const val CHANNEL_WEIGH_IN = "weigh_in_reminder"
+        const val ACTION_RECORD_WEIGHT = "fr.ibdjournal.app.ACTION_RECORD_WEIGHT"
+        const val KEY_WEIGHT_INPUT = "weight_input"
     }
 }

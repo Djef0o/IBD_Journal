@@ -15,6 +15,7 @@ import fr.ibdjournal.app.notification.PendingActions
 import fr.ibdjournal.app.notification.ReminderSource
 import fr.ibdjournal.app.notification.TreatmentReminderScheduler
 import fr.ibdjournal.app.security.AutoLock
+import fr.ibdjournal.app.widget.WidgetSource
 import javax.inject.Inject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,9 @@ class IBDJournalApp : Application(), Configuration.Provider {
     lateinit var reminderSource: ReminderSource
 
     @Inject
+    lateinit var widgetSource: WidgetSource
+
+    @Inject
     lateinit var pendingActions: PendingActions
 
     @Inject
@@ -56,6 +60,7 @@ class IBDJournalApp : Application(), Configuration.Provider {
         // unlocks; the journal locks itself a minute after leaving the screen.
         reminderSource.start(applicationScope)
         pendingActions.start(applicationScope)
+        widgetSource.start(applicationScope)
         autoLock.start(applicationScope)
 
         // Reschedules on every process start: also covers the case where the device was
