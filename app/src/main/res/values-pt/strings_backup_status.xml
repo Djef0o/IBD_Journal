@@ -3,7 +3,7 @@
     <string name="backup_status_title">Backup criptografado</string>
     <string name="backup_status_never">Nenhum backup ainda</string>
     <string name="backup_status_last">Último backup: %1$s</string>
-    <string name="backup_reminder_switch">Lembrete mensal</string>
+    <string name="backup_reminder_switch">Lembrete de backup</string>
     <string name="backup_reminder_desc">Lembra você de exportar um backup criptografado quando o último tem um mês.</string>
     <string name="backup_reminder_title">Lembrete de backup</string>
     <string name="backup_reminder_text">Seu último backup criptografado é de %1$s. Exporte um novo em Configurações: se você esquecer o PIN, só um backup pode restaurar seu diário.</string>

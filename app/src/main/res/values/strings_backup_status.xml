@@ -3,7 +3,7 @@
     <string name="backup_status_title">Encrypted backup</string>
     <string name="backup_status_never">No backup yet</string>
     <string name="backup_status_last">Last backup: %1$s</string>
-    <string name="backup_reminder_switch">Monthly reminder</string>
+    <string name="backup_reminder_switch">Backup reminder</string>
     <string name="backup_reminder_desc">Reminds you to export an encrypted backup when the last one is a month old.</string>
     <string name="backup_reminder_title">Backup reminder</string>
     <string name="backup_reminder_text">Your last encrypted backup is from %1$s. Export a new one from Settings: if you forget your PIN, only a backup can restore your journal.</string>

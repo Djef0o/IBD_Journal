@@ -3,7 +3,7 @@
     <string name="backup_status_title">Copia de seguridad cifrada</string>
     <string name="backup_status_never">Ninguna copia todavía</string>
     <string name="backup_status_last">Última copia: %1$s</string>
-    <string name="backup_reminder_switch">Recordatorio mensual</string>
+    <string name="backup_reminder_switch">Recordatorio de copia</string>
     <string name="backup_reminder_desc">Te recuerda exportar una copia cifrada cuando la última tiene un mes.</string>
     <string name="backup_reminder_title">Recordatorio de copia</string>
     <string name="backup_reminder_text">Tu última copia cifrada es del %1$s. Exporta una nueva desde Ajustes: si olvidas tu PIN, solo una copia puede recuperar tu diario.</string>

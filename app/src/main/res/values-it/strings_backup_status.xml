@@ -3,7 +3,7 @@
     <string name="backup_status_title">Backup cifrato</string>
     <string name="backup_status_never">Nessun backup finora</string>
     <string name="backup_status_last">Ultimo backup: %1$s</string>
-    <string name="backup_reminder_switch">Promemoria mensile</string>
+    <string name="backup_reminder_switch">Promemoria backup</string>
     <string name="backup_reminder_desc">Ti ricorda di esportare un backup cifrato quando l\'ultimo ha un mese.</string>
     <string name="backup_reminder_title">Promemoria backup</string>
     <string name="backup_reminder_text">Il tuo ultimo backup cifrato è del %1$s. Esportane uno nuovo dalle Impostazioni: se dimentichi il PIN, solo un backup può ripristinare il diario.</string>

@@ -18,5 +18,5 @@
     <string name="weigh_in_recorded">Peso registrado: %1$.1f kg</string>
     <string name="weigh_in_switch">Lembrete semanal de pesagem</string>
     <string name="weigh_in_switch_desc">Uma notificação onde você digita seu peso, uma vez por semana às 9:00.</string>
-    <string name="weigh_in_day">Dia</string>
+    <string name="weigh_in_day">Dia da pesagem</string>
 </resources>

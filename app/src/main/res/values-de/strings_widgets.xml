@@ -18,5 +18,5 @@
     <string name="weigh_in_recorded">Gewicht gespeichert: %1$.1f kg</string>
     <string name="weigh_in_switch">Wöchentliche Wiege-Erinnerung</string>
     <string name="weigh_in_switch_desc">Eine Benachrichtigung, in der du dein Gewicht eingibst, einmal pro Woche um 9:00 Uhr.</string>
-    <string name="weigh_in_day">Tag</string>
+    <string name="weigh_in_day">Wiegetag</string>
 </resources>

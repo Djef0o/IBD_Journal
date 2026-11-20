@@ -3,7 +3,7 @@
     <string name="backup_status_title">Verschlüsselte Sicherung</string>
     <string name="backup_status_never">Noch keine Sicherung</string>
     <string name="backup_status_last">Letzte Sicherung: %1$s</string>
-    <string name="backup_reminder_switch">Monatliche Erinnerung</string>
+    <string name="backup_reminder_switch">Sicherungserinnerung</string>
     <string name="backup_reminder_desc">Erinnert dich daran, eine verschlüsselte Sicherung zu exportieren, wenn die letzte einen Monat alt ist.</string>
     <string name="backup_reminder_title">Sicherungserinnerung</string>
     <string name="backup_reminder_text">Deine letzte verschlüsselte Sicherung ist vom %1$s. Exportiere in den Einstellungen eine neue: Wenn du deine PIN vergisst, kann nur eine Sicherung dein Tagebuch wiederherstellen.</string>

@@ -18,5 +18,5 @@
     <string name="weigh_in_recorded">Poids enregistré : %1$.1f kg</string>
     <string name="weigh_in_switch">Rappel de pesée hebdomadaire</string>
     <string name="weigh_in_switch_desc">Une notification où vous saisissez votre poids, une fois par semaine à 9 h.</string>
-    <string name="weigh_in_day">Jour</string>
+    <string name="weigh_in_day">Jour de pesée</string>
 </resources>
