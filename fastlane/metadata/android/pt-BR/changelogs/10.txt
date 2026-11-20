@@ -1,0 +1,1 @@
+Novidades: lembrete mensal para exportar um backup criptografado, data do último backup em Configurações e exportação CSV (arquivo protegido por senha) de fezes, sintomas, refeições, peso e exames.

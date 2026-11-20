@@ -1,0 +1,1 @@
+New: monthly reminder to export an encrypted backup, last backup date in Settings, and CSV export (password-protected archive) of your stools, symptoms, meals, weights and lab results.

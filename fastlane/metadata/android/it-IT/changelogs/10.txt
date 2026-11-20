@@ -1,0 +1,1 @@
+Novità: promemoria mensile per esportare un backup cifrato, data dell'ultimo backup nelle Impostazioni ed esportazione CSV (archivio protetto da password) di feci, sintomi, pasti, peso e analisi.

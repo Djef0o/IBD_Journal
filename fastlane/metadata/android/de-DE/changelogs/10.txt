@@ -1,0 +1,1 @@
+Neu: monatliche Erinnerung zum Export einer verschlüsselten Sicherung, Datum der letzten Sicherung in den Einstellungen und CSV-Export (passwortgeschütztes Archiv) von Stuhl, Symptomen, Mahlzeiten, Gewicht und Laborwerten.

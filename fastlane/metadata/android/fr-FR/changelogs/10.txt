@@ -1,0 +1,1 @@
+Nouveau : rappel mensuel pour exporter une sauvegarde chiffrée, date de la dernière sauvegarde dans les Réglages, et export CSV (archive protégée par mot de passe) des selles, symptômes, repas, poids et analyses.

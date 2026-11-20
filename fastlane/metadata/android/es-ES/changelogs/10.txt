@@ -1,0 +1,1 @@
+Novedades: recordatorio mensual para exportar una copia cifrada, fecha de la última copia en Ajustes y exportación CSV (archivo protegido con contraseña) de deposiciones, síntomas, comidas, peso y análisis.
