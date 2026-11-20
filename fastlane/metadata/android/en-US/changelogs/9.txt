@@ -1,0 +1,1 @@
+New: note joint, skin, eye, mouth and fever symptoms per day (they pre-fill activity scores), questions to ask your doctor, appointments with reminders, and biologic drug levels and antibodies in lab results. Your doctor's report includes them.
