@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import fr.ibdjournal.app.data.model.DoseStatus
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -98,6 +99,10 @@ interface MedicationDao {
     @Query("SELECT * FROM medications WHERE id = :id")
     suspend fun get(id: Long): MedicationEntity?
 
+    /** Moves the intakes left by [delta] (never below 0); medications that are not counted stay as they are. */
+    @Query("UPDATE medications SET stockDoses = MAX(0, stockDoses + :delta) WHERE id = :id AND stockDoses IS NOT NULL")
+    suspend fun adjustStock(id: Long, delta: Int)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(medication: MedicationEntity): Long
 
@@ -173,6 +178,9 @@ interface DoseLogDao {
 
     @Query("DELETE FROM dose_logs WHERE medicationId = :medicationId AND scheduledAt = :scheduledAt")
     suspend fun delete(medicationId: Long, scheduledAt: Long)
+
+    @Query("SELECT status FROM dose_logs WHERE medicationId = :medicationId AND scheduledAt = :scheduledAt")
+    suspend fun statusOf(medicationId: Long, scheduledAt: Long): DoseStatus?
 
     @Query("DELETE FROM dose_logs WHERE medicationId = :medicationId")
     suspend fun deleteForMedication(medicationId: Long)

@@ -17,6 +17,7 @@ import fr.ibdjournal.app.data.local.toProfileEntity
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoseLog
 import fr.ibdjournal.app.data.model.DoseStatus
+import fr.ibdjournal.app.domain.stockDelta
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Profile
@@ -121,6 +122,7 @@ class ProfileRepository @Inject constructor(
 
     /** Confirms a scheduled dose ([status] null: cancels the confirmation). */
     suspend fun logDose(medicationId: Long, scheduledAt: Long, status: DoseStatus?) {
+        val previous = doseLogDao.statusOf(medicationId, scheduledAt)
         if (status == null) {
             doseLogDao.delete(medicationId, scheduledAt)
         } else {
@@ -128,5 +130,7 @@ class ProfileRepository @Inject constructor(
                 DoseLog(medicationId = medicationId, scheduledAt = scheduledAt, status = status).toDoseLogEntity()
             )
         }
+        // Only a dose confirmed taken uses up stock; undoing or changing it gives the dose back.
+        stockDelta(previous, status).takeIf { it != 0 }?.let { medicationDao.adjustStock(medicationId, it) }
     }
 }

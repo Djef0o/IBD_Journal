@@ -15,6 +15,7 @@ IBD Journal è un diario personale per chi convive con la malattia di Crohn o la
 • Esportazione CSV (foglio di calcolo) in un archivio protetto da password
 • Widget per la schermata Home (aggiungi evacuazione, ultimi 7 giorni) e promemoria settimanale del peso facoltativo
 • Note su sonno, stress, umore e ciclo, confrontate con i sintomi in Tendenze
+• Assunzioni rimaste per terapia, scalate a ogni assunzione confermata, con notifica di scorta bassa
 
 Privacy: nessun account, nessun server, nessun tracker, nessun servizio Google. I tuoi dati non lasciano il telefono se non li esporti. L'unico uso della rete è la ricerca dei codici a barre su Open Food Facts.
 

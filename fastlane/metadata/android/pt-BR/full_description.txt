@@ -15,6 +15,7 @@ IBD Journal é um diário pessoal para quem vive com doença de Crohn ou retocol
 • Exportação CSV (planilha) em um arquivo protegido por senha
 • Widgets da tela inicial (adicionar fezes, últimos 7 dias) e lembrete semanal de pesagem opcional
 • Notas de sono, estresse, humor e menstruação, comparadas com seus sintomas em Tendências
+• Doses restantes por tratamento, descontadas a cada dose confirmada, com aviso de estoque baixo
 
 Privacidade: sem conta, sem servidor, sem rastreadores, sem serviços do Google. Seus dados só saem do celular se você exportar. O único uso de rede é a consulta de códigos de barras no Open Food Facts.
 

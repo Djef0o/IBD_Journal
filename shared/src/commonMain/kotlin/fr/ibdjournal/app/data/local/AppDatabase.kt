@@ -27,7 +27,7 @@ import androidx.room.RoomDatabaseConstructor
         AppointmentEntity::class,
         WellbeingEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)

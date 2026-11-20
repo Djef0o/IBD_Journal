@@ -54,10 +54,12 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.CheckupType
+import fr.ibdjournal.app.data.model.DEFAULT_LOW_STOCK_DOSES
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.REFILL_LEAD_DAYS
@@ -76,6 +78,9 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 
 private const val MAX_REPEAT_EVERY = 99
+
+/** Longest stock count typed: 4 digits. */
+private const val MAX_STOCK_DIGITS = 4
 
 /** The DatePicker works in UTC milliseconds at midnight: epoch day × length of a day. */
 private const val MILLIS_PER_DAY = 86_400_000L
@@ -96,6 +101,10 @@ fun MedicationEditorSheet(
     var showPicker by remember { mutableStateOf(initial == null) }
     var refillAlert by remember { mutableStateOf(initial?.refillAlert ?: false) }
     var stockEndDate by remember { mutableStateOf(initial?.stockEndDate) }
+    var stockText by remember { mutableStateOf(initial?.stockDoses?.toString().orEmpty()) }
+    var lowStockText by remember {
+        mutableStateOf(initial?.takeIf { it.stockDoses != null }?.lowStockDoses?.toString().orEmpty())
+    }
 
     val draft = Medication(
         id = initial?.id ?: 0,
@@ -104,6 +113,8 @@ fun MedicationEditorSheet(
         schedule = schedule,
         refillAlert = refillAlert,
         stockEndDate = stockEndDate,
+        stockDoses = stockText.toIntOrNull(),
+        lowStockDoses = lowStockText.toIntOrNull() ?: DEFAULT_LOW_STOCK_DOSES,
     )
     // In "end of stock" mode, the alert makes no sense without the date.
     val refillIncomplete = refillAlert && draft.refillBasis == RefillBasis.STOCK_END && stockEndDate == null
@@ -151,6 +162,12 @@ fun MedicationEditorSheet(
             medication = draft,
             onRefillAlert = { refillAlert = it },
             onStockEnd = { stockEndDate = it },
+        )
+        StockEditor(
+            stock = stockText,
+            low = lowStockText,
+            onStock = { stockText = it.filter(Char::isDigit).take(MAX_STOCK_DIGITS) },
+            onLow = { lowStockText = it.filter(Char::isDigit).take(MAX_STOCK_DIGITS) },
         )
     }
 
@@ -237,6 +254,14 @@ fun refillStatus(medication: Medication): String? {
             DateFormats.time(next.hour, next.minute),
         ),
     )
+}
+
+/** "12 intakes left", with a reorder hint at or below the threshold; null when the stock is not counted. */
+@Composable
+fun stockStatus(medication: Medication): String? {
+    val left = medication.stockDoses ?: return null
+    val text = pluralStringResource(R.plurals.stock_left, left, left)
+    return if (medication.isLowStock) stringResource(R.string.stock_status_low, text) else text
 }
 
 /** Filterable standard list; "Other" keeps the entered text as is. */
@@ -607,4 +632,35 @@ internal fun TimePickerDialogFor(
             }
         },
     )
+}
+
+/**
+ * Optional count of intakes left, counted down when a dose is confirmed taken; once a number is
+ * entered, the threshold of the low-stock notification can be changed.
+ */
+@Composable
+private fun StockEditor(stock: String, low: String, onStock: (String) -> Unit, onLow: (String) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedTextField(
+            value = stock,
+            onValueChange = onStock,
+            label = { Text(stringResource(R.string.stock_field)) },
+            supportingText = { Text(stringResource(R.string.stock_field_hint)) },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (stock.isNotEmpty()) {
+            OutlinedTextField(
+                value = low,
+                onValueChange = onLow,
+                label = { Text(stringResource(R.string.stock_low_field)) },
+                placeholder = { Text(DEFAULT_LOW_STOCK_DOSES.toString()) },
+                supportingText = { Text(stringResource(R.string.stock_low_hint)) },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
 }

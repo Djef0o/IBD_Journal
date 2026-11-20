@@ -69,7 +69,7 @@ class TreatmentReminderScheduler @Inject constructor(
         MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
         EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
-        VACCINE("vaccine"), APPOINTMENT("appointment"), BACKUP("backup"), WEIGH_IN("weigh-in"),
+        VACCINE("vaccine"), APPOINTMENT("appointment"), BACKUP("backup"), WEIGH_IN("weigh-in"), STOCK("stock"),
     }
 
     /** Reminder for each exam step. */
@@ -520,6 +520,23 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    /** Low-stock alert: the treatment and how many intakes are left. */
+    fun showLowStock(medication: Medication) {
+        val left = medication.stockDoses ?: return
+        notify(
+            kind = Kind.STOCK,
+            id = medication.id,
+            channelId = CHANNEL_STOCK,
+            channelName = context.getString(R.string.stock_channel),
+            title = context.getString(R.string.stock_notification_title),
+            text = context.getString(
+                R.string.stock_notification_text,
+                medication.name,
+                context.resources.getQuantityString(R.plurals.stock_intakes, left, left),
+            ),
+        )
+    }
+
     private fun notify(
         kind: Kind,
         id: Long,
@@ -573,6 +590,7 @@ class TreatmentReminderScheduler @Inject constructor(
         private const val CHANNEL_APPOINTMENT = "appointment_reminder"
         private const val CHANNEL_BACKUP = "backup_reminder"
         private const val CHANNEL_WEIGH_IN = "weigh_in_reminder"
+        private const val CHANNEL_STOCK = "stock_reminder"
         const val ACTION_RECORD_WEIGHT = "fr.ibdjournal.app.ACTION_RECORD_WEIGHT"
         const val KEY_WEIGHT_INPUT = "weight_input"
     }

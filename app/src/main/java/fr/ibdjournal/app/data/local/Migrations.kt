@@ -201,9 +201,17 @@ object Migrations {
         }
     }
 
+    /** Intakes left per medication and the threshold of the low-stock alert. */
+    val MIGRATION_13_14 = object : Migration(13, 14) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL("ALTER TABLE `medications` ADD COLUMN `stockDoses` INTEGER")
+            db.execSQL("ALTER TABLE `medications` ADD COLUMN `lowStockDoses` INTEGER NOT NULL DEFAULT 7")
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13,
+        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14,
     )
 
     private const val SCHEDULE_COLUMNS =

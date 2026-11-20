@@ -71,6 +71,9 @@ data class ReminderSchedule(
 /** Lead time of the "remember to reorder" alert, in days. */
 const val REFILL_LEAD_DAYS = 7
 
+/** Intakes left at which the low-stock notification fires, unless the user chooses otherwise. */
+const val DEFAULT_LOW_STOCK_DOSES = 7
+
 /** Reference of the reorder alert, derived from the dose frequency. */
 enum class RefillBasis {
     /** Doses spaced more than [REFILL_LEAD_DAYS] days apart (injections…): before each dose. */
@@ -82,7 +85,9 @@ enum class RefillBasis {
 
 /**
  * Tracked treatment, from the standard list or freely entered. [refillAlert] enables
- * the reorder alert; [stockEndDate] is only used in [RefillBasis.STOCK_END] mode.
+ * the reorder alert; [stockEndDate] is only used in [RefillBasis.STOCK_END] mode. [stockDoses]:
+ * intakes left, counted down as doses are confirmed taken (null: not counted); the low-stock
+ * notification fires when it reaches [lowStockDoses].
  */
 @Serializable
 data class Medication(
@@ -91,8 +96,13 @@ data class Medication(
     val dosage: String = "",
     val schedule: ReminderSchedule,
     val refillAlert: Boolean = false,
+    val stockDoses: Int? = null,
+    val lowStockDoses: Int = DEFAULT_LOW_STOCK_DOSES,
     val stockEndDate: LocalDate? = null,
 ) {
+    /** True when the counted stock has reached [lowStockDoses] or less; false when not counted. */
+    val isLowStock: Boolean get() = stockDoses?.let { it <= lowStockDoses } == true
+
     val refillBasis: RefillBasis
         get() {
             val intervalDays = when (schedule.repeatUnit) {

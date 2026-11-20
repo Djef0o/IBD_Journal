@@ -13,6 +13,7 @@ import fr.ibdjournal.app.data.AppPrefs
 import fr.ibdjournal.app.notification.NotificationHelper
 import fr.ibdjournal.app.notification.PendingActions
 import fr.ibdjournal.app.notification.ReminderSource
+import fr.ibdjournal.app.notification.StockMonitor
 import fr.ibdjournal.app.notification.TreatmentReminderScheduler
 import fr.ibdjournal.app.security.AutoLock
 import fr.ibdjournal.app.widget.WidgetSource
@@ -44,6 +45,9 @@ class IBDJournalApp : Application(), Configuration.Provider {
     lateinit var pendingActions: PendingActions
 
     @Inject
+    lateinit var stockMonitor: StockMonitor
+
+    @Inject
     lateinit var autoLock: AutoLock
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -61,6 +65,7 @@ class IBDJournalApp : Application(), Configuration.Provider {
         reminderSource.start(applicationScope)
         pendingActions.start(applicationScope)
         widgetSource.start(applicationScope)
+        stockMonitor.start(applicationScope)
         autoLock.start(applicationScope)
 
         // Reschedules on every process start: also covers the case where the device was

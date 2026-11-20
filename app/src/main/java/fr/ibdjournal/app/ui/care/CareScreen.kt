@@ -260,7 +260,7 @@ fun CareContent(
                     icon = Icons.Outlined.Medication,
                     title = listOf(medication.name, medication.dosage).filter { it.isNotBlank() }.joinToString(" · "),
                     schedule = medication.schedule,
-                    extra = listOfNotNull(refillStatus(medication), adherenceStatus(medication, doseLogs))
+                    extra = listOfNotNull(stockStatus(medication), refillStatus(medication), adherenceStatus(medication, doseLogs))
                         .joinToString("\n")
                         .ifEmpty { null },
                     onClick = { editMedication = Editing(medication) },

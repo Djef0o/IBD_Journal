@@ -56,6 +56,7 @@ Your health data stays on your phone.
 - **PIN lock and local encryption**: a PIN (4 to 8 digits) is chosen at first launch, or right after updating. The journal database (SQLCipher) and meal photos are encrypted with a random key that only the PIN, or optionally your fingerprint, can unlock. The app locks one minute after leaving the screen; wrong PINs trigger waiting times. A forgotten PIN cannot be recovered: the only way out is to erase the data and restore an encrypted backup.
 - Home-screen widgets: an "add a stool" button, and the last 7 days (stool counts and blood marks only; readable without the PIN, placing it is your choice).
 - Sleep, stress and mood (1 to 5) and menstrual period noted per day, compared with bad days in Trends and averaged in the report.
+- Optional count of intakes left per treatment, counted down as doses are confirmed taken, with a low-stock notification.
 - Optional weekly weigh-in reminder: type your weight in the notification itself.
 - Guided first launch, light and dark themes, several color palettes.
 - Available in English, French, German, Spanish, Italian and Portuguese.

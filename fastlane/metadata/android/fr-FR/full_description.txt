@@ -15,6 +15,7 @@ IBD Journal est un journal personnel pour les personnes atteintes de la maladie 
 • Export CSV (tableur) dans une archive protégée par mot de passe
 • Widgets d'écran d'accueil (bouton ajouter une selle, 7 derniers jours) et rappel de pesée hebdomadaire facultatif
 • Sommeil, stress, humeur et règles, comparés à vos symptômes dans Tendances
+• Prises restantes par traitement, décomptées à chaque prise confirmée, avec notification de stock bas
 
 Confidentialité : ni compte, ni serveur, ni traceur, ni service Google. Vos données ne quittent jamais le téléphone sauf si vous les exportez. Le seul accès réseau est la recherche de codes-barres sur Open Food Facts.
 

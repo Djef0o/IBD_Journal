@@ -264,6 +264,9 @@ data class MedicationEntity(
     /** Added in version 4: SQL default identical to that of migration 3 → 4. */
     @ColumnInfo(defaultValue = "0") val refillAlert: Boolean = false,
     val stockEndEpochDay: Long? = null,
+    /** Added in version 14: intakes left (null: not counted) and the threshold of the low-stock alert. */
+    val stockDoses: Int? = null,
+    @ColumnInfo(defaultValue = "7") val lowStockDoses: Int = 7,
 )
 
 @Entity(tableName = "checkups")
@@ -316,6 +319,8 @@ fun MedicationEntity.toMedication() = Medication(
     schedule = schedule.toSchedule(),
     refillAlert = refillAlert,
     stockEndDate = stockEndEpochDay?.let { LocalDate.fromEpochDays(it) },
+    stockDoses = stockDoses,
+    lowStockDoses = lowStockDoses,
 )
 
 fun Medication.toMedicationEntity() = MedicationEntity(
@@ -325,6 +330,8 @@ fun Medication.toMedicationEntity() = MedicationEntity(
     schedule = schedule.toColumns(),
     refillAlert = refillAlert,
     stockEndEpochDay = stockEndDate?.toEpochDays(),
+    stockDoses = stockDoses,
+    lowStockDoses = lowStockDoses,
 )
 
 fun CheckupEntity.toCheckup() = Checkup(
