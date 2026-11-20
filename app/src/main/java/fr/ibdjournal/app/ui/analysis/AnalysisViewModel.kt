@@ -11,6 +11,8 @@ import fr.ibdjournal.app.domain.AnalysisPeriod
 import fr.ibdjournal.app.domain.AnalysisSummary
 import fr.ibdjournal.app.domain.FoodLink
 import fr.ibdjournal.app.domain.foodSymptomLinks
+import fr.ibdjournal.app.domain.WellbeingLink
+import fr.ibdjournal.app.domain.wellbeingLinks
 import fr.ibdjournal.app.domain.analyze
 import fr.ibdjournal.app.domain.startFrom
 import fr.ibdjournal.app.domain.today
@@ -61,6 +63,14 @@ class AnalysisViewModel @Inject constructor(
         repository.observeAllStools(),
         repository.observeMeals(LocalDate(2000, 1, 1), today),
     ) { stools, meals -> foodSymptomLinks(meals, stools) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Sleep, stress, mood or period that came with bad days: whole history, whatever the period. */
+    val wellbeingLinks: StateFlow<List<WellbeingLink>> = combine(
+        careRepository.wellbeing,
+        repository.observeAllStools(),
+    ) { days, stools -> wellbeingLinks(days, stools) }
         .flowOn(Dispatchers.Default)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 

@@ -57,6 +57,12 @@ fun BackupData.toCsvFiles(): Map<String, String> = linkedMapOf(
             listOf(it.date.toString(), it.kind.name.lowercase(), it.total.toString(), it.answers.joinToString(" "))
         },
     ),
+    "wellbeing.csv" to csv(
+        listOf("date", "sleep", "stress", "mood", "period"),
+        wellbeing.orEmpty().sortedBy { it.date }.map {
+            listOf(it.date.toString(), it.sleep?.toString().orEmpty(), it.stress?.toString().orEmpty(), it.mood?.toString().orEmpty(), it.period.flag())
+        },
+    ),
 )
 
 private fun Boolean.flag() = if (this) "1" else "0"

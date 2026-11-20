@@ -7,6 +7,9 @@ import fr.ibdjournal.app.data.local.toDoctorQuestion
 import fr.ibdjournal.app.data.local.toDoctorQuestionEntity
 import fr.ibdjournal.app.data.local.toExtraSymptomEntity
 import fr.ibdjournal.app.data.local.toExtraSymptomsDay
+import fr.ibdjournal.app.data.local.toWellbeingDay
+import fr.ibdjournal.app.data.local.toWellbeingEntity
+import fr.ibdjournal.app.data.model.WellbeingDay
 import fr.ibdjournal.app.data.local.toActivityScoreEntity
 import fr.ibdjournal.app.data.local.toEmergencyEntity
 import fr.ibdjournal.app.data.local.toEmergencyInfo
@@ -109,6 +112,25 @@ class CareRepository @Inject constructor(
             db.extraSymptomDao().delete(date.toEpochDays())
         } else {
             db.extraSymptomDao().upsert(ExtraSymptomsDay(date, symptoms).toExtraSymptomEntity())
+        }
+    }
+
+    // --- Sleep, stress, mood, menstrual period (one entry per day) ---
+
+    val wellbeing: Flow<List<WellbeingDay>> =
+        vault.observe { it.wellbeingDao().observeAll() }.map { list -> list.map { it.toWellbeingDay() } }
+
+    /** The day's entry; an empty one when nothing was noted. */
+    fun wellbeingOn(date: LocalDate): Flow<WellbeingDay> =
+        vault.observe { it.wellbeingDao().observe(date.toEpochDays()) }
+            .map { it?.toWellbeingDay() ?: WellbeingDay(date) }
+
+    /** Replaces the day's entry; an empty one removes it. */
+    suspend fun saveWellbeing(day: WellbeingDay) {
+        if (day.isEmpty) {
+            db.wellbeingDao().delete(day.date.toEpochDays())
+        } else {
+            db.wellbeingDao().upsert(day.toWellbeingEntity())
         }
     }
 

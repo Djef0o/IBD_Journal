@@ -22,6 +22,11 @@ import fr.ibdjournal.app.domain.AnalysisSummary
 import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.ReferenceRange
 import fr.ibdjournal.app.domain.adherence
+import fr.ibdjournal.app.domain.WellbeingAverages
+import fr.ibdjournal.app.domain.WellbeingLink
+import fr.ibdjournal.app.domain.wellbeingAverages
+import fr.ibdjournal.app.domain.wellbeingLinks
+import fr.ibdjournal.app.data.model.WellbeingDay
 import fr.ibdjournal.app.domain.analyze
 import fr.ibdjournal.app.domain.end
 import fr.ibdjournal.app.domain.reference
@@ -62,6 +67,15 @@ data class LabPanels(val dates: List<LocalDate>, val rows: List<LabPanelRow>, va
 /** Number of days with [symptom] over the report period, and the most recent one. */
 data class ExtraSymptomReport(val symptom: ExtraSymptom, val days: Int, val last: LocalDate)
 
+/** Means over the period and the factors that came with bad days; see [wellbeingAverages], [wellbeingLinks]. */
+data class WellbeingReport(val averages: WellbeingAverages, val links: List<WellbeingLink>)
+
+private fun wellbeingReport(days: List<WellbeingDay>, stools: List<Stool>, from: LocalDate, to: LocalDate): WellbeingReport? {
+    val averages = wellbeingAverages(days, from, to)
+    if (averages.entries == 0) return null
+    return WellbeingReport(averages, wellbeingLinks(days.filter { it.date in from..to }, stools))
+}
+
 /** Appointments listed in the report: the next ones from today. */
 const val REPORT_APPOINTMENTS = 3
 
@@ -95,6 +109,8 @@ data class ReportData(
     val doctorQuestions: List<DoctorQuestion>,
     /** Next [REPORT_APPOINTMENTS] appointments from now, chronological. */
     val appointments: List<Appointment>,
+    /** Sleep, stress, mood and period over the period; null when none was noted. */
+    val wellbeing: WellbeingReport?,
 )
 
 /** Builds the report for [period] ending on the day of [now], from the raw data. */
@@ -115,6 +131,7 @@ fun reportData(
     extraSymptoms: List<ExtraSymptomsDay> = emptyList(),
     doctorQuestions: List<DoctorQuestion> = emptyList(),
     appointments: List<Appointment> = emptyList(),
+    wellbeing: List<WellbeingDay> = emptyList(),
 ): ReportData {
     val today = now.date
     val summary = analyze(stools, meals, today, period)
@@ -156,6 +173,7 @@ fun reportData(
             .filter { it.at >= now }
             .sortedBy { it.at }
             .take(REPORT_APPOINTMENTS),
+        wellbeing = wellbeingReport(wellbeing, stools, from, today),
     )
 }
 

@@ -119,6 +119,7 @@ fun DayScreen(
 
             if (selected <= today()) {
                 DayExtrasCard(date = selected)
+                DayWellbeingCard(date = selected)
             }
 
             SectionHeader(

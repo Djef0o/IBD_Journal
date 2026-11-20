@@ -25,8 +25,9 @@ import androidx.room.RoomDatabaseConstructor
         ExtraSymptomEntity::class,
         DoctorQuestionEntity::class,
         AppointmentEntity::class,
+        WellbeingEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -49,6 +50,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun extraSymptomDao(): ExtraSymptomDao
     abstract fun doctorQuestionDao(): DoctorQuestionDao
     abstract fun appointmentDao(): AppointmentDao
+    abstract fun wellbeingDao(): WellbeingDao
 
     companion object {
         const val NAME = "ibd_diary.db"

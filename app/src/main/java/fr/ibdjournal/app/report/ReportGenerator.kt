@@ -56,6 +56,7 @@ class ReportGenerator @Inject constructor(
             extraSymptoms = careRepository.extraSymptoms.first(),
             doctorQuestions = careRepository.doctorQuestions.first(),
             appointments = careRepository.appointments.first(),
+            wellbeing = careRepository.wellbeing.first(),
         )
         return withContext(Dispatchers.IO) {
             val dir = File(context.cacheDir, REPORTS_DIR).apply { mkdirs() }

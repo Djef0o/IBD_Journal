@@ -45,6 +45,9 @@ import fr.ibdjournal.app.domain.AnalysisPeriod
 import fr.ibdjournal.app.domain.AnalysisSummary
 import fr.ibdjournal.app.domain.Symptom
 import fr.ibdjournal.app.domain.FoodLink
+import fr.ibdjournal.app.domain.WellbeingFactor
+import fr.ibdjournal.app.domain.WellbeingLink
+import androidx.annotation.StringRes
 import fr.ibdjournal.app.domain.MIN_FOOD_OCCURRENCES
 import fr.ibdjournal.app.domain.SymptomDays
 import fr.ibdjournal.app.ui.chipRes
@@ -67,6 +70,7 @@ fun AnalysisScreen(
     val exportingReport by viewModel.exportingReport.collectAsStateWithLifecycle()
     val foodLinks by viewModel.foodLinks.collectAsStateWithLifecycle()
     val flares by viewModel.flares.collectAsStateWithLifecycle()
+    val wellbeingLinks by viewModel.wellbeingLinks.collectAsStateWithLifecycle()
     val context = LocalContext.current
     // Activity context: the share sheet opens on top of the app.
     LaunchedEffect(viewModel) {
@@ -86,6 +90,7 @@ fun AnalysisScreen(
         onExportReport = viewModel::exportReport,
         foodLinks = foodLinks,
         flares = flares,
+        wellbeingLinks = wellbeingLinks,
     )
 }
 
@@ -98,6 +103,7 @@ fun AnalysisContent(
     onExportReport: () -> Unit,
     foodLinks: List<FoodLink>,
     flares: List<Flare> = emptyList(),
+    wellbeingLinks: List<WellbeingLink> = emptyList(),
 ) {
     val stools = state.stools
     val daysFollowed = (stools.map { it.date } + state.meals.map { it.date }).distinct().size
@@ -208,6 +214,7 @@ fun AnalysisContent(
                 SymptomsCard(state)
             }
             FoodLinksCard(foodLinks)
+            if (wellbeingLinks.isNotEmpty()) WellbeingLinksCard(wellbeingLinks)
         }
     }
 }
@@ -383,31 +390,95 @@ private fun FoodLinkRow(link: FoodLink) {
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(6.dp))
+        RateBar(link.badRate, link.baseline)
+    }
+}
+
+/** Rate of bad days as a bar; the tick marks the usual rate for comparison. */
+@Composable
+private fun RateBar(rate: Double, baseline: Double) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(8.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+    ) {
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
+            Modifier
+                .fillMaxWidth(rate.toFloat().coerceIn(0f, 1f))
                 .height(8.dp)
                 .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MaterialTheme.colorScheme.primary),
+        )
+        Box(
+            modifier = Modifier.fillMaxWidth(baseline.toFloat().coerceIn(0f, 1f)).height(8.dp),
+            contentAlignment = Alignment.CenterEnd,
         ) {
             Box(
                 Modifier
-                    .fillMaxWidth(link.badRate.toFloat().coerceIn(0f, 1f))
+                    .width(2.dp)
                     .height(8.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary),
+                    .background(MaterialTheme.colorScheme.onSurface),
             )
-            Box(
-                modifier = Modifier.fillMaxWidth(link.baseline.toFloat().coerceIn(0f, 1f)).height(8.dp),
-                contentAlignment = Alignment.CenterEnd,
-            ) {
-                Box(
-                    Modifier
-                        .width(2.dp)
-                        .height(8.dp)
-                        .background(MaterialTheme.colorScheme.onSurface),
-                )
-            }
         }
     }
+}
+
+/** Sleep, stress, mood or period that came with bad days more often than usual: shown only when there is one. */
+@Composable
+private fun WellbeingLinksCard(links: List<WellbeingLink>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+    ) {
+        Column(Modifier.padding(18.dp)) {
+            Text(
+                text = stringResource(R.string.wellbeing_link_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(8.dp))
+            links.forEach { link ->
+                val badDays = Math.round(link.badRate * link.days).toInt()
+                Column(Modifier.padding(vertical = 6.dp)) {
+                    Text(text = stringResource(link.factor.labelRes()), style = MaterialTheme.typography.labelLarge)
+                    Text(
+                        text = stringResource(
+                            R.string.wellbeing_link_row,
+                            badDays,
+                            link.days,
+                            Math.round(link.baseline * 100).toInt(),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    RateBar(link.badRate, link.baseline)
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+            Text(
+                text = stringResource(R.string.wellbeing_link_caveat),
+                style = MaterialTheme.typography.bodySmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.wellbeing_link_definition),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@StringRes
+internal fun WellbeingFactor.labelRes(): Int = when (this) {
+    WellbeingFactor.POOR_SLEEP -> R.string.wellbeing_factor_poor_sleep
+    WellbeingFactor.HIGH_STRESS -> R.string.wellbeing_factor_high_stress
+    WellbeingFactor.LOW_MOOD -> R.string.wellbeing_factor_low_mood
+    WellbeingFactor.PERIOD -> R.string.wellbeing_factor_period
 }

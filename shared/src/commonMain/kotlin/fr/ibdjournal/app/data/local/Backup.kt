@@ -27,6 +27,7 @@ suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connectio
             extraSymptoms = extraSymptomDao().getAll().map { it.toExtraSymptomsDay() },
             doctorQuestions = doctorQuestionDao().getAll().map { it.toDoctorQuestion() },
             appointments = appointmentDao().getAll().map { it.toAppointment() },
+            wellbeing = wellbeingDao().getAll().map { it.toWellbeingDay() },
         )
     }
 }
@@ -96,6 +97,10 @@ suspend fun AppDatabase.restore(backup: BackupData) {
             backup.appointments?.let { list ->
                 appointmentDao().deleteAll()
                 appointmentDao().insertAll(list.map { it.toAppointmentEntity() })
+            }
+            backup.wellbeing?.let { list ->
+                wellbeingDao().deleteAll()
+                wellbeingDao().insertAll(list.map { it.toWellbeingEntity() })
             }
         }
     }

@@ -20,7 +20,7 @@ const val MIN_FOOD_OCCURRENCES = 4
 private const val MIN_EXCESS = 0.2
 
 /** Bad day: liquid stool (Bristol 6–7), blood, or pain of 3 and above. */
-private fun Stool.isBad(): Boolean = isRealStool && (bristolType >= 6 || bloodLevel >= 1 || painLevel >= 3)
+internal fun Stool.isBad(): Boolean = isRealStool && (bristolType >= 6 || bloodLevel >= 1 || painLevel >= 3)
 
 /** Foods of a meal: product name and description items split on commas, semicolons, "+" and line breaks. */
 internal fun mealItems(meal: Meal): Set<String> {

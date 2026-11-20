@@ -33,6 +33,7 @@ import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.labelRes
 import fr.ibdjournal.app.ui.care.nameRes
 import fr.ibdjournal.app.ui.day.labelRes as extraLabelRes
+import fr.ibdjournal.app.ui.analysis.labelRes as factorLabelRes
 import fr.ibdjournal.app.ui.theme.bristolColor
 import java.io.OutputStream
 import java.text.NumberFormat
@@ -156,6 +157,7 @@ class ReportPdfBuilder(private val context: Context) {
                 symptoms()
                 dailyChart()
                 extraSymptoms()
+                wellbeing()
                 treatments()
                 flares()
                 activityScores()
@@ -723,6 +725,35 @@ class ReportPdfBuilder(private val context: Context) {
             }
             if (rows.isEmpty()) return
             section(string(R.string.report_followup_extra_title), string(R.string.report_followup_extra_note), rows.first().height)
+            table(null, rows)
+        }
+
+        /** Means of sleep, stress and mood, days with a period, and the factors that came with bad days. */
+        fun wellbeing() {
+            val report = data.wellbeing ?: return
+            val averages = report.averages
+            val lines = mutableListOf<String>()
+            val means = listOfNotNull(
+                averages.sleep?.let { string(R.string.report_wellbeing_sleep, formatDecimal(it)) },
+                averages.stress?.let { string(R.string.report_wellbeing_stress, formatDecimal(it)) },
+                averages.mood?.let { string(R.string.report_wellbeing_mood, formatDecimal(it)) },
+            )
+            if (means.isNotEmpty()) lines += means.joinToString(" · ")
+            if (averages.periodDays > 0) {
+                lines += string(R.string.report_wellbeing_period, plural(R.plurals.report_followup_days, averages.periodDays))
+            }
+            report.links.forEach { link ->
+                lines += string(
+                    R.string.report_wellbeing_link,
+                    string(link.factor.factorLabelRes()),
+                    Math.round(link.badRate * link.days).toInt(),
+                    link.days,
+                    Math.round(link.baseline * 100).toInt(),
+                )
+            }
+            val rows = lines.map { linesRow(listOf(layout(it, bodyPaint, CONTENT_WIDTH))) }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_wellbeing_title), string(R.string.report_wellbeing_note), rows.first().height)
             table(null, rows)
         }
 

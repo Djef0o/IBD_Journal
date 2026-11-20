@@ -14,6 +14,7 @@ IBD Journal ist ein persönliches Tagebuch für Menschen mit Morbus Crohn oder C
 • Sicherung und Wiederherstellung in einer mit Passwort verschlüsselten Datei, mit monatlicher Erinnerung
 • CSV-Export (Tabellenkalkulation) in einem passwortgeschützten Archiv
 • Startbildschirm-Widgets (Stuhl hinzufügen, letzte 7 Tage) und optionale wöchentliche Wiege-Erinnerung
+• Schlaf-, Stress-, Stimmungs- und Periodennotizen, in Trends mit deinen Symptomen verglichen
 
 Datenschutz: kein Konto, kein Server, keine Tracker, keine Google-Dienste. Deine Daten verlassen das Handy nur, wenn du sie exportierst. Die einzige Netzwerknutzung ist die Barcode-Suche bei Open Food Facts.
 
