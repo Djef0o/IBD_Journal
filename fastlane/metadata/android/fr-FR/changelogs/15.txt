@@ -1,0 +1,1 @@
+Amélioré : les cartes facultatives de l'écran du jour (autres symptômes, sommeil, stress, humeur) sont repliées, les repas et les selles redeviennent accessibles en haut. Libellés plus clairs dans les Réglages.

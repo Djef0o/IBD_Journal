@@ -1,0 +1,1 @@
+Verbessert: Die optionalen Karten der Tagesansicht (weitere Symptome, Schlaf, Stress, Stimmung) sind jetzt zugeklappt, Mahlzeiten und Stuhl stehen wieder oben. Klarere Bezeichnungen in den Einstellungen.

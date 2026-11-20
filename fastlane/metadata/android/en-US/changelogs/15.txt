@@ -1,0 +1,1 @@
+Improved: the optional cards of the day screen (other symptoms, sleep, stress, mood) are now folded, so meals and stools are back at the top. Clearer labels in Settings.

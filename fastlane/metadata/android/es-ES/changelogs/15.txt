@@ -1,0 +1,1 @@
+Mejorado: las tarjetas opcionales de la pantalla del día (otros síntomas, sueño, estrés, ánimo) aparecen plegadas, y las comidas y deposiciones vuelven a estar arriba. Etiquetas más claras en Ajustes.

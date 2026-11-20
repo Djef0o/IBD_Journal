@@ -1,0 +1,1 @@
+Migliorato: le schede facoltative della schermata del giorno (altri sintomi, sonno, stress, umore) sono ora compresse, pasti ed evacuazioni tornano in alto. Etichette più chiare nelle Impostazioni.

@@ -1,0 +1,1 @@
+Melhorado: os cartões opcionais da tela do dia (outros sintomas, sono, estresse, humor) agora aparecem recolhidos, e as refeições e evacuações voltam ao topo. Rótulos mais claros em Configurações.
