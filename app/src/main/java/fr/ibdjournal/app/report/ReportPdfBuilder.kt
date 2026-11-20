@@ -31,6 +31,8 @@ import fr.ibdjournal.app.ui.display
 import fr.ibdjournal.app.ui.displayValue
 import fr.ibdjournal.app.ui.formatDecimal
 import fr.ibdjournal.app.ui.labelRes
+import fr.ibdjournal.app.ui.care.nameRes
+import fr.ibdjournal.app.ui.day.labelRes as extraLabelRes
 import fr.ibdjournal.app.ui.theme.bristolColor
 import java.io.OutputStream
 import java.text.NumberFormat
@@ -153,6 +155,7 @@ class ReportPdfBuilder(private val context: Context) {
                 summary()
                 symptoms()
                 dailyChart()
+                extraSymptoms()
                 treatments()
                 flares()
                 activityScores()
@@ -160,6 +163,8 @@ class ReportPdfBuilder(private val context: Context) {
                 vaccinations()
                 labResults()
                 checkups()
+                appointments()
+                doctorQuestions()
                 finish()
             }
             document.writeTo(out)
@@ -703,6 +708,53 @@ class ReportPdfBuilder(private val context: Context) {
             ensure(layout(title, headerCellPaint, CONTENT_WIDTH).height + 2f + layout(notes.first(), bodyPaint, CONTENT_WIDTH).height)
             paragraph(title, headerCellPaint, 2f)
             notes.forEach { paragraph(it, bodyPaint, 2f) }
+        }
+
+        /** Manifestations noted over the period: days count and most recent day. */
+        fun extraSymptoms() {
+            val rows = data.extraSymptoms.map { report ->
+                val line = string(
+                    R.string.report_followup_extra_line,
+                    string(report.symptom.extraLabelRes()),
+                    plural(R.plurals.report_followup_days, report.days),
+                    DateFormats.dayMonthYear(report.last),
+                )
+                linesRow(listOf(layout(line, bodyPaint, CONTENT_WIDTH)))
+            }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_followup_extra_title), string(R.string.report_followup_extra_note), rows.first().height)
+            table(null, rows)
+        }
+
+        /** Next appointments: kind, date and time, then place. */
+        fun appointments() {
+            val rows = data.appointments.map { appointment ->
+                val title = "${string(appointment.kind.nameRes())} · " +
+                    string(
+                        R.string.report_checkup_at,
+                        DateFormats.dayMonthYear(appointment.at.date),
+                        DateFormats.time(appointment.at.hour, appointment.at.minute),
+                    )
+                linesRow(
+                    listOfNotNull(
+                        layout(title, strongPaint, CONTENT_WIDTH),
+                        appointment.place.takeIf { it.isNotBlank() }?.let { layout(it.trim(), bodyPaint, CONTENT_WIDTH) },
+                    ),
+                )
+            }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_followup_appointments), null, rows.first().height)
+            table(null, rows)
+        }
+
+        /** Open questions as a bullet list. */
+        fun doctorQuestions() {
+            val rows = data.doctorQuestions.map { question ->
+                linesRow(listOf(layout("• ${question.text.trim()}", bodyPaint, CONTENT_WIDTH)))
+            }
+            if (rows.isEmpty()) return
+            section(string(R.string.report_followup_questions), null, rows.first().height)
+            table(null, rows)
         }
 
         fun checkups() {

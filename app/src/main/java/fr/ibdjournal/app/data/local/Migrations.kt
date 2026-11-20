@@ -172,9 +172,28 @@ object Migrations {
         }
     }
 
+    /** Extra-intestinal symptoms, questions for the doctor, appointments. */
+    val MIGRATION_11_12 = object : Migration(11, 12) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `extra_symptoms` (`dateEpochDay` INTEGER NOT NULL, " +
+                    "`symptoms` TEXT NOT NULL, PRIMARY KEY(`dateEpochDay`))"
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `doctor_questions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`text` TEXT NOT NULL, `done` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL)"
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `appointments` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`kind` TEXT NOT NULL, `at` TEXT NOT NULL, `place` TEXT NOT NULL, `note` TEXT NOT NULL, " +
+                    "`remindersEnabled` INTEGER NOT NULL)"
+            )
+        }
+    }
+
     val ALL = arrayOf(
         MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9,
-        MIGRATION_9_10, MIGRATION_10_11,
+        MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12,
     )
 
     private const val SCHEDULE_COLUMNS =

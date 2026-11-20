@@ -83,6 +83,9 @@ data class BackupData(
     val vaccinations: List<Vaccination>? = null,
     val steroidCourses: List<SteroidCourse>? = null,
     val emergencyInfo: EmergencyInfo? = null,
+    val extraSymptoms: List<ExtraSymptomsDay>? = null,
+    val doctorQuestions: List<DoctorQuestion>? = null,
+    val appointments: List<Appointment>? = null,
 )
 
 /** Result of a product lookup by barcode. */

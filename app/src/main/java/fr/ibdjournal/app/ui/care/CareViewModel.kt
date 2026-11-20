@@ -11,6 +11,8 @@ import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.data.CareRepository
 import fr.ibdjournal.app.data.DiaryRepository
+import fr.ibdjournal.app.data.model.Appointment
+import fr.ibdjournal.app.data.model.DoctorQuestion
 import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Diagnosis
 import fr.ibdjournal.app.data.model.Flare
@@ -147,6 +149,32 @@ class CareViewModel @Inject constructor(
 
     fun deleteSteroidCourse(course: SteroidCourse) {
         viewModelScope.launch { careRepository.deleteSteroidCourse(course.id) }
+    }
+
+    // --- Questions for the doctor, appointments ---
+
+    /** Questions for the next appointment, open ones first. */
+    val doctorQuestions: StateFlow<List<DoctorQuestion>> = careRepository.doctorQuestions
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveDoctorQuestion(question: DoctorQuestion) {
+        viewModelScope.launch { careRepository.saveDoctorQuestion(question) }
+    }
+
+    fun deleteDoctorQuestion(question: DoctorQuestion) {
+        viewModelScope.launch { careRepository.deleteDoctorQuestion(question.id) }
+    }
+
+    /** Medical appointments, chronological. */
+    val appointments: StateFlow<List<Appointment>> = careRepository.appointments
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun saveAppointment(appointment: Appointment) {
+        viewModelScope.launch { careRepository.saveAppointment(appointment) }
+    }
+
+    fun deleteAppointment(appointment: Appointment) {
+        viewModelScope.launch { careRepository.deleteAppointment(appointment.id) }
     }
 
     /** Body weight entries, chronological. */

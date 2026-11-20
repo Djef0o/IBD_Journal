@@ -85,6 +85,9 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.atTime
+import fr.ibdjournal.app.data.model.Appointment
+import fr.ibdjournal.app.data.model.AppointmentKind
+import fr.ibdjournal.app.data.model.DoctorQuestion
 import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Diagnosis
 import fr.ibdjournal.app.data.model.Flare
@@ -114,6 +117,8 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
     val diagnosis by viewModel.diagnosis.collectAsStateWithLifecycle()
     val vaccinations by viewModel.vaccinations.collectAsStateWithLifecycle()
     val steroidCourses by viewModel.steroidCourses.collectAsStateWithLifecycle()
+    val doctorQuestions by viewModel.doctorQuestions.collectAsStateWithLifecycle()
+    val appointments by viewModel.appointments.collectAsStateWithLifecycle()
 
     CareContent(
         medications = medications,
@@ -145,6 +150,12 @@ fun CareScreen(onOpenLabs: () -> Unit, viewModel: CareViewModel = hiltViewModel(
         steroidCourses = steroidCourses,
         onSaveSteroidCourse = viewModel::saveSteroidCourse,
         onDeleteSteroidCourse = viewModel::deleteSteroidCourse,
+        doctorQuestions = doctorQuestions,
+        onSaveDoctorQuestion = viewModel::saveDoctorQuestion,
+        onDeleteDoctorQuestion = viewModel::deleteDoctorQuestion,
+        appointments = appointments,
+        onSaveAppointment = viewModel::saveAppointment,
+        onDeleteAppointment = viewModel::deleteAppointment,
     )
 }
 
@@ -183,6 +194,12 @@ fun CareContent(
     steroidCourses: List<SteroidCourse> = emptyList(),
     onSaveSteroidCourse: (SteroidCourse) -> Unit = {},
     onDeleteSteroidCourse: (SteroidCourse) -> Unit = {},
+    doctorQuestions: List<DoctorQuestion> = emptyList(),
+    onSaveDoctorQuestion: (DoctorQuestion) -> Unit = {},
+    onDeleteDoctorQuestion: (DoctorQuestion) -> Unit = {},
+    appointments: List<Appointment> = emptyList(),
+    onSaveAppointment: (Appointment) -> Unit = {},
+    onDeleteAppointment: (Appointment) -> Unit = {},
 ) {
     val context = LocalContext.current
     var editMedication by remember { mutableStateOf<Editing<Medication>?>(null) }
@@ -207,7 +224,8 @@ fun CareContent(
     val pastExams = exams.filter { it.at < current }.sortedByDescending { it.at }
     val anyReminder = medications.any { it.schedule.enabled || it.refillAlert } ||
         checkups.any { it.schedule.enabled } ||
-        upcomingExams.any { it.remindersEnabled }
+        upcomingExams.any { it.remindersEnabled } ||
+        appointments.any { it.remindersEnabled && it.at >= current }
 
     Scaffold(
         topBar = {
@@ -284,6 +302,17 @@ fun CareContent(
             pastExams.forEach { exam ->
                 ExamRow(exam = exam, upcoming = false, onClick = { editExam = Editing(exam) })
             }
+
+            QuestionsSection(
+                questions = doctorQuestions,
+                onSave = onSaveDoctorQuestion,
+                onDelete = onDeleteDoctorQuestion,
+            )
+            AppointmentsSection(
+                appointments = appointments,
+                onSave = { onSaveAppointment(it); requestPermissionIfNeeded(it.remindersEnabled && it.at >= current) },
+                onDelete = onDeleteAppointment,
+            )
 
             FlaresSection(flares = flares, onSave = onSaveFlare, onDelete = onDeleteFlare)
             ActivityScoreSection(
@@ -592,6 +621,14 @@ private fun CarePreview() {
             ),
             exams = listOf(
                 Exam(1, ExamType.COLONOSCOPY, today.plus(18, DateTimeUnit.DAY).atTime(9, 30)),
+            ),
+            doctorQuestions = listOf(
+                DoctorQuestion(1, "Can I stay on this treatment during pregnancy?"),
+                DoctorQuestion(2, "Blood test results", done = true),
+            ),
+            appointments = listOf(
+                Appointment(1, AppointmentKind.GASTROENTEROLOGIST, today.plus(9, DateTimeUnit.DAY).atTime(14, 15), place = "Dr Martin"),
+                Appointment(2, AppointmentKind.DIETITIAN, today.minus(30, DateTimeUnit.DAY).atTime(10, 0)),
             ),
             labResults = listOf(
                 LabResult(1, LabTest.CRP, 18.0, today.minus(40, DateTimeUnit.DAY)),

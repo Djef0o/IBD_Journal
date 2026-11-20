@@ -16,6 +16,7 @@ import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RefillBasis
 import fr.ibdjournal.app.data.model.Exam
+import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.Vaccination
 import fr.ibdjournal.app.domain.nextReminder
 import fr.ibdjournal.app.domain.ExamStep
@@ -62,7 +63,7 @@ class TreatmentReminderScheduler @Inject constructor(
         MEDICATION("medication"), REFILL("refill"), CHECKUP("checkup"),
         EXAM_ANESTHESIA("exam-anesthesia"), EXAM_DIET("exam-diet"),
         EXAM_PREP_FIRST("exam-prep-first"), EXAM_PREP_SECOND("exam-prep-second"), EXAM("exam"),
-        VACCINE("vaccine"),
+        VACCINE("vaccine"), APPOINTMENT("appointment"),
     }
 
     /** Reminder for each exam step. */
@@ -137,6 +138,13 @@ class TreatmentReminderScheduler @Inject constructor(
 
     fun cancelVaccination(id: Long) = cancelAlarms(Kind.VACCINE, id)
 
+    /** Appointment reminders use app notifications too: the evening before, then shortly before. */
+    fun schedule(appointment: Appointment, after: LocalDateTime = now()) {
+        schedule(Kind.APPOINTMENT, appointment.id, appointment.nextReminder(after))
+    }
+
+    fun cancelAppointment(id: Long) = cancelAlarms(Kind.APPOINTMENT, id)
+
     private fun cancelAlarms(kind: Kind, id: Long) {
         notificationHelper.cancelAlarm(alarmIntent(kind, id, triggerAtMillis = null))
         NotificationManagerCompat.from(context).cancel(kind.path, id.toInt())
@@ -148,6 +156,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.checkups.forEach { schedule(it) }
         data.exams.forEach { schedule(it) }
         data.vaccinations.forEach { schedule(it) }
+        data.appointments.forEach { schedule(it) }
     }
 
     suspend fun cancelAll() {
@@ -156,6 +165,7 @@ class TreatmentReminderScheduler @Inject constructor(
         data.checkups.forEach { cancelCheckup(it.id) }
         data.exams.forEach { cancelExam(it.id) }
         data.vaccinations.forEach { cancelVaccination(it.id) }
+        data.appointments.forEach { cancelAppointment(it.id) }
     }
 
     /**
@@ -186,6 +196,10 @@ class TreatmentReminderScheduler @Inject constructor(
         )
         if (kind == Kind.VACCINE) {
             onVaccineAlarm(id, firedAt)
+            return
+        }
+        if (kind == Kind.APPOINTMENT) {
+            onAppointmentAlarm(id, firedAt)
             return
         }
         // Alarm set before switching to the calendar: the calendar already notifies.
@@ -232,6 +246,14 @@ class TreatmentReminderScheduler @Inject constructor(
         schedule(Kind.VACCINE, id, vaccination.nextReminder(firedAt))
         val due = vaccination.nextDue?.takeIf { vaccination.reminderEnabled } ?: return
         showVaccine(vaccination, due)
+    }
+
+    /** Sets the following appointment reminder, then notifies if the appointment still wants one. */
+    private suspend fun onAppointmentAlarm(id: Long, firedAt: LocalDateTime) {
+        val appointment = reminderSource.current().appointments.firstOrNull { it.id == id } ?: return
+        schedule(Kind.APPOINTMENT, id, appointment.nextReminder(firedAt))
+        if (!appointment.remindersEnabled || appointment.at <= firedAt) return
+        showAppointment(appointment)
     }
 
     private fun ReminderSchedule.nextIfEnabled(after: LocalDateTime) = takeIf { it.enabled }?.nextOccurrence(after)
@@ -345,6 +367,24 @@ class TreatmentReminderScheduler @Inject constructor(
         )
     }
 
+    /** Appointment reminder: the kind of doctor, the day and time, and the place if given. */
+    private fun showAppointment(appointment: Appointment) {
+        val text = context.getString(
+            R.string.appointment_reminder_text,
+            context.getString(appointment.kind.nameRes()),
+            DateFormats.weekdayDayMonth(appointment.at.date),
+            DateFormats.time(appointment.at.hour, appointment.at.minute),
+        )
+        notify(
+            kind = Kind.APPOINTMENT,
+            id = appointment.id,
+            channelId = CHANNEL_APPOINTMENT,
+            channelName = context.getString(R.string.appointment_reminder_channel),
+            title = context.getString(R.string.appointment_reminder_title),
+            text = if (appointment.place.isBlank()) text else "$text\n${appointment.place}",
+        )
+    }
+
     /** "Remember to reorder": before the next intake or before the stock runs out. */
     private fun showRefill(medication: Medication, after: LocalDateTime) {
         val text = when (medication.refillBasis) {
@@ -419,5 +459,6 @@ class TreatmentReminderScheduler @Inject constructor(
         private const val CHANNEL_CHECKUP = "checkup_reminder"
         private const val CHANNEL_EXAM = "exam_reminder"
         private const val CHANNEL_VACCINE = "vaccine_reminder"
+        private const val CHANNEL_APPOINTMENT = "appointment_reminder"
     }
 }

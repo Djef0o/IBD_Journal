@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 /** Lab test families, in display order. */
 @Serializable
-enum class LabCategory { INFLAMMATION, BLOOD_COUNT, IRON, KIDNEY, LIVER, METABOLIC, NUTRITION, OTHER }
+enum class LabCategory { INFLAMMATION, BLOOD_COUNT, IRON, KIDNEY, LIVER, METABOLIC, NUTRITION, DRUG_MONITORING, OTHER }
 
 /**
  * Recognized lab tests, with the entry unit: that of the most common French lab reports
@@ -61,6 +61,13 @@ enum class LabTest(val unit: String, val category: LabCategory) {
 
     VITAMIN_D("ng/mL", LabCategory.NUTRITION),
     ALBUMIN("g/L", LabCategory.NUTRITION),
+
+    // Biologic drug monitoring: trough level and anti-drug antibodies. Entered by hand (assays and
+    // units vary by laboratory; the antibody unit may be AU/mL on some reports: note it in the comment).
+    INFLIXIMAB_LEVEL("µg/mL", LabCategory.DRUG_MONITORING),
+    ADALIMUMAB_LEVEL("µg/mL", LabCategory.DRUG_MONITORING),
+    ANTI_INFLIXIMAB_ANTIBODIES("ng/mL", LabCategory.DRUG_MONITORING),
+    ANTI_ADALIMUMAB_ANTIBODIES("ng/mL", LabCategory.DRUG_MONITORING),
 
     PROTHROMBIN_TIME("%", LabCategory.OTHER),
     PSA("µg/L", LabCategory.OTHER),

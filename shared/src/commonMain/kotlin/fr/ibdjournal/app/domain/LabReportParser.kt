@@ -347,6 +347,9 @@ private fun conversionFactor(test: LabTest, unit: String): Double? {
         LabTest.TRIGLYCERIDES -> mapOf("g/l" to 1.0, "mmol/l" to 0.8857, "mg/dl" to 0.01)
         LabTest.VITAMIN_D -> mapOf("ng/ml" to 1.0, "µg/l" to 1.0, "nmol/l" to 0.4006)
         LabTest.ALBUMIN -> mapOf("g/l" to 1.0, "g/dl" to 10.0)
+        // Drug monitoring is entered by hand, never read from reports.
+        LabTest.INFLIXIMAB_LEVEL, LabTest.ADALIMUMAB_LEVEL,
+        LabTest.ANTI_INFLIXIMAB_ANTIBODIES, LabTest.ANTI_ADALIMUMAB_ANTIBODIES -> emptyMap()
         LabTest.PSA -> mapOf("µg/l" to 1.0, "ng/ml" to 1.0)
     }
     return factors[u]
@@ -382,6 +385,8 @@ private fun plausible(test: LabTest): ClosedFloatingPointRange<Double> = when (t
     LabTest.TRIGLYCERIDES -> 0.05..50.0
     LabTest.VITAMIN_D -> 0.0..300.0
     LabTest.ALBUMIN -> 5.0..80.0
+    LabTest.INFLIXIMAB_LEVEL, LabTest.ADALIMUMAB_LEVEL,
+    LabTest.ANTI_INFLIXIMAB_ANTIBODIES, LabTest.ANTI_ADALIMUMAB_ANTIBODIES -> 0.0..100000.0
     LabTest.PSA -> 0.0..10000.0
 }
 

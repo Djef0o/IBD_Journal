@@ -46,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import fr.ibdjournal.app.R
 import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Diagnosis
+import fr.ibdjournal.app.data.model.ExtraSymptom
+import fr.ibdjournal.app.ui.day.ExtraSymptomsViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.domain.ActivityLevel
@@ -310,12 +313,15 @@ private fun ScoreEditorSheet(
     }
     var touched by remember { mutableStateOf(initial != null) }
 
-    // Null until the day's stools are loaded. An existing entry keeps its answers.
+    // Null until the day's stools and noted symptoms are loaded. An existing entry keeps its answers.
+    val extrasViewModel: ExtraSymptomsViewModel = hiltViewModel()
     val dayStools by remember(date) { if (initial == null) stoolsOn(date) else emptyFlow<List<Stool>>() }
         .collectAsState<List<Stool>, List<Stool>?>(initial = null)
-    LaunchedEffect(kind, dayStools) {
+    val dayExtras by remember(date) { if (initial == null) extrasViewModel.on(date) else emptyFlow<Set<ExtraSymptom>>() }
+        .collectAsState<Set<ExtraSymptom>, Set<ExtraSymptom>>(initial = emptySet())
+    LaunchedEffect(kind, dayStools, dayExtras) {
         val stools = dayStools
-        if (!touched && stools != null) answers = prefilledAnswers(kind, stools)
+        if (!touched && stools != null) answers = prefilledAnswers(kind, stools, dayExtras)
     }
 
     val draft = ActivityScore(id = initial?.id ?: 0, date = date, kind = kind, answers = answers)

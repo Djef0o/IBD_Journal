@@ -156,6 +156,10 @@ val LabTest.labelRes: Int
         LabTest.TRIGLYCERIDES -> R.string.lab_triglycerides
         LabTest.VITAMIN_D -> R.string.lab_vitamin_d
         LabTest.ALBUMIN -> R.string.lab_albumin
+        LabTest.INFLIXIMAB_LEVEL -> R.string.lab_infliximab_level
+        LabTest.ADALIMUMAB_LEVEL -> R.string.lab_adalimumab_level
+        LabTest.ANTI_INFLIXIMAB_ANTIBODIES -> R.string.lab_anti_infliximab_antibodies
+        LabTest.ANTI_ADALIMUMAB_ANTIBODIES -> R.string.lab_anti_adalimumab_antibodies
         LabTest.PROTHROMBIN_TIME -> R.string.lab_prothrombin_time
         LabTest.PSA -> R.string.lab_psa
     }
@@ -171,6 +175,7 @@ val LabCategory.labelRes: Int
         LabCategory.LIVER -> R.string.lab_category_liver
         LabCategory.METABOLIC -> R.string.lab_category_metabolic
         LabCategory.NUTRITION -> R.string.lab_category_nutrition
+        LabCategory.DRUG_MONITORING -> R.string.lab_category_drug_monitoring
         LabCategory.OTHER -> R.string.lab_category_other
     }
 

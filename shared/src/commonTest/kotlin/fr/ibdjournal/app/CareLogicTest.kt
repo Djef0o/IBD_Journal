@@ -1,6 +1,9 @@
 package fr.ibdjournal.app
 
 import fr.ibdjournal.app.data.model.ActivityScore
+import fr.ibdjournal.app.data.model.Appointment
+import fr.ibdjournal.app.data.model.AppointmentKind
+import fr.ibdjournal.app.data.model.ExtraSymptom
 import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
@@ -186,5 +189,51 @@ class FlareCoverageTest {
         val ended = Flare(start = LocalDate(2026, 11, 1), end = LocalDate(2026, 11, 5))
         assertEquals(true, ended.covers(LocalDate(2026, 11, 5), today))
         assertEquals(false, ended.covers(LocalDate(2026, 11, 6), today))
+    }
+}
+
+class AppointmentReminderTest {
+    private fun appointment(at: LocalDateTime, enabled: Boolean = true) =
+        Appointment(kind = AppointmentKind.GASTROENTEROLOGIST, at = at, remindersEnabled = enabled)
+
+    @Test
+    fun remindsTheEveningBeforeThenTwoHoursBefore() {
+        val visit = appointment(LocalDateTime(2026, 12, 10, 14, 30))
+        val first = visit.nextReminder(LocalDateTime(2026, 12, 1, 8, 0))
+        assertEquals(LocalDateTime(2026, 12, 9, 18, 0), first)
+        val second = visit.nextReminder(first!!)
+        assertEquals(LocalDateTime(2026, 12, 10, 12, 30), second)
+        assertNull(visit.nextReminder(second!!))
+    }
+
+    @Test
+    fun anEarlyMorningAppointmentGetsItsSecondReminderTheNightBefore() {
+        // Two hours before 01:30 is the previous day 23:30, after the 18:00 evening reminder.
+        val visit = appointment(LocalDateTime(2026, 12, 10, 1, 30))
+        val first = visit.nextReminder(LocalDateTime(2026, 12, 1, 8, 0))
+        assertEquals(LocalDateTime(2026, 12, 9, 18, 0), first)
+        assertEquals(LocalDateTime(2026, 12, 9, 23, 30), visit.nextReminder(first!!))
+    }
+
+    @Test
+    fun skipsPastRemindersAndStaysSilentWhenOff() {
+        val visit = appointment(LocalDateTime(2026, 12, 10, 14, 30))
+        assertEquals(LocalDateTime(2026, 12, 10, 12, 30), visit.nextReminder(LocalDateTime(2026, 12, 10, 8, 0)))
+        assertNull(visit.nextReminder(LocalDateTime(2026, 12, 10, 13, 0)))
+        assertNull(appointment(LocalDateTime(2026, 12, 10, 14, 30), enabled = false).nextReminder(LocalDateTime(2026, 1, 1, 0, 0)))
+    }
+}
+
+class ExtraSymptomPrefillTest {
+    private val day = LocalDate(2026, 11, 18)
+
+    @Test
+    fun symptomsCheckTheMatchingComplications() {
+        val extras = setOf(ExtraSymptom.JOINTS, ExtraSymptom.EYES, ExtraSymptom.MOUTH_ULCERS)
+        // HBI: arthralgia bit 0, uveitis bit 1, aphthous ulcers bit 3.
+        assertEquals(0b1011, prefilledAnswers(ScoreKind.HBI, emptyList(), extras)[4])
+        // SCCAI: joint pains bit 0, uveitis bit 3; mouth ulcers have no item.
+        assertEquals(0b1001, prefilledAnswers(ScoreKind.SCCAI, emptyList(), extras)[5])
+        assertEquals(0, prefilledAnswers(ScoreKind.HBI, listOf(Stool(date = day)), emptySet())[4])
     }
 }

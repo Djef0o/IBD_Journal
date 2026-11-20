@@ -1,6 +1,12 @@
 package fr.ibdjournal.app.data
 
 import fr.ibdjournal.app.data.local.toActivityScore
+import fr.ibdjournal.app.data.local.toAppointment
+import fr.ibdjournal.app.data.local.toAppointmentEntity
+import fr.ibdjournal.app.data.local.toDoctorQuestion
+import fr.ibdjournal.app.data.local.toDoctorQuestionEntity
+import fr.ibdjournal.app.data.local.toExtraSymptomEntity
+import fr.ibdjournal.app.data.local.toExtraSymptomsDay
 import fr.ibdjournal.app.data.local.toActivityScoreEntity
 import fr.ibdjournal.app.data.local.toEmergencyEntity
 import fr.ibdjournal.app.data.local.toEmergencyInfo
@@ -11,7 +17,11 @@ import fr.ibdjournal.app.data.local.toSteroidCourseEntity
 import fr.ibdjournal.app.data.local.toVaccination
 import fr.ibdjournal.app.data.local.toVaccinationEntity
 import fr.ibdjournal.app.data.model.ActivityScore
+import fr.ibdjournal.app.data.model.Appointment
+import fr.ibdjournal.app.data.model.DoctorQuestion
 import fr.ibdjournal.app.data.model.EmergencyInfo
+import fr.ibdjournal.app.data.model.ExtraSymptom
+import fr.ibdjournal.app.data.model.ExtraSymptomsDay
 import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.SteroidCourse
 import fr.ibdjournal.app.data.model.Vaccination
@@ -21,10 +31,12 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.LocalDate
 
 /**
- * Flares, activity scores, vaccinations, steroid courses and the emergency sheet. Reads stay
- * silent and writes fail while the app is locked ([Vault]).
+ * Flares, activity scores, vaccinations, steroid courses, the emergency sheet, extra-intestinal
+ * symptoms, questions for the doctor and appointments. Reads stay silent and writes fail while
+ * the app is locked ([Vault]).
  */
 @Singleton
 class CareRepository @Inject constructor(
@@ -79,5 +91,51 @@ class CareRepository @Inject constructor(
 
     suspend fun saveEmergencyInfo(info: EmergencyInfo) {
         db.emergencyDao().upsert(info.toEmergencyEntity())
+    }
+
+    // --- Extra-intestinal symptoms (one entry per day) ---
+
+    val extraSymptoms: Flow<List<ExtraSymptomsDay>> =
+        vault.observe { it.extraSymptomDao().observeAll() }.map { list -> list.map { it.toExtraSymptomsDay() } }
+
+    /** Symptoms noted on [date] (empty set when none). */
+    fun extraSymptomsOn(date: LocalDate): Flow<Set<ExtraSymptom>> =
+        vault.observe { it.extraSymptomDao().observe(date.toEpochDays()) }
+            .map { it?.toExtraSymptomsDay()?.symptoms.orEmpty() }
+
+    /** Replaces the day's symptoms; an empty set removes the entry. */
+    suspend fun saveExtraSymptoms(date: LocalDate, symptoms: Set<ExtraSymptom>) {
+        if (symptoms.isEmpty()) {
+            db.extraSymptomDao().delete(date.toEpochDays())
+        } else {
+            db.extraSymptomDao().upsert(ExtraSymptomsDay(date, symptoms).toExtraSymptomEntity())
+        }
+    }
+
+    // --- Questions for the doctor ---
+
+    /** Open questions first, then answered ones, oldest first. */
+    val doctorQuestions: Flow<List<DoctorQuestion>> =
+        vault.observe { it.doctorQuestionDao().observeAll() }.map { list -> list.map { it.toDoctorQuestion() } }
+
+    suspend fun saveDoctorQuestion(question: DoctorQuestion) {
+        db.doctorQuestionDao().upsert(question.toDoctorQuestionEntity())
+    }
+
+    suspend fun deleteDoctorQuestion(id: Long) = db.doctorQuestionDao().deleteById(id)
+
+    // --- Appointments ---
+
+    val appointments: Flow<List<Appointment>> =
+        vault.observe { it.appointmentDao().observeAll() }.map { list -> list.map { it.toAppointment() } }
+
+    suspend fun saveAppointment(appointment: Appointment) {
+        val id = db.appointmentDao().upsert(appointment.toAppointmentEntity())
+        reminders.schedule(appointment.copy(id = id))
+    }
+
+    suspend fun deleteAppointment(id: Long) {
+        reminders.cancelAppointment(id)
+        db.appointmentDao().deleteById(id)
     }
 }

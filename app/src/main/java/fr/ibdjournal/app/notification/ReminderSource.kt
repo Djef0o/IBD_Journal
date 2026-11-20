@@ -8,7 +8,9 @@ import fr.ibdjournal.app.data.local.toExam
 import fr.ibdjournal.app.data.local.toMedication
 import fr.ibdjournal.app.data.local.toEmergencyInfo
 import fr.ibdjournal.app.data.local.toProfile
+import fr.ibdjournal.app.data.local.toAppointment
 import fr.ibdjournal.app.data.local.toVaccination
+import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.EmergencyInfo
 import fr.ibdjournal.app.data.model.Exam
@@ -34,8 +36,8 @@ import kotlinx.serialization.json.Json
 
 /**
  * What reminders and the emergency sheet need while the app is locked: treatments, check-ups,
- * exams, vaccinations and, only when the user allows the emergency sheet on the lock screen,
- * [profile] and [emergency].
+ * exams, vaccinations, appointments and, only when the user allows the emergency sheet on the
+ * lock screen, [profile] and [emergency].
  */
 @Serializable
 data class ReminderData(
@@ -45,6 +47,7 @@ data class ReminderData(
     val profile: Profile? = null,
     val emergency: EmergencyInfo? = null,
     val vaccinations: List<Vaccination> = emptyList(),
+    val appointments: List<Appointment> = emptyList(),
 ) {
     companion object {
         fun of(
@@ -54,9 +57,12 @@ data class ReminderData(
             profile: Profile?,
             emergency: EmergencyInfo?,
             vaccinations: List<Vaccination> = emptyList(),
+            appointments: List<Appointment> = emptyList(),
         ): ReminderData {
             val shown = emergency?.takeIf { it.showOnLockScreen }
-            return ReminderData(medications, checkups, exams, profile.takeIf { shown != null }, shown, vaccinations)
+            return ReminderData(
+                medications, checkups, exams, profile.takeIf { shown != null }, shown, vaccinations, appointments,
+            )
         }
     }
 }
@@ -95,19 +101,22 @@ class ReminderSource @Inject constructor(
             vault.observe { db ->
                 combine(
                     combine(
-                        db.medicationDao().observeAll(),
-                        db.checkupDao().observeAll(),
-                        db.examDao().observeAll(),
-                        db.profileDao().observe(),
-                        db.emergencyDao().observe(),
-                    ) { m, c, e, p, em ->
-                        ReminderData.of(
-                            m.map { it.toMedication() }, c.map { it.toCheckup() }, e.map { it.toExam() },
-                            p?.toProfile(), em?.toEmergencyInfo(),
-                        )
-                    },
-                    db.vaccinationDao().observeAll(),
-                ) { data, vaccinations -> data.copy(vaccinations = vaccinations.map { it.toVaccination() }) }
+                        combine(
+                            db.medicationDao().observeAll(),
+                            db.checkupDao().observeAll(),
+                            db.examDao().observeAll(),
+                            db.profileDao().observe(),
+                            db.emergencyDao().observe(),
+                        ) { m, c, e, p, em ->
+                            ReminderData.of(
+                                m.map { it.toMedication() }, c.map { it.toCheckup() }, e.map { it.toExam() },
+                                p?.toProfile(), em?.toEmergencyInfo(),
+                            )
+                        },
+                        db.vaccinationDao().observeAll(),
+                    ) { data, vaccinations -> data.copy(vaccinations = vaccinations.map { it.toVaccination() }) },
+                    db.appointmentDao().observeAll(),
+                ) { data, appointments -> data.copy(appointments = appointments.map { it.toAppointment() }) }
             }.collect { withContext(Dispatchers.IO) { save(it) } }
         }
     }
@@ -121,6 +130,7 @@ class ReminderSource @Inject constructor(
         profile = db.profileDao().get()?.toProfile(),
         emergency = db.emergencyDao().get()?.toEmergencyInfo(),
         vaccinations = db.vaccinationDao().getAll().map { it.toVaccination() },
+        appointments = db.appointmentDao().getAll().map { it.toAppointment() },
     )
 
     private suspend fun load(): ReminderData = mutex.withLock {

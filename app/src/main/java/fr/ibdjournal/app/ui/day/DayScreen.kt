@@ -117,6 +117,10 @@ fun DayScreen(
                 meals = meals,
             )
 
+            if (selected <= today()) {
+                DayExtrasCard(date = selected)
+            }
+
             SectionHeader(
                 title = stringResource(R.string.meals_section),
                 addLabel = stringResource(R.string.add),

@@ -2,6 +2,7 @@ package fr.ibdjournal.app.domain
 
 import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Diagnosis
+import fr.ibdjournal.app.data.model.ExtraSymptom
 import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.Stool
 
@@ -68,13 +69,19 @@ val Diagnosis?.suggestedScore: ScoreKind?
     }
 
 /**
- * Answers that the day's stools settle: liquid stools (HBI), daily and night frequency and
- * urgency (SCCAI). The others stay at 0 for the user to answer. [dayStools] all from the same date.
+ * Answers that the day's data settle: liquid stools and the extra-intestinal manifestations noted
+ * that day (HBI), daily and night frequency, urgency and manifestations (SCCAI). The others stay at
+ * 0 for the user to answer. [dayStools] all from the same date.
  */
-fun prefilledAnswers(kind: ScoreKind, dayStools: List<Stool>): List<Int> {
+fun prefilledAnswers(kind: ScoreKind, dayStools: List<Stool>, extras: Set<ExtraSymptom> = emptySet()): List<Int> {
     val real = dayStools.filter { it.isRealStool }
+    fun bit(index: Int, symptom: ExtraSymptom) = if (symptom in extras) 1 shl index else 0
     return when (kind) {
-        ScoreKind.HBI -> listOf(0, 0, real.count { it.bristolType >= 6 }, 0, 0)
+        ScoreKind.HBI -> listOf(
+            0, 0, real.count { it.bristolType >= 6 }, 0,
+            bit(0, ExtraSymptom.JOINTS) or bit(1, ExtraSymptom.EYES) or
+                bit(2, ExtraSymptom.SKIN) or bit(3, ExtraSymptom.MOUTH_ULCERS),
+        )
         ScoreKind.SCCAI -> listOf(
             when {
                 real.size <= 3 -> 0
@@ -88,7 +95,8 @@ fun prefilledAnswers(kind: ScoreKind, dayStools: List<Stool>): List<Int> {
                 else -> 2
             },
             if (real.any { it.urgency }) 1 else 0,
-            0, 0, 0,
+            0, 0,
+            bit(0, ExtraSymptom.JOINTS) or bit(2, ExtraSymptom.SKIN) or bit(3, ExtraSymptom.EYES),
         )
     }
 }

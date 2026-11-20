@@ -32,15 +32,17 @@ Your health data stays on your phone.
 - **Treatments**: standard IBD medications, reminders, "taken / missed" from the notification, adherence, refill alerts.
 - **Blood and stool tests** scheduled with reminders.
 - **Colonoscopy and rectosigmoidoscopy**: exam date, low-residue diet and bowel preparation doses as prescribed by your doctor, anesthesiologist appointment. A reminder for each step.
-- **Lab results**: 43 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids…), with the reference range printed by your lab, charts and a table of blood panels. The app provides no normal values of its own.
+- **Lab results**: 47 common tests (CRP, fecal calprotectin, full blood count, iron panel, kidney, liver, lipids, biologic drug levels and anti-drug antibodies…), with the reference range printed by your lab, charts and a table of blood panels. The app provides no normal values of its own.
 - **Import lab reports** (lab PDFs, several at once): the text of the PDF is read on the phone, values are converted to the app's units, and nothing is saved before you review it. Scanned documents are not supported.
 - **Body weight**: weight entries with their date and a weight curve over 6 months, 1 year or the whole history.
 - **Flares**: start and end dates, treatment, hospitalization. Flare days are marked on the calendar, the day screen and the stool chart, and an ongoing flare shows on the Today screen.
-- **Activity scores**: self-assessed Harvey-Bradshaw index (Crohn's) or SCCAI (ulcerative colitis), pre-filled from your stools of the day, with a curve over time.
+- **Activity scores**: self-assessed Harvey-Bradshaw index (Crohn's) or SCCAI (ulcerative colitis), pre-filled from your stools and the symptoms noted that day, with a curve over time.
 - **Vaccinations**: vaccines with date and next due date, with an optional reminder a week before and on the day.
 - **Steroid courses**: dose steps, today's dose and cumulative dose.
 - **Meals and symptoms**: foods eaten before liquid stools, blood or pain more often than usual, shown as an observation, not a cause.
 - **Emergency**: a full-screen "I urgently need a toilet" card and an emergency sheet (diagnosis, treatments, allergies, doctor, contact), optionally readable from the lock screen.
+- **Other symptoms**: joint pain, skin, eyes, mouth ulcers and fever noted per day, in the report for your doctor.
+- **Questions for the doctor** and **appointments**: a list of what to ask, included in the report; appointments by kind of doctor with reminders the evening before and two hours before.
 
 <p>
   <img src="docs/screenshots/labs.png" width="200" alt="Lab results by test">

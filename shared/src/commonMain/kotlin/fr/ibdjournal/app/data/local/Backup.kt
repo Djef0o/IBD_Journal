@@ -24,6 +24,9 @@ suspend fun AppDatabase.snapshot(): BackupData = useReaderConnection { connectio
             vaccinations = vaccinationDao().getAll().map { it.toVaccination() },
             steroidCourses = steroidCourseDao().getAll().map { it.toSteroidCourse() },
             emergencyInfo = emergencyDao().get()?.toEmergencyInfo(),
+            extraSymptoms = extraSymptomDao().getAll().map { it.toExtraSymptomsDay() },
+            doctorQuestions = doctorQuestionDao().getAll().map { it.toDoctorQuestion() },
+            appointments = appointmentDao().getAll().map { it.toAppointment() },
         )
     }
 }
@@ -82,6 +85,18 @@ suspend fun AppDatabase.restore(backup: BackupData) {
                 steroidCourseDao().insertAll(list.map { it.toSteroidCourseEntity() })
             }
             backup.emergencyInfo?.let { emergencyDao().upsert(it.toEmergencyEntity()) }
+            backup.extraSymptoms?.let { list ->
+                extraSymptomDao().deleteAll()
+                extraSymptomDao().insertAll(list.map { it.toExtraSymptomEntity() })
+            }
+            backup.doctorQuestions?.let { list ->
+                doctorQuestionDao().deleteAll()
+                doctorQuestionDao().insertAll(list.map { it.toDoctorQuestionEntity() })
+            }
+            backup.appointments?.let { list ->
+                appointmentDao().deleteAll()
+                appointmentDao().insertAll(list.map { it.toAppointmentEntity() })
+            }
         }
     }
 }

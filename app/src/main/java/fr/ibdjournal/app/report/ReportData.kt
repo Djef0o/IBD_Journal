@@ -1,8 +1,12 @@
 package fr.ibdjournal.app.report
 
 import fr.ibdjournal.app.data.model.ActivityScore
+import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.Checkup
+import fr.ibdjournal.app.data.model.DoctorQuestion
 import fr.ibdjournal.app.data.model.DoseLog
+import fr.ibdjournal.app.data.model.ExtraSymptom
+import fr.ibdjournal.app.data.model.ExtraSymptomsDay
 import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.LabTest
 import fr.ibdjournal.app.data.model.Meal
@@ -55,6 +59,12 @@ data class LabPanelRow(val test: LabTest, val cells: List<LabCell?>, val referen
  */
 data class LabPanels(val dates: List<LocalDate>, val rows: List<LabPanelRow>, val notes: List<LabResult>)
 
+/** Number of days with [symptom] over the report period, and the most recent one. */
+data class ExtraSymptomReport(val symptom: ExtraSymptom, val days: Int, val last: LocalDate)
+
+/** Appointments listed in the report: the next ones from today. */
+const val REPORT_APPOINTMENTS = 3
+
 /** Everything the report contains, already computed: PDF rendering only does the layout. */
 data class ReportData(
     val profile: Profile,
@@ -79,6 +89,12 @@ data class ReportData(
     val steroidCourses: List<SteroidCourse>,
     /** All vaccinations, most recent first. */
     val vaccinations: List<Vaccination>,
+    /** Extra-intestinal manifestations over the period, in [ExtraSymptom] order; only those noted. */
+    val extraSymptoms: List<ExtraSymptomReport>,
+    /** Questions not yet asked, in the repository's order. */
+    val doctorQuestions: List<DoctorQuestion>,
+    /** Next [REPORT_APPOINTMENTS] appointments from now, chronological. */
+    val appointments: List<Appointment>,
 )
 
 /** Builds the report for [period] ending on the day of [now], from the raw data. */
@@ -96,6 +112,9 @@ fun reportData(
     activityScores: List<ActivityScore> = emptyList(),
     steroidCourses: List<SteroidCourse> = emptyList(),
     vaccinations: List<Vaccination> = emptyList(),
+    extraSymptoms: List<ExtraSymptomsDay> = emptyList(),
+    doctorQuestions: List<DoctorQuestion> = emptyList(),
+    appointments: List<Appointment> = emptyList(),
 ): ReportData {
     val today = now.date
     val summary = analyze(stools, meals, today, period)
@@ -131,8 +150,22 @@ fun reportData(
             .filter { it.start <= today && it.end >= from }
             .sortedBy { it.start },
         vaccinations = vaccinations.sortedByDescending { it.date },
+        extraSymptoms = extraSymptomReports(extraSymptoms.filter { it.date in from..today }),
+        doctorQuestions = doctorQuestions.filter { !it.done },
+        appointments = appointments
+            .filter { it.at >= now }
+            .sortedBy { it.at }
+            .take(REPORT_APPOINTMENTS),
     )
 }
+
+/** One entry per manifestation noted at least one day, in enum order. */
+private fun extraSymptomReports(days: List<ExtraSymptomsDay>): List<ExtraSymptomReport> =
+    ExtraSymptom.entries.mapNotNull { symptom ->
+        val matching = days.filter { symptom in it.symptoms }
+        val last = matching.maxOfOrNull { it.date } ?: return@mapNotNull null
+        ExtraSymptomReport(symptom, matching.map { it.date }.distinct().size, last)
+    }
 
 /** Table of the last [REPORT_LAB_PANELS] analysis dates, rows in [LabTest] order. */
 private fun labPanels(results: List<LabResult>): LabPanels {
