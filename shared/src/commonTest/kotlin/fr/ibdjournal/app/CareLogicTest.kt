@@ -1,13 +1,10 @@
 package fr.ibdjournal.app
 
-import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.AppointmentKind
-import fr.ibdjournal.app.data.model.ExtraSymptom
 import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.Meal
 import fr.ibdjournal.app.data.model.MealType
-import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.SteroidCourse
 import fr.ibdjournal.app.data.model.SteroidStep
 import fr.ibdjournal.app.data.model.Stool
@@ -16,71 +13,16 @@ import fr.ibdjournal.app.data.model.VaccineType
 import fr.ibdjournal.app.domain.covers
 import fr.ibdjournal.app.domain.nextReminder
 import kotlinx.datetime.LocalDateTime
-import fr.ibdjournal.app.domain.ActivityLevel
 import fr.ibdjournal.app.domain.cumulativeMgThrough
 import fr.ibdjournal.app.domain.doseOn
 import fr.ibdjournal.app.domain.end
 import fr.ibdjournal.app.domain.foodSymptomLinks
-import fr.ibdjournal.app.domain.level
-import fr.ibdjournal.app.domain.prefilledAnswers
-import fr.ibdjournal.app.domain.total
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-
-class ActivityScoreTest {
-    private val day = LocalDate(2026, 11, 18)
-
-    @Test
-    fun hbiAddsAnswersAndCountsComplicationBits() {
-        // well-being 2, pain 1, 5 liquid stools, mass 0, complications: bits 0 and 2 (two items)
-        val score = ActivityScore(date = day, kind = ScoreKind.HBI, answers = listOf(2, 1, 5, 0, 0b101))
-        assertEquals(2 + 1 + 5 + 0 + 2, score.total)
-        assertEquals(ActivityLevel.MODERATE, score.level)
-    }
-
-    @Test
-    fun hbiBandsFollowUsualThresholds() {
-        fun level(total: Int) = ActivityScore(date = day, kind = ScoreKind.HBI, answers = listOf(0, 0, total, 0, 0)).level
-        assertEquals(ActivityLevel.REMISSION, level(4))
-        assertEquals(ActivityLevel.MILD, level(5))
-        assertEquals(ActivityLevel.MILD, level(7))
-        assertEquals(ActivityLevel.MODERATE, level(8))
-        assertEquals(ActivityLevel.MODERATE, level(16))
-        assertEquals(ActivityLevel.SEVERE, level(17))
-    }
-
-    @Test
-    fun sccaiMaximumIs19AndMiddleBandHasNoLabel() {
-        val worst = ActivityScore(date = day, kind = ScoreKind.SCCAI, answers = listOf(3, 2, 3, 3, 4, 0b1111))
-        assertEquals(19, worst.total)
-        assertEquals(ActivityLevel.ACTIVE, worst.level)
-        val middle = ActivityScore(date = day, kind = ScoreKind.SCCAI, answers = listOf(1, 1, 1, 0, 0, 0))
-        assertEquals(3, middle.total)
-        assertNull(middle.level)
-        assertEquals(ActivityLevel.REMISSION, ActivityScore(date = day, kind = ScoreKind.SCCAI, answers = listOf(1, 1, 0, 0, 0, 0)).level)
-    }
-
-    @Test
-    fun missingAnswersCountAsZero() {
-        assertEquals(3, ActivityScore(date = day, kind = ScoreKind.HBI, answers = listOf(3)).total)
-    }
-
-    @Test
-    fun prefillCountsLiquidStoolsAndIgnoresFalseUrges() {
-        val stools = listOf(
-            Stool(date = day, bristolType = 7),
-            Stool(date = day, bristolType = 6, urgency = true, nocturnal = true),
-            Stool(date = day, bristolType = 4),
-            Stool(date = day, bristolType = 0, falseUrge = true),
-        )
-        assertEquals(2, prefilledAnswers(ScoreKind.HBI, stools)[2])
-        assertEquals(listOf(0, 1, 1, 0, 0, 0), prefilledAnswers(ScoreKind.SCCAI, stools))
-    }
-}
 
 class SteroidCourseTest {
     private val start = LocalDate(2026, 11, 1)
@@ -221,19 +163,5 @@ class AppointmentReminderTest {
         assertEquals(LocalDateTime(2026, 12, 10, 12, 30), visit.nextReminder(LocalDateTime(2026, 12, 10, 8, 0)))
         assertNull(visit.nextReminder(LocalDateTime(2026, 12, 10, 13, 0)))
         assertNull(appointment(LocalDateTime(2026, 12, 10, 14, 30), enabled = false).nextReminder(LocalDateTime(2026, 1, 1, 0, 0)))
-    }
-}
-
-class ExtraSymptomPrefillTest {
-    private val day = LocalDate(2026, 11, 18)
-
-    @Test
-    fun symptomsCheckTheMatchingComplications() {
-        val extras = setOf(ExtraSymptom.JOINTS, ExtraSymptom.EYES, ExtraSymptom.MOUTH_ULCERS)
-        // HBI: arthralgia bit 0, uveitis bit 1, aphthous ulcers bit 3.
-        assertEquals(0b1011, prefilledAnswers(ScoreKind.HBI, emptyList(), extras)[4])
-        // SCCAI: joint pains bit 0, uveitis bit 3; mouth ulcers have no item.
-        assertEquals(0b1001, prefilledAnswers(ScoreKind.SCCAI, emptyList(), extras)[5])
-        assertEquals(0, prefilledAnswers(ScoreKind.HBI, listOf(Stool(date = day)), emptySet())[4])
     }
 }

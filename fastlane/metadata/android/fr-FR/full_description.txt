@@ -7,7 +7,7 @@ IBD Journal est un journal personnel pour les personnes atteintes de la maladie 
 • Coloscopie et rectosigmoïdoscopie : date, régime, prises de la préparation et un rappel par étape, selon les consignes de votre médecin
 • Analyses : 47 examens courants avec les valeurs de référence imprimées par votre laboratoire, graphiques et tableaux ; import depuis les PDF de votre laboratoire, lus sur le téléphone
 • Poids : saisie du poids avec sa date et courbe de poids
-• Poussées, scores d'activité (Harvey-Bradshaw, SCCAI), vaccinations avec rappels facultatifs et cures de corticoïdes
+• Poussées, vaccinations avec rappels facultatifs et cures de corticoïdes
 • Analyse repas et symptômes, carte « besoin urgent » et fiche d'urgence lisible depuis l'écran verrouillé
 • Symptômes du jour (articulations, peau, yeux, aphtes, fièvre), questions pour le médecin, rendez-vous avec rappels
 • Rapport PDF pour votre médecin

@@ -51,12 +51,6 @@ fun BackupData.toCsvFiles(): Map<String, String> = linkedMapOf(
             listOf(it.start.toString(), it.end?.toString().orEmpty(), it.hospitalized.flag(), text(it.treatment), text(it.note))
         },
     ),
-    "activity_scores.csv" to csv(
-        listOf("date", "score", "total", "answers"),
-        activityScores.orEmpty().sortedWith(compareBy({ it.date }, { it.id })).map {
-            listOf(it.date.toString(), it.kind.name.lowercase(), it.total.toString(), it.answers.joinToString(" "))
-        },
-    ),
     "wellbeing.csv" to csv(
         listOf("date", "sleep", "stress", "mood", "period"),
         wellbeing.orEmpty().sortedBy { it.date }.map {

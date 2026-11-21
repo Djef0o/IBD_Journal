@@ -50,7 +50,6 @@ class ReportGenerator @Inject constructor(
             labResults = profileRepository.labResults.first(),
             checkups = profileRepository.checkups.first(),
             flares = careRepository.flares.first(),
-            activityScores = careRepository.activityScores.first(),
             steroidCourses = careRepository.steroidCourses.first(),
             vaccinations = careRepository.vaccinations.first(),
             extraSymptoms = careRepository.extraSymptoms.first(),

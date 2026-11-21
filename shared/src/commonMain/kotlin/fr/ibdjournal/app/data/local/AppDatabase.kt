@@ -18,7 +18,6 @@ import androidx.room.RoomDatabaseConstructor
         ExamEntity::class,
         WeightEntity::class,
         FlareEntity::class,
-        ActivityScoreEntity::class,
         VaccinationEntity::class,
         SteroidCourseEntity::class,
         EmergencyEntity::class,
@@ -27,7 +26,7 @@ import androidx.room.RoomDatabaseConstructor
         AppointmentEntity::class,
         WellbeingEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = false,
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -43,7 +42,6 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun examDao(): ExamDao
     abstract fun weightDao(): WeightDao
     abstract fun flareDao(): FlareDao
-    abstract fun activityScoreDao(): ActivityScoreDao
     abstract fun vaccinationDao(): VaccinationDao
     abstract fun steroidCourseDao(): SteroidCourseDao
     abstract fun emergencyDao(): EmergencyDao

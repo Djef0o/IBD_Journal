@@ -79,7 +79,6 @@ data class BackupData(
     val exams: List<Exam>? = null,
     val weights: List<Weight>? = null,
     val flares: List<Flare>? = null,
-    val activityScores: List<ActivityScore>? = null,
     val vaccinations: List<Vaccination>? = null,
     val steroidCourses: List<SteroidCourse>? = null,
     val emergencyInfo: EmergencyInfo? = null,

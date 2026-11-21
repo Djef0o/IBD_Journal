@@ -8,7 +8,7 @@ IBD Journal is a personal diary for people living with Crohn's disease or ulcera
 • Daily joint, skin, eye, mouth and fever symptoms, questions for your doctor, appointments with reminders
 • Lab results: 47 common tests with the reference range printed by your lab, charts and tables; import from your lab's PDF reports, read on the phone
 • Body weight: log your weight with its date and follow your weight curve
-• Flares, activity scores (Harvey-Bradshaw, SCCAI), vaccinations with optional reminders and steroid courses
+• Flares, vaccinations with optional reminders and steroid courses
 • Meals and symptoms analysis, urgent-need card and emergency sheet readable from the lock screen
 • PDF report for your doctor
 • Password-encrypted backup and restore to a file, with a monthly reminder

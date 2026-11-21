@@ -7,7 +7,7 @@ IBD Journal è un diario personale per chi convive con la malattia di Crohn o la
 • Colonscopia e rettosigmoidoscopia: data, dieta, dosi della preparazione e un promemoria per ogni fase, secondo le indicazioni del tuo medico
 • Esami: 47 esami comuni con i valori di riferimento stampati dal tuo laboratorio, grafici e tabelle; importazione dai PDF del tuo laboratorio, letti sul telefono
 • Peso corporeo: registra il tuo peso con la data e segui la curva del peso
-• Riacutizzazioni, punteggi di attività (Harvey-Bradshaw, SCCAI), vaccinazioni con promemoria facoltativo e cicli di cortisonici
+• Riacutizzazioni, vaccinazioni con promemoria facoltativo e cicli di cortisonici
 • Analisi di pasti e sintomi, tessera per urgenza di andare in bagno e scheda di emergenza dalla schermata di blocco
 • Sintomi del giorno (articolazioni, pelle, occhi, afte, febbre), domande per il medico, appuntamenti con promemoria
 • Report PDF per il tuo medico

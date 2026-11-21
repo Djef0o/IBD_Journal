@@ -89,18 +89,11 @@ import kotlinx.datetime.atTime
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.AppointmentKind
 import fr.ibdjournal.app.data.model.DoctorQuestion
-import fr.ibdjournal.app.data.model.ActivityScore
-import fr.ibdjournal.app.data.model.Diagnosis
 import fr.ibdjournal.app.data.model.Flare
-import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.SteroidCourse
 import fr.ibdjournal.app.data.model.SteroidStep
-import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.data.model.Vaccination
 import fr.ibdjournal.app.data.model.VaccineType
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.datetime.LocalDate
 
 /** Adherence window shown under each treatment, today included. */
 private const val ADHERENCE_DAYS = 30
@@ -114,8 +107,6 @@ fun CareScreen(onOpenLabs: () -> Unit, onOpenTravel: () -> Unit, viewModel: Care
     val doseLogs by viewModel.doseLogs.collectAsStateWithLifecycle()
     val weights by viewModel.weights.collectAsStateWithLifecycle()
     val flares by viewModel.flares.collectAsStateWithLifecycle()
-    val activityScores by viewModel.activityScores.collectAsStateWithLifecycle()
-    val diagnosis by viewModel.diagnosis.collectAsStateWithLifecycle()
     val vaccinations by viewModel.vaccinations.collectAsStateWithLifecycle()
     val steroidCourses by viewModel.steroidCourses.collectAsStateWithLifecycle()
     val doctorQuestions by viewModel.doctorQuestions.collectAsStateWithLifecycle()
@@ -141,11 +132,6 @@ fun CareScreen(onOpenLabs: () -> Unit, onOpenTravel: () -> Unit, viewModel: Care
         flares = flares,
         onSaveFlare = viewModel::saveFlare,
         onDeleteFlare = viewModel::deleteFlare,
-        activityScores = activityScores,
-        diagnosis = diagnosis,
-        stoolsOn = viewModel::stoolsOn,
-        onSaveActivityScore = viewModel::saveActivityScore,
-        onDeleteActivityScore = viewModel::deleteActivityScore,
         vaccinations = vaccinations,
         onSaveVaccination = viewModel::saveVaccination,
         onDeleteVaccination = viewModel::deleteVaccination,
@@ -186,11 +172,6 @@ fun CareContent(
     flares: List<Flare> = emptyList(),
     onSaveFlare: (Flare) -> Unit = {},
     onDeleteFlare: (Flare) -> Unit = {},
-    activityScores: List<ActivityScore> = emptyList(),
-    diagnosis: Diagnosis? = null,
-    stoolsOn: (LocalDate) -> Flow<List<Stool>> = { emptyFlow() },
-    onSaveActivityScore: (ActivityScore) -> Unit = {},
-    onDeleteActivityScore: (ActivityScore) -> Unit = {},
     vaccinations: List<Vaccination> = emptyList(),
     onSaveVaccination: (Vaccination) -> Unit = {},
     onDeleteVaccination: (Vaccination) -> Unit = {},
@@ -318,13 +299,6 @@ fun CareContent(
             )
 
             FlaresSection(flares = flares, onSave = onSaveFlare, onDelete = onDeleteFlare)
-            ActivityScoreSection(
-                scores = activityScores,
-                diagnosis = diagnosis,
-                stoolsOn = stoolsOn,
-                onSave = onSaveActivityScore,
-                onDelete = onDeleteActivityScore,
-            )
             VaccinationsSection(
                 vaccinations = vaccinations,
                 onSave = { onSaveVaccination(it); requestPermissionIfNeeded(it.reminderEnabled) },
@@ -668,10 +642,6 @@ private fun CarePreview() {
             flares = listOf(
                 Flare(1, today.minus(90, DateTimeUnit.DAY), today.minus(75, DateTimeUnit.DAY), "Prednisone 40 mg", hospitalized = true),
                 Flare(2, today.minus(4, DateTimeUnit.DAY), note = "Fatigue, urgency"),
-            ),
-            activityScores = listOf(
-                ActivityScore(1, today.minus(40, DateTimeUnit.DAY), ScoreKind.HBI, listOf(1, 1, 4, 0, 1)),
-                ActivityScore(2, today.minus(10, DateTimeUnit.DAY), ScoreKind.HBI, listOf(0, 0, 2, 0, 0)),
             ),
             vaccinations = listOf(
                 Vaccination(1, VaccineType.INFLUENZA, today.minus(400, DateTimeUnit.DAY), today.minus(30, DateTimeUnit.DAY)),

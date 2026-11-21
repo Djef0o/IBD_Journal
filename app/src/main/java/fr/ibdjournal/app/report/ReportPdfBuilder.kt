@@ -16,15 +16,11 @@ import fr.ibdjournal.app.data.model.ReminderSchedule
 import fr.ibdjournal.app.data.model.RepeatUnit
 import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.data.model.Diagnosis
-import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.VaccineType
-import fr.ibdjournal.app.domain.ActivityLevel
 import fr.ibdjournal.app.domain.Adherence
 import fr.ibdjournal.app.domain.LabStatus
 import fr.ibdjournal.app.domain.Symptom
 import fr.ibdjournal.app.domain.end
-import fr.ibdjournal.app.domain.level
-import fr.ibdjournal.app.domain.total
 import fr.ibdjournal.app.domain.totalMg
 import fr.ibdjournal.app.ui.DateFormats
 import fr.ibdjournal.app.ui.display
@@ -56,8 +52,6 @@ private const val FOOTER_TOP = PAGE_HEIGHT - 48f
 private const val CONTENT_BOTTOM = FOOTER_TOP - 12f
 
 private const val SECTION_GAP = 20f
-/** Most recent activity scores listed in the compact line of the report. */
-private const val ACTIVITY_LIST_MAX = 12
 private const val ROW_PADDING = 4f
 private const val COLUMN_GAP = 10f
 private const val TILE_GAP = 8f
@@ -160,7 +154,6 @@ class ReportPdfBuilder(private val context: Context) {
                 wellbeing()
                 treatments()
                 flares()
-                activityScores()
                 steroidCourses()
                 vaccinations()
                 labResults()
@@ -546,31 +539,6 @@ class ReportPdfBuilder(private val context: Context) {
             table(null, rows)
         }
 
-        /** Latest score with its level, then the most recent entries of the period in a compact line. */
-        fun activityScores() {
-            val scores = data.activityScores
-            val latest = scores.lastOrNull() ?: return
-            val date = DateFormats.dayMonthYear(latest.date)
-            val level = latest.level
-            val latestText = if (level != null) {
-                string(R.string.report_care_activity_latest_level, scoreName(latest.kind), latest.total, date, levelName(level))
-            } else {
-                string(R.string.report_care_activity_latest, scoreName(latest.kind), latest.total, date)
-            }
-            section(
-                string(R.string.report_care_activity),
-                string(R.string.report_care_activity_note),
-                layout(latestText, strongPaint, CONTENT_WIDTH).height.toFloat(),
-            )
-            paragraph(latestText, strongPaint)
-            if (scores.size > 1) {
-                val entries = scores.takeLast(ACTIVITY_LIST_MAX).joinToString("; ") {
-                    string(R.string.report_care_activity_entry, DateFormats.dayMonthYear(it.date), scoreName(it.kind), it.total)
-                }
-                paragraph(entries, bodyPaint)
-            }
-        }
-
         /** Steroid courses overlapping the period, with their total dose. */
         fun steroidCourses() {
             val rows = data.steroidCourses.map { course ->
@@ -828,23 +796,6 @@ class ReportPdfBuilder(private val context: Context) {
     }
 
     // --- Care labels ---
-
-    private fun scoreName(kind: ScoreKind): String = string(
-        when (kind) {
-            ScoreKind.HBI -> R.string.report_care_score_hbi
-            ScoreKind.SCCAI -> R.string.report_care_score_sccai
-        },
-    )
-
-    private fun levelName(level: ActivityLevel): String = string(
-        when (level) {
-            ActivityLevel.REMISSION -> R.string.report_care_level_remission
-            ActivityLevel.MILD -> R.string.report_care_level_mild
-            ActivityLevel.MODERATE -> R.string.report_care_level_moderate
-            ActivityLevel.SEVERE -> R.string.report_care_level_severe
-            ActivityLevel.ACTIVE -> R.string.report_care_level_active
-        },
-    )
 
     private fun diagnosisName(diagnosis: Diagnosis): String = string(
         when (diagnosis) {

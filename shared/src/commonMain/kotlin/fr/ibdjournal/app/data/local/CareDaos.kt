@@ -28,27 +28,6 @@ interface FlareDao {
 }
 
 @Dao
-interface ActivityScoreDao {
-    @Query("SELECT * FROM activity_scores ORDER BY dateEpochDay, id")
-    fun observeAll(): Flow<List<ActivityScoreEntity>>
-
-    @Query("SELECT * FROM activity_scores")
-    suspend fun getAll(): List<ActivityScoreEntity>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun upsert(score: ActivityScoreEntity): Long
-
-    @Query("DELETE FROM activity_scores WHERE id = :id")
-    suspend fun deleteById(id: Long)
-
-    @Insert
-    suspend fun insertAll(scores: List<ActivityScoreEntity>)
-
-    @Query("DELETE FROM activity_scores")
-    suspend fun deleteAll()
-}
-
-@Dao
 interface VaccinationDao {
     @Query("SELECT * FROM vaccinations ORDER BY dateEpochDay, id")
     fun observeAll(): Flow<List<VaccinationEntity>>

@@ -20,25 +20,6 @@ data class Flare(
     val note: String = "",
 )
 
-/**
- * Self-assessed activity score. [HBI]: Harvey-Bradshaw index (Crohn's disease).
- * [SCCAI]: Simple Clinical Colitis Activity Index (ulcerative colitis).
- */
-@Serializable
-enum class ScoreKind { HBI, SCCAI }
-
-/**
- * Answers of one score entry, in the order of the questionnaire (see `domain/Activity.kt`).
- * The total is computed, never stored.
- */
-@Serializable
-data class ActivityScore(
-    val id: Long = 0,
-    val date: LocalDate,
-    val kind: ScoreKind,
-    val answers: List<Int>,
-)
-
 @Serializable
 enum class VaccineType { INFLUENZA, PNEUMOCOCCAL, COVID19, HEPATITIS_B, HPV, ZOSTER, TETANUS, OTHER }
 

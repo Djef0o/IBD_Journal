@@ -3,10 +3,8 @@ package fr.ibdjournal.app.data.local
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.EmergencyInfo
 import fr.ibdjournal.app.data.model.Flare
-import fr.ibdjournal.app.data.model.ScoreKind
 import fr.ibdjournal.app.data.model.SteroidCourse
 import fr.ibdjournal.app.data.model.SteroidStep
 import fr.ibdjournal.app.data.model.Vaccination
@@ -22,15 +20,6 @@ data class FlareEntity(
     val treatment: String,
     val hospitalized: Boolean,
     val note: String,
-)
-
-/** [answers]: comma-separated integers. */
-@Entity(tableName = "activity_scores")
-data class ActivityScoreEntity(
-    @PrimaryKey(autoGenerate = true) val id: Long = 0,
-    val dateEpochDay: Long,
-    val kind: ScoreKind,
-    val answers: String,
 )
 
 @Entity(tableName = "vaccinations")
@@ -87,20 +76,6 @@ fun Flare.toFlareEntity() = FlareEntity(
     treatment = treatment,
     hospitalized = hospitalized,
     note = note,
-)
-
-fun ActivityScoreEntity.toActivityScore() = ActivityScore(
-    id = id,
-    date = LocalDate.fromEpochDays(dateEpochDay),
-    kind = kind,
-    answers = answers.split(',').mapNotNull { it.trim().toIntOrNull() },
-)
-
-fun ActivityScore.toActivityScoreEntity() = ActivityScoreEntity(
-    id = id,
-    dateEpochDay = date.toEpochDays(),
-    kind = kind,
-    answers = answers.joinToString(","),
 )
 
 fun VaccinationEntity.toVaccination() = Vaccination(

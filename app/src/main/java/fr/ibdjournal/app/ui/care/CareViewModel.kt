@@ -10,14 +10,10 @@ import fr.ibdjournal.app.data.model.LabResult
 import fr.ibdjournal.app.data.model.Medication
 import fr.ibdjournal.app.data.model.Weight
 import fr.ibdjournal.app.data.CareRepository
-import fr.ibdjournal.app.data.DiaryRepository
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.DoctorQuestion
-import fr.ibdjournal.app.data.model.ActivityScore
-import fr.ibdjournal.app.data.model.Diagnosis
 import fr.ibdjournal.app.data.model.Flare
 import fr.ibdjournal.app.data.model.SteroidCourse
-import fr.ibdjournal.app.data.model.Stool
 import fr.ibdjournal.app.data.model.Vaccination
 import fr.ibdjournal.app.domain.LabReportScan
 import fr.ibdjournal.app.domain.parseLabReport
@@ -30,9 +26,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.datetime.LocalDate
 import kotlinx.coroutines.launch
 import fr.ibdjournal.app.data.model.Exam
 
@@ -40,7 +33,6 @@ import fr.ibdjournal.app.data.model.Exam
 class CareViewModel @Inject constructor(
     private val repository: ProfileRepository,
     private val careRepository: CareRepository,
-    private val diaryRepository: DiaryRepository,
     private val reportReader: LabReportReader,
 ) : ViewModel() {
 
@@ -93,7 +85,7 @@ class CareViewModel @Inject constructor(
         viewModelScope.launch { repository.deleteLabResult(result.id) }
     }
 
-    // --- Flares, activity scores, vaccinations, steroid courses ---
+    // --- Flares, vaccinations, steroid courses ---
 
     /** Flare periods, chronological. */
     val flares: StateFlow<List<Flare>> = careRepository.flares
@@ -105,26 +97,6 @@ class CareViewModel @Inject constructor(
 
     fun deleteFlare(flare: Flare) {
         viewModelScope.launch { careRepository.deleteFlare(flare.id) }
-    }
-
-    /** Activity scores, chronological. */
-    val activityScores: StateFlow<List<ActivityScore>> = careRepository.activityScores
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-    /** Diagnosis of the profile: picks the questionnaire proposed by default. */
-    val diagnosis: StateFlow<Diagnosis?> = repository.profile
-        .map { it.diagnosis }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    /** Stools of [date], to pre-fill a new score entry. */
-    fun stoolsOn(date: LocalDate): Flow<List<Stool>> = diaryRepository.observeStools(date, date)
-
-    fun saveActivityScore(score: ActivityScore) {
-        viewModelScope.launch { careRepository.saveActivityScore(score) }
-    }
-
-    fun deleteActivityScore(score: ActivityScore) {
-        viewModelScope.launch { careRepository.deleteActivityScore(score.id) }
     }
 
     /** Vaccinations, chronological. */

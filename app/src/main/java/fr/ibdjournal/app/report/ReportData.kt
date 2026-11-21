@@ -1,6 +1,5 @@
 package fr.ibdjournal.app.report
 
-import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.Checkup
 import fr.ibdjournal.app.data.model.DoctorQuestion
@@ -97,8 +96,6 @@ data class ReportData(
     val upcomingCheckups: List<UpcomingCheckup>,
     /** Flares overlapping the period, oldest first. */
     val flares: List<Flare>,
-    /** Activity scores within the period, oldest first. */
-    val activityScores: List<ActivityScore>,
     /** Steroid courses overlapping the period, oldest first. */
     val steroidCourses: List<SteroidCourse>,
     /** All vaccinations, most recent first. */
@@ -125,7 +122,6 @@ fun reportData(
     labResults: List<LabResult>,
     checkups: List<Checkup>,
     flares: List<Flare> = emptyList(),
-    activityScores: List<ActivityScore> = emptyList(),
     steroidCourses: List<SteroidCourse> = emptyList(),
     vaccinations: List<Vaccination> = emptyList(),
     extraSymptoms: List<ExtraSymptomsDay> = emptyList(),
@@ -160,9 +156,6 @@ fun reportData(
         flares = flares
             .filter { it.start <= today && (it.end ?: today) >= from }
             .sortedBy { it.start },
-        activityScores = activityScores
-            .filter { it.date in from..today }
-            .sortedWith(compareBy({ it.date }, { it.id })),
         steroidCourses = steroidCourses
             .filter { it.start <= today && it.end >= from }
             .sortedBy { it.start },

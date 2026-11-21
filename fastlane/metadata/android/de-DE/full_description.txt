@@ -7,7 +7,7 @@ IBD Journal ist ein persönliches Tagebuch für Menschen mit Morbus Crohn oder C
 • Koloskopie und Rektosigmoidoskopie: Termin, Diät, Vorbereitungsdosen und eine Erinnerung pro Schritt, nach den Vorgaben deines Arztes
 • Laborwerte: 47 gängige Werte mit den vom Labor gedruckten Referenzbereichen, Diagramme und Tabellen; Import aus den PDF-Befunden deines Labors, auf dem Handy gelesen
 • Körpergewicht: Gewicht mit Datum erfassen und Gewichtskurve verfolgen
-• Schübe, Aktivitätsscores (Harvey-Bradshaw, SCCAI), Impfungen mit optionaler Erinnerung und Kortison-Kuren
+• Schübe, Impfungen mit optionaler Erinnerung und Kortison-Kuren
 • Analyse von Mahlzeiten und Symptomen, Karte für dringenden Toilettenbedarf und Notfallblatt vom Sperrbildschirm aus
 • Tägliche Symptome (Gelenke, Haut, Augen, Aphthen, Fieber), Fragen an den Arzt, Termine mit Erinnerung
 • PDF-Bericht für deinen Arzt

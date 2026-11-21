@@ -1,6 +1,5 @@
 package fr.ibdjournal.app.data
 
-import fr.ibdjournal.app.data.local.toActivityScore
 import fr.ibdjournal.app.data.local.toAppointment
 import fr.ibdjournal.app.data.local.toAppointmentEntity
 import fr.ibdjournal.app.data.local.toDoctorQuestion
@@ -10,7 +9,6 @@ import fr.ibdjournal.app.data.local.toExtraSymptomsDay
 import fr.ibdjournal.app.data.local.toWellbeingDay
 import fr.ibdjournal.app.data.local.toWellbeingEntity
 import fr.ibdjournal.app.data.model.WellbeingDay
-import fr.ibdjournal.app.data.local.toActivityScoreEntity
 import fr.ibdjournal.app.data.local.toEmergencyEntity
 import fr.ibdjournal.app.data.local.toEmergencyInfo
 import fr.ibdjournal.app.data.local.toFlare
@@ -19,7 +17,6 @@ import fr.ibdjournal.app.data.local.toSteroidCourse
 import fr.ibdjournal.app.data.local.toSteroidCourseEntity
 import fr.ibdjournal.app.data.local.toVaccination
 import fr.ibdjournal.app.data.local.toVaccinationEntity
-import fr.ibdjournal.app.data.model.ActivityScore
 import fr.ibdjournal.app.data.model.Appointment
 import fr.ibdjournal.app.data.model.DoctorQuestion
 import fr.ibdjournal.app.data.model.EmergencyInfo
@@ -57,15 +54,6 @@ class CareRepository @Inject constructor(
     }
 
     suspend fun deleteFlare(id: Long) = db.flareDao().deleteById(id)
-
-    val activityScores: Flow<List<ActivityScore>> =
-        vault.observe { it.activityScoreDao().observeAll() }.map { list -> list.map { it.toActivityScore() } }
-
-    suspend fun saveActivityScore(score: ActivityScore) {
-        db.activityScoreDao().upsert(score.toActivityScoreEntity())
-    }
-
-    suspend fun deleteActivityScore(id: Long) = db.activityScoreDao().deleteById(id)
 
     val vaccinations: Flow<List<Vaccination>> =
         vault.observe { it.vaccinationDao().observeAll() }.map { list -> list.map { it.toVaccination() } }
