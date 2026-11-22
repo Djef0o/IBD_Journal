@@ -1,0 +1,1 @@
+Supprimé : le score d'activité (Harvey-Bradshaw, SCCAI), qui faisait double emploi avec le reste du journal. Les scores déjà saisis sont effacés.

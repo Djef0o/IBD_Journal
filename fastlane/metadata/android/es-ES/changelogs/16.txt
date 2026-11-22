@@ -1,0 +1,1 @@
+Eliminado: la puntuación de actividad (Harvey-Bradshaw, SCCAI), que duplicaba el resto del diario. Las puntuaciones ya introducidas se borran.

@@ -1,0 +1,1 @@
+Entfernt: der Aktivitätsscore (Harvey-Bradshaw, SCCAI), der sich mit dem Rest des Tagebuchs doppelte. Bereits erfasste Scores werden gelöscht.

@@ -1,0 +1,1 @@
+Removed: the activity score (Harvey-Bradshaw, SCCAI), which duplicated the rest of the journal. Scores already entered are deleted.
